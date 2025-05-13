@@ -1,0 +1,55 @@
+*{
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+h1{
+    height: 15%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.menu{
+    display: flex;
+    width: 100%;
+    height: 60%;
+}
+.video{
+    width: 50%;
+    height: 100%;
+    background-color: chocolate;
+    border-radius: 3%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 5px;
+}
+.audio{
+    width: 50%;
+    height: 100%;
+    background-color: aqua;
+    border-radius: 3%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 5px;
+}
+.menu2{
+    display: flex;
+    width: 100%;
+    height: 10%;
+}
+.user_infomation{
+    width: 50%;
+    height: 100%;
+    border-radius: 3%;
+    margin: 5px;
+}
+.setting{
+    width: 50%;
+    height: 100%;
+    background-color: chocolate;
+    border-radius: 3%;
+    margin: 5px;
+}
