@@ -1,40 +1,88 @@
+*{
+  padding: 0px;
+  margin: 0px;
+}
+h1 {
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  background: linear-gradient(to right, #4facfe, #00f2fe);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 .form-container {
-    width: 300px;
-    margin: 50px auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-  }
-  .form-container h2 {
-    margin-top: 0;
-  }
-  .form-container label {
-    display: block;
-    margin-top: 10px;
-  }
-  .form-container input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-  }
-  .form-container button {
-    margin-top: 15px;
-    width: 100%;
-    padding: 10px;
-  }
-  .hidden {
-    display: none;
-  }
-  .switch-link {
-    margin-top: 15px;
-    text-align: center;
-    font-size: 0.9em;
-    color: #333;
-  }
-  .switch-link button {
-    background: none;
-    border: none;
-    color: blue;
-    cursor: pointer;
-    text-decoration: underline;
-  }
+  width: 320px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.form-container h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.4rem;
+  text-align: center;
+  color: #333;
+}
+
+.form-container label {
+  display: block;
+  margin-top: 12px;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-container input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+}
+
+.form-container button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px;
+  background-color: chocolate;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.form-container button:hover {
+  background-color: #b25514;
+}
+
+.hidden {
+  display: none;
+}
+
+.switch-link {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.switch-link button {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  padding: 0;
+}
