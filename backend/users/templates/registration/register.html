@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - Speakle{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="text-center">
+            <h2 class="text-3xl font-bold text-gray-900">Join Speakle</h2>
+            <p class="mt-2 text-sm text-gray-600">Start your language learning journey today</p>
+        </div>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="mb-4 p-4 rounded-md bg-red-50 text-red-700">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form class="space-y-6" method="post">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            First Name
+                        </label>
+                        <div class="mt-1">
+                            {{ form.first_name }}
+                        </div>
+                        {% if form.first_name.errors %}
+                            {% for error in form.first_name.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Last Name
+                        </label>
+                        <div class="mt-1">
+                            {{ form.last_name }}
+                        </div>
+                        {% if form.last_name.errors %}
+                            {% for error in form.last_name.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Username
+                    </label>
+                    <div class="mt-1">
+                        {{ form.username }}
+                    </div>
+                    {% if form.username.errors %}
+                        {% for error in form.username.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Email Address
+                    </label>
+                    <div class="mt-1">
+                        {{ form.email }}
+                    </div>
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Language Selection Section -->
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Language Information</h3>
+                    
+                    <div>
+                        <label for="{{ form.native_language.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Native Language
+                        </label>
+                        <div class="mt-1">
+                            {{ form.native_language }}
+                        </div>
+                        {% if form.native_language.errors %}
+                            {% for error in form.native_language.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">{{ form.native_language.help_text }}</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="{{ form.target_language.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Target Language
+                        </label>
+                        <div class="mt-1">
+                            {{ form.target_language }}
+                        </div>
+                        {% if form.target_language.errors %}
+                            {% for error in form.target_language.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">{{ form.target_language.help_text }}</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="{{ form.target_proficiency.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Current Level in Target Language
+                        </label>
+                        <div class="mt-1">
+                            {{ form.target_proficiency }}
+                        </div>
+                        {% if form.target_proficiency.errors %}
+                            {% for error in form.target_proficiency.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">{{ form.target_proficiency.help_text }}</p>
+                    </div>
+                </div>
+
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Account Security</h3>
+                    
+                    <div>
+                        <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Password
+                        </label>
+                        <div class="mt-1">
+                            {{ form.password1 }}
+                        </div>
+                        {% if form.password1.errors %}
+                            {% for error in form.password1.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Confirm Password
+                        </label>
+                        <div class="mt-1">
+                            {{ form.password2 }}
+                        </div>
+                        {% if form.password2.errors %}
+                            {% for error in form.password2.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                        Create Account
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6">
+                <div class="text-center">
+                    <p class="text-sm text-gray-600">
+                        Already have an account?
+                        <a href="{% url 'users:login' %}" class="font-medium text-blue-600 hover:text-blue-500">
+                            Sign in here
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add some JavaScript to enhance the language selection experience
+document.addEventListener('DOMContentLoaded', function() {
+    const nativeSelect = document.getElementById('{{ form.native_language.id_for_label }}');
+    const targetSelect = document.getElementById('{{ form.target_language.id_for_label }}');
+    
+    function updateAvailableOptions() {
+        const nativeValue = nativeSelect.value;
+        const targetValue = targetSelect.value;
+        
+        // Reset all options
+        Array.from(targetSelect.options).forEach(option => {
+            option.style.display = 'block';
+        });
+        
+        // Hide the native language from target language options
+        if (nativeValue) {
+            Array.from(targetSelect.options).forEach(option => {
+                if (option.value === nativeValue) {
+                    option.style.display = 'none';
+                    if (option.selected) {
+                        targetSelect.value = '';
+                    }
+                }
+            });
+        }
+    }
+    
+    nativeSelect.addEventListener('change', updateAvailableOptions);
+    updateAvailableOptions(); // Run on page load
+});
+</script>
+{% endblock %} 

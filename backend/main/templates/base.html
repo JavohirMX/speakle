@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Speakle - Connect, Learn, Speak{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'main:home' %}" class="text-2xl font-bold text-blue-600">
+                        🗣️ Speakle
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'matches:find_matches' %}" class="text-gray-700 hover:text-blue-600">Find Partners</a>
+                        <a href="{% url 'matches:my_matches' %}" class="text-gray-700 hover:text-blue-600">My Matches</a>
+                        <a href="{% url 'matches:requests' %}" class="text-gray-700 hover:text-blue-600">Requests</a>
+                        <a href="{% url 'users:profile' %}" class="text-gray-700 hover:text-blue-600">Profile</a>
+                        <a href="{% url 'users:logout' %}" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">Logout</a>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="text-gray-700 hover:text-blue-600">Login</a>
+                        <a href="{% url 'users:register' %}" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p>&copy; 2025 Speakle. Connect with language learners worldwide.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple JavaScript for enhanced interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add hover effects to language cards
+            const languageCards = document.querySelectorAll('.grid .text-center');
+            languageCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

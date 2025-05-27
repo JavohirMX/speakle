@@ -1,0 +1,55 @@
+Sure! Here's a simple, **non-technical, plain-text guide** you can give to an AI to help with your **Speakle** project:
+
+---
+
+**Project Name:** Speakle
+**Project Type:** Web Application
+**Goal:** Build a website where people can sign up, find language exchange partners, and talk to each other through video chat.
+
+---
+
+### 🧩 What the Website Should Do:
+
+1. **User Registration and Login**
+
+   * People should be able to create an account with their basic info, languages they know, and languages they want to learn.
+   * They should be able to log in and log out.
+
+2. **User Profiles**
+
+   * Each user has a profile with a bio, a profile picture, their native language, the language they are learning, how well they speak it, and their interests.
+
+3. **Finding Language Partners (Matching)**
+
+   * The website should help users find others who speak the language they want to learn and want to learn the language they speak.
+
+4. **Video Chat**
+
+   * After finding a match, users should be able to enter a video chat room to talk.
+   * The video chat works directly in the browser.
+
+5. **Room System**
+
+   * A unique room is created for each conversation.
+   * The room should only be accessible by the matched users.
+
+---
+
+### 🛠️ Tools to Use:
+
+* Use Django for the website’s backend and pages.
+* Use HTML, CSS, JS, TailwindCSS
+* Use JavaScript only when needed (for video chat).
+* Use a Node.js server only for handling the video chat connection (signaling).
+
+---
+
+### 📌 Important Notes:
+
+* Don't use Django REST Framework or APIs.
+* Don’t use React or Vue.
+* Keep everything simple and server-rendered.
+* All user info and matching should be handled in Django.
+* The video chat should work using WebRTC and connect users through a separate small server.
+
+---

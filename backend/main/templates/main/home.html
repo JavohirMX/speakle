@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Speakle - Find Your Perfect Language Exchange Partner{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-br from-blue-600 to-purple-700 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div class="text-center">
+            <h1 class="text-5xl font-bold mb-6">
+                Connect. Learn. <span class="text-yellow-300">Speak.</span>
+            </h1>
+            <p class="text-xl mb-8 max-w-3xl mx-auto leading-relaxed">
+                Join thousands of language learners worldwide. Find your perfect language exchange partner 
+                and practice speaking through real conversations via video chat.
+            </p>
+            <div class="space-x-4">
+                <a href="{% url 'users:register' %}" class="bg-yellow-400 text-gray-900 px-8 py-4 rounded-lg font-semibold hover:bg-yellow-300 transition text-lg">
+                    Start Learning Today
+                </a>
+                <a href="#how-it-works" class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition text-lg">
+                    How It Works
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Why Choose Speakle?</h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Experience the most effective way to learn languages through real conversations with native speakers.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">🌍</span>
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Global Community</h3>
+                <p class="text-gray-600">
+                    Connect with native speakers from around the world. Practice with real people, not bots.
+                </p>
+            </div>
+
+            <div class="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">💬</span>
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Video Chat</h3>
+                <p class="text-gray-600">
+                    Practice speaking face-to-face through our integrated video chat. Build confidence naturally.
+                </p>
+            </div>
+
+            <div class="text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">🎯</span>
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Smart Matching</h3>
+                <p class="text-gray-600">
+                    Our algorithm matches you with the perfect partner based on your language goals and interests.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="bg-gray-100 py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p class="text-xl text-gray-600">Get started in just 3 simple steps</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="text-center">
+                <div class="w-20 h-20 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                    1
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Create Your Profile</h3>
+                <p class="text-gray-600">
+                    Sign up and tell us about your native language, what you want to learn, and your interests.
+                </p>
+            </div>
+
+            <div class="text-center">
+                <div class="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                    2
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Find Your Match</h3>
+                <p class="text-gray-600">
+                    Browse profiles and connect with speakers who want to learn your language and speak yours.
+                </p>
+            </div>
+
+            <div class="text-center">
+                <div class="w-20 h-20 bg-purple-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+                    3
+                </div>
+                <h3 class="text-xl font-semibold mb-3">Start Speaking</h3>
+                <p class="text-gray-600">
+                    Jump into a video chat and start practicing! Learn naturally through real conversations.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Languages Section -->
+<section class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Popular Languages</h2>
+            <p class="text-xl text-gray-600">Practice with native speakers in these popular languages</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇺🇸</div>
+                <p class="font-medium">English</p>
+            </div>
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇪🇸</div>
+                <p class="font-medium">Spanish</p>
+            </div>
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇫🇷</div>
+                <p class="font-medium">French</p>
+            </div>
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇩🇪</div>
+                <p class="font-medium">German</p>
+            </div>
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇮🇹</div>
+                <p class="font-medium">Italian</p>
+            </div>
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇯🇵</div>
+                <p class="font-medium">Japanese</p>
+            </div>
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇰🇷</div>
+                <p class="font-medium">Korean</p>
+            </div>
+            <div class="text-center p-4 bg-white rounded-lg shadow hover:shadow-md transition">
+                <div class="text-3xl mb-2">🇨🇳</div>
+                <p class="font-medium">Chinese</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-blue-600 text-white py-20">
+    <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <h2 class="text-4xl font-bold mb-6">Ready to Start Your Language Journey?</h2>
+        <p class="text-xl mb-8">
+            Join thousands of learners who are already improving their language skills through real conversations.
+        </p>
+        <a href="{% url 'users:register' %}" class="bg-yellow-400 text-gray-900 px-8 py-4 rounded-lg font-semibold hover:bg-yellow-300 transition text-lg">
+            Sign Up for Free
+        </a>
+    </div>
+</section>
+{% endblock %} 

@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - Speakle{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow rounded-lg">
+            <!-- Profile Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-700 px-6 py-8 rounded-t-lg">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        {% if user.profile_picture %}
+                            <img class="h-20 w-20 rounded-full border-4 border-white" src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}">
+                        {% else %}
+                            <div class="h-20 w-20 rounded-full border-4 border-white bg-gray-300 flex items-center justify-center">
+                                <span class="text-gray-600 text-2xl font-bold">{{ user.first_name.0 }}{{ user.last_name.0 }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="ml-6">
+                        <h1 class="text-2xl font-bold text-white">{{ user.get_full_name|default:user.username }}</h1>
+                        <p class="text-blue-100">@{{ user.username }}</p>
+                        
+                        <!-- Language Summary -->
+                        <div class="flex flex-wrap mt-2 gap-2">
+                            {% for user_lang in user_languages %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                                    {% if user_lang.language_type == 'native' %}bg-blue-100 text-blue-800
+                                    {% elif user_lang.language_type == 'fluent' %}bg-green-100 text-green-800
+                                    {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                    {{ user_lang.language.flag_emoji }} {{ user_lang.language.name }}
+                                    {% if user_lang.language_type == 'native' %}(Native)
+                                    {% elif user_lang.language_type == 'fluent' %}(Fluent)
+                                    {% else %}(Learning){% endif %}
+                                </span>
+                            {% empty %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                    No languages added yet
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+                <div class="px-6 pt-6">
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Languages Section -->
+            <div class="px-6 py-6 border-b">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-medium text-gray-900">My Languages</h2>
+                    <a href="{% url 'users:add_language' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm">
+                        + Add Language
+                    </a>
+                </div>
+                
+                {% if user_languages %}
+                    <div class="grid gap-4 md:grid-cols-2">
+                        {% for user_lang in user_languages %}
+                            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <span class="text-2xl mr-2">{{ user_lang.language.flag_emoji }}</span>
+                                            <h3 class="font-semibold text-gray-900">{{ user_lang.language.name }}</h3>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Type:</span> 
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                    {% if user_lang.language_type == 'native' %}bg-blue-100 text-blue-800
+                                                    {% elif user_lang.language_type == 'fluent' %}bg-green-100 text-green-800
+                                                    {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                                    {{ user_lang.get_language_type_display }}
+                                                </span>
+                                            </p>
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Level:</span> 
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    {{ user_lang.get_proficiency_display }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2 ml-4">
+                                        <a href="{% url 'users:edit_language' user_lang.id %}" 
+                                           class="text-blue-600 hover:text-blue-800 text-sm">Edit</a>
+                                        <a href="{% url 'users:delete_language' user_lang.id %}" 
+                                           class="text-red-600 hover:text-red-800 text-sm">Remove</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 text-gray-500">
+                        <p class="mb-4">You haven't added any languages yet.</p>
+                        <a href="{% url 'users:add_language' %}" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">
+                            Add Your First Language
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Profile Form -->
+            <div class="px-6 py-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-6">Profile Information</h2>
+                
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                First Name
+                            </label>
+                            <div class="mt-1">
+                                {{ form.first_name }}
+                            </div>
+                            {% if form.first_name.errors %}
+                                {% for error in form.first_name.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Last Name
+                            </label>
+                            <div class="mt-1">
+                                {{ form.last_name }}
+                            </div>
+                            {% if form.last_name.errors %}
+                                {% for error in form.last_name.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Email Address
+                        </label>
+                        <div class="mt-1">
+                            {{ form.email }}
+                        </div>
+                        {% if form.email.errors %}
+                            {% for error in form.email.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.profile_picture.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Profile Picture
+                        </label>
+                        <div class="mt-1">
+                            {{ form.profile_picture }}
+                        </div>
+                        {% if form.profile_picture.errors %}
+                            {% for error in form.profile_picture.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.bio.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Bio
+                        </label>
+                        <div class="mt-1">
+                            {{ form.bio }}
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Tell other learners about yourself and your language goals.</p>
+                        {% if form.bio.errors %}
+                            {% for error in form.bio.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.interests.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Interests
+                        </label>
+                        <div class="mt-1">
+                            {{ form.interests }}
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">What are your hobbies and interests? This helps match you with compatible partners.</p>
+                        {% if form.interests.errors %}
+                            {% for error in form.interests.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% url 'main:home' %}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition">
+                            Cancel
+                        </a>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
