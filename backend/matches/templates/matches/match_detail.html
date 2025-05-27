@@ -35,13 +35,16 @@
                 
                 <!-- Quick Action Buttons -->
                 <div class="flex space-x-3">
-                    <button onclick="startVideoChat('{{ match.id }}')" 
-                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                    <a href="{% url 'chats:create_room' match.id %}" 
+                       class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
                         🎥 Start Video Chat
-                    </button>
-                    <button class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition">
-                        💬 Send Message
-                    </button>
+                    </a>
+                    {% if match.video_room %}
+                        <a href="{% url 'chats:call_history' match.video_room.room_id %}" 
+                           class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition">
+                            📊 Call History
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -155,7 +158,13 @@
                 <p class="text-sm text-blue-800">Time since match</p>
             </div>
             <div class="bg-green-50 rounded-lg p-4">
-                <div class="text-2xl font-bold text-green-600">0</div>
+                <div class="text-2xl font-bold text-green-600">
+                    {% if match.video_room %}
+                        {{ match.video_room.sessions.count }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
                 <p class="text-sm text-green-800">Video sessions</p>
             </div>
             <div class="bg-purple-50 rounded-lg p-4">
@@ -165,33 +174,4 @@
         </div>
     </div>
 </div>
-
-<!-- Video Chat Modal (Placeholder) -->
-<div id="videoChatModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 class="text-lg font-semibold mb-4">Start Video Chat</h3>
-            <p class="text-gray-600 mb-4">Video chat functionality will be available soon!</p>
-            <div class="flex justify-end space-x-2">
-                <button onclick="closeVideoChat()" 
-                        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
-                    Close
-                </button>
-                <button class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition" disabled>
-                    Coming Soon
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function startVideoChat(matchId) {
-        document.getElementById('videoChatModal').classList.remove('hidden');
-    }
-
-    function closeVideoChat() {
-        document.getElementById('videoChatModal').classList.add('hidden');
-    }
-</script>
 {% endblock %} 

@@ -26,30 +26,46 @@ Sure! Here's a simple, **non-technical, plain-text guide** you can give to an AI
 4. **Video Chat**
 
    * After finding a match, users should be able to enter a video chat room to talk.
-   * The video chat works directly in the browser.
+   * The video chat works directly in the browser using WebRTC technology.
+   * Each match gets its own secure video room that only the matched users can access.
 
 5. **Room System**
 
-   * A unique room is created for each conversation.
+   * A unique room is created for each conversation between matched partners.
    * The room should only be accessible by the matched users.
+   * Call history and session data should be stored for user analytics.
 
 ---
 
 ### 🛠️ Tools to Use:
 
-* Use Django for the website’s backend and pages.
-* Use HTML, CSS, JS, TailwindCSS
-* Use JavaScript only when needed (for video chat).
-* Use a Node.js server only for handling the video chat connection (signaling).
+* Use Django for the website's backend, pages, and real-time communication.
+* Use Django Channels for WebSocket support (enables real-time video chat signaling).
+* Use HTML, CSS, JS, TailwindCSS for the frontend.
+* Use modern JavaScript with WebRTC APIs for video/audio communication.
+* Use Redis as the channel layer backend for Django Channels (for scaling WebSocket connections).
 
 ---
 
 ### 📌 Important Notes:
 
-* Don't use Django REST Framework or APIs.
-* Don’t use React or Vue.
-* Keep everything simple and server-rendered.
-* All user info and matching should be handled in Django.
-* The video chat should work using WebRTC and connect users through a separate small server.
+* Don't use Django REST Framework or APIs for the main functionality.
+* Don't use React or Vue - keep frontend simple with vanilla JavaScript.
+* Don't use separate Node.js servers - everything should run through Django.
+* Keep everything simple and server-rendered with Django templates.
+* All user info, matching, and video room management should be handled in Django.
+* Use Django Channels for WebSocket connections that handle video chat signaling.
+* The video chat should work using WebRTC with Django Channels managing the peer connections.
+* Store video call sessions and analytics in Django models for future features.
+
+---
+
+### 🔧 Technical Architecture:
+
+* **Frontend**: HTML templates + TailwindCSS + Vanilla JavaScript + WebRTC
+* **Backend**: Django + Django Channels for WebSocket support
+* **Database**: SQLite (development) / PostgreSQL (production)
+* **Real-time**: Django Channels with Redis channel layer
+* **Video/Audio**: Browser WebRTC APIs (no external services needed)
 
 ---
