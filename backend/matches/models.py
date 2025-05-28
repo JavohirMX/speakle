@@ -28,6 +28,7 @@ class Match(models.Model):
         ('declined', 'Declined'),
         ('active', 'Active'),
         ('inactive', 'Inactive'),
+        ('ended', 'Ended'),
     ]
     
     user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='matches_as_user1')
@@ -38,6 +39,11 @@ class Match(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     last_activity = models.DateTimeField(blank=True, null=True)
+    
+    # Enhanced call end features
+    ended_at = models.DateTimeField(blank=True, null=True)
+    ended_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ended_matches')
+    end_reason = models.TextField(blank=True, help_text="Reason for ending the match")
     
     class Meta:
         unique_together = ['user1', 'user2']
@@ -75,6 +81,7 @@ class MatchRequest(models.Model):
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('declined', 'Declined'),
+        ('cancelled', 'Cancelled'),
     ], default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     responded_at = models.DateTimeField(blank=True, null=True)

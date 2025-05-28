@@ -94,6 +94,17 @@ class CallSession(models.Model):
         ('failed', 'Failed'),
     ]
     
+    END_REASON_CHOICES = [
+        ('normal', 'Normal end'),
+        ('user_hangup', 'User hung up'),
+        ('partner_hangup', 'Partner hung up'),
+        ('connection_lost', 'Connection lost'),
+        ('timeout', 'Session timeout'),
+        ('technical_issue', 'Technical issue'),
+        ('emergency', 'Emergency end'),
+        ('network_failure', 'Network failure'),
+    ]
+    
     room = models.ForeignKey(VideoRoom, on_delete=models.CASCADE, related_name='sessions')
     participants = models.ManyToManyField(User, related_name='call_sessions')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='starting')
@@ -101,10 +112,24 @@ class CallSession(models.Model):
     ended_at = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
     
+    # Enhanced call end tracking
+    ended_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
+                               related_name='ended_calls', help_text='User who ended the call')
+    end_reason = models.CharField(max_length=20, choices=END_REASON_CHOICES, 
+                                null=True, blank=True, help_text='Reason for call ending')
+    end_notes = models.TextField(blank=True, help_text='Additional notes about call ending')
+    
     # Analytics fields
     video_enabled = models.BooleanField(default=True)
     audio_enabled = models.BooleanField(default=True)
     connection_quality = models.CharField(max_length=20, blank=True)  # good, fair, poor
+    max_participants = models.IntegerField(default=0, help_text='Maximum participants during call')
+    disconnection_count = models.IntegerField(default=0, help_text='Number of disconnections during call')
+    
+    # Performance metrics
+    average_video_quality = models.CharField(max_length=20, blank=True)  # HD, SD, Poor
+    network_issues_count = models.IntegerField(default=0)
+    total_data_transferred = models.BigIntegerField(default=0, help_text='Total data in bytes')
     
     class Meta:
         ordering = ['-started_at']
@@ -117,6 +142,31 @@ class CallSession(models.Model):
         if self.ended_at and self.started_at:
             self.duration = self.ended_at - self.started_at
             self.save()
+    
+    def get_duration_display(self):
+        """Get human-readable duration."""
+        if self.duration:
+            total_seconds = int(self.duration.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            
+            if hours > 0:
+                return f"{hours}h {minutes}m {seconds}s"
+            elif minutes > 0:
+                return f"{minutes}m {seconds}s"
+            else:
+                return f"{seconds}s"
+        return "Unknown"
+    
+    def was_successful(self):
+        """Check if the call was successfully completed."""
+        return self.status == 'ended' and self.end_reason in ['normal', 'user_hangup', 'partner_hangup']
+    
+    def get_end_reason_display(self):
+        """Get human-readable end reason."""
+        reason_map = dict(self.END_REASON_CHOICES)
+        return reason_map.get(self.end_reason, 'Unknown')
 
 class RoomMessage(models.Model):
     """Model for chat messages within video rooms."""

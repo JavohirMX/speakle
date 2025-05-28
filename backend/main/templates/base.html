@@ -438,7 +438,7 @@
                 formData.append('response', 'accept');
                 formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
                 
-                fetch(`/chats/invitation/${currentGlobalIncomingInvitation.id}/respond/`, {
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
                     method: 'POST',
                     body: formData
                 })
@@ -472,7 +472,7 @@
                 formData.append('response', 'decline');
                 formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
                 
-                fetch(`/chats/invitation/${currentGlobalIncomingInvitation.id}/respond/`, {
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
                     method: 'POST',
                     body: formData
                 })
@@ -651,7 +651,7 @@
             formData.append('message', message);
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
             
-            fetch(`/chats/invite/${matchId}/`, {
+            fetch(`/chats/api/send-invitation/${matchId}/`, {
                 method: 'POST',
                 body: formData
             })

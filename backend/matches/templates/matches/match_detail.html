@@ -254,7 +254,7 @@
                             class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
                         Close
                     </button>
-                    <a href="{% url 'chats:create_room' match.id %}" 
+                    <a href="{% url 'chats:create_video_room' match.id %}" 
                        class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
                         Enter Room Anyway
                     </a>
@@ -335,7 +335,7 @@ function sendCallInvitation() {
     formData.append('message', message);
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
     
-    fetch(`/chats/invite/${currentMatchId}/`, {
+    fetch(`/chats/api/send-invitation/${currentMatchId}/`, {
         method: 'POST',
         body: formData
     })
@@ -382,7 +382,7 @@ function startInvitationTimer() {
 function startStatusPolling() {
     statusCheckInterval = setInterval(() => {
         if (currentInvitationId) {
-            fetch(`/chats/invitation/${currentInvitationId}/status/`)
+            fetch(`/chats/api/invitation-status/${currentInvitationId}/`)
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'accepted') {
@@ -438,7 +438,7 @@ function cancelInvitation() {
         const formData = new FormData();
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
         
-        fetch(`/chats/invitation/${currentInvitationId}/cancel/`, {
+        fetch(`/chats/api/cancel-invitation/${currentInvitationId}/`, {
             method: 'POST',
             body: formData
         })

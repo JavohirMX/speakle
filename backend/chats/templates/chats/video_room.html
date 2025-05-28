@@ -141,6 +141,44 @@
         padding: 20px;
         max-height: calc(100vh - 160px);
         background: #f8fafc;
+        scroll-behavior: smooth;
+    }
+    
+    .message-fade-in {
+        animation: messageSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #ef4444;
+        color: white;
+        font-size: 10px;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: badgePulse 1s infinite;
+    }
+    
+    @keyframes badgePulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
     }
     
     .connection-status {
@@ -273,6 +311,207 @@
             font-size: 20px;
         }
     }
+    
+    .typing-indicator {
+        animation: messageSlideIn 0.3s ease-out;
+    }
+    
+    .animate-bounce {
+        animation: bounce 1s infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% {
+            animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+            transform: translate3d(0, 0, 0);
+        }
+        40%, 43% {
+            animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+            transform: translate3d(0, -8px, 0);
+        }
+        70% {
+            animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+            transform: translate3d(0, -4px, 0);
+        }
+        90% {
+            transform: translate3d(0, -2px, 0);
+        }
+    }
+
+    /* Enhanced Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .modal-header {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-body {
+        padding: 20px 24px;
+    }
+
+    .modal-footer {
+        padding: 16px 24px 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-select, .form-textarea {
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-select:focus, .form-textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .btn-danger {
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-danger:hover {
+        background-color: #b91c1c;
+    }
+
+    .btn-secondary {
+        background-color: #6b7280;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background-color: #4b5563;
+    }
+
+    .btn-primary {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-primary:hover {
+        background-color: #2563eb;
+    }
+
+    /* Call Summary Styles */
+    .summary-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .summary-stat:last-child {
+        border-bottom: none;
+    }
+
+    .summary-stat .label {
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .summary-stat .value {
+        color: #6b7280;
+    }
+
+    .success-indicator {
+        color: #059669;
+        font-weight: 600;
+    }
+
+    .warning-indicator {
+        color: #d97706;
+        font-weight: 600;
+    }
+
+    .error-indicator {
+        color: #dc2626;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -384,7 +623,10 @@
             {% for message in recent_messages %}
                 <div class="mb-4 {% if message.sender == user %}text-right{% endif %}">
                     <div class="inline-block max-w-xs {% if message.sender == user %}bg-blue-500 text-white{% else %}bg-white shadow-md{% endif %} rounded-xl px-4 py-3">
-                        <p class="text-sm">{{ message.content }}</p>
+                        {% if message.sender != user %}
+                            <p class="text-xs font-semibold mb-1 opacity-75">{{ message.sender.username }}</p>
+                        {% endif %}
+                        <p class="text-sm">{{ message.content|escape }}</p>
                         <p class="text-xs opacity-75 mt-1">{{ message.timestamp|timesince }} ago</p>
                     </div>
                 </div>
@@ -419,6 +661,88 @@
             </div>
         </div>
     </div>
+
+    <!-- Chat Typing Indicator -->
+    <div id="typingIndicator" class="typing-indicator" style="display: none;">
+        <span></span> is typing...
+    </div>
+</div>
+
+<!-- Enhanced Call End Modal -->
+<div id="callEndModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-xl font-semibold text-gray-900">End Call</h3>
+            <button id="closeCallEndModal" class="close-btn">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <p class="text-gray-600 mb-4">Are you sure you want to end this call?</p>
+            
+            <form id="callEndForm">
+                <div class="form-group">
+                    <label for="endReason" class="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for ending call:
+                    </label>
+                    <select id="endReason" name="end_reason" class="form-select w-full p-2 border border-gray-300 rounded-md">
+                        <option value="user_hangup">Normal end</option>
+                        <option value="connection_lost">Connection issues</option>
+                        <option value="technical_issue">Technical problems</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="timeout">Session timeout</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="connectionQuality" class="block text-sm font-medium text-gray-700 mb-2">
+                        How was the call quality?
+                    </label>
+                    <select id="connectionQuality" name="connection_quality" class="form-select w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">Select quality</option>
+                        <option value="excellent">Excellent</option>
+                        <option value="good">Good</option>
+                        <option value="fair">Fair</option>
+                        <option value="poor">Poor</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="endNotes" class="block text-sm font-medium text-gray-700 mb-2">
+                        Additional notes (optional):
+                    </label>
+                    <textarea id="endNotes" name="end_notes" rows="3" 
+                              class="form-textarea w-full p-2 border border-gray-300 rounded-md"
+                              placeholder="Any additional feedback about the call..."></textarea>
+                </div>
+            </form>
+        </div>
+        
+        <div class="modal-footer">
+            <button id="cancelEndCall" class="btn-secondary">Cancel</button>
+            <button id="confirmEndCall" class="btn-danger">End Call</button>
+        </div>
+    </div>
+</div>
+
+<!-- Post-Call Summary Modal -->
+<div id="callSummaryModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-xl font-semibold text-gray-900">Call Summary</h3>
+            <button id="closeCallSummaryModal" class="close-btn">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <div id="callSummaryContent">
+                <!-- Summary content will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button id="viewCallHistory" class="btn-secondary">View Call History</button>
+            <button id="closeCallSummary" class="btn-primary">Close</button>
+        </div>
+    </div>
 </div>
 
 <!-- Enhanced WebRTC JavaScript -->
@@ -441,6 +765,8 @@ class VideoChat {
         this.isAudioEnabled = true;
         this.isInitiator = false;
         this.iceCandidateQueue = [];
+        this.messageIds = new Set(); // Track message IDs to prevent duplicates
+        this.networkIssuesCount = 0; // Track network issues during call
         
         // WebRTC configuration with more STUN servers
         this.pcConfig = {
@@ -457,6 +783,7 @@ class VideoChat {
         this.setupEventListeners();
         this.connectWebSocket();
         this.initializeLocalVideo();
+        this.loadRecentMessages();
     }
     
     initializeElements() {
@@ -495,6 +822,46 @@ class VideoChat {
         this.sendChatBtn.addEventListener('click', () => this.sendChatMessage());
         this.chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendChatMessage();
+        });
+        
+        // Modal event listeners
+        document.getElementById('closeCallEndModal').addEventListener('click', () => this.hideCallEndModal());
+        document.getElementById('cancelEndCall').addEventListener('click', () => this.hideCallEndModal());
+        document.getElementById('confirmEndCall').addEventListener('click', () => this.confirmEndCall());
+        
+        document.getElementById('closeCallSummaryModal').addEventListener('click', () => this.hideCallSummary());
+        document.getElementById('closeCallSummary').addEventListener('click', () => this.hideCallSummary());
+        document.getElementById('viewCallHistory').addEventListener('click', () => {
+            window.location.href = `/chats/history/${this.roomId}/`;
+        });
+        
+        // Close modals when clicking outside
+        document.getElementById('callEndModal').addEventListener('click', (e) => {
+            if (e.target.id === 'callEndModal') this.hideCallEndModal();
+        });
+        document.getElementById('callSummaryModal').addEventListener('click', (e) => {
+            if (e.target.id === 'callSummaryModal') this.hideCallSummary();
+        });
+        
+        // Add typing indicator
+        let typingTimer;
+        this.chatInput.addEventListener('input', () => {
+            // Send typing indicator
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    type: 'typing_start'
+                }));
+            }
+            
+            // Clear the typing indicator after 2 seconds of no typing
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'typing_stop'
+                    }));
+                }
+            }, 2000);
         });
         
         document.getElementById('closeChatBtn').addEventListener('click', () => {
@@ -626,7 +993,7 @@ class VideoChat {
                 break;
             case 'error':
                 console.error('WebSocket error message:', data.message);
-                this.addChatMessage(`❌ Error: ${data.message}`, 'system');
+                this.showError(data.message);
                 break;
             case 'user_joined':
                 if (data.user_id !== this.userId) {
@@ -662,8 +1029,20 @@ class VideoChat {
                 this.handleIceCandidate(data);
                 break;
             case 'chat_message':
+                // Only show messages from other users since we display our own immediately
                 if (data.sender_id !== this.userId) {
-                    this.addChatMessage(data.message, data.sender_username);
+                    // Check for duplicate messages
+                    if (data.message_id && this.messageIds.has(data.message_id)) {
+                        console.log('Duplicate message received, ignoring:', data.message_id);
+                        return;
+                    }
+                    
+                    // Add message ID to set if provided
+                    if (data.message_id) {
+                        this.messageIds.add(data.message_id);
+                    }
+                    
+                    this.addChatMessage(data.message, data.sender_username, data.timestamp);
                 }
                 break;
             case 'call_started':
@@ -677,6 +1056,36 @@ class VideoChat {
                     this.resetCall();
                 }
                 break;
+            case 'call_ended_enhanced':
+                if (data.sender_id !== this.userId) {
+                    const endReasonDisplay = this.getEndReasonDisplay(data.end_reason);
+                    this.addChatMessage(`📞 Partner ended call: ${endReasonDisplay}`, 'system');
+                    this.resetCall();
+                    
+                    // Show call summary if available
+                    if (data.session_summary) {
+                        setTimeout(() => {
+                            this.showCallSummary(data.session_summary, {
+                                endReason: data.end_reason,
+                                connectionQuality: data.session_summary.connection_quality,
+                                callDuration: data.session_summary.duration,
+                                endNotes: data.end_notes
+                            });
+                        }, 1000);
+                    }
+                } else {
+                    // This is the user who ended the call, they already saw the modal
+                    this.resetCall();
+                }
+                
+                // Redirect both users to call summary page after a delay
+                if (data.redirect_url) {
+                    setTimeout(() => {
+                        console.log('Redirecting to call summary:', data.redirect_url);
+                        window.location.href = data.redirect_url;
+                    }, 3000); // 3 second delay to allow users to see the summary modal
+                }
+                break;
             case 'video_status_change':
                 if (data.sender_id !== this.userId) {
                     const status = data.video_enabled ? 'on' : 'off';
@@ -688,6 +1097,16 @@ class VideoChat {
                 if (data.sender_id !== this.userId) {
                     const status = data.audio_enabled ? 'on' : 'off';
                     this.addChatMessage(`🎤 Partner turned audio ${status}`, 'system');
+                }
+                break;
+            case 'typing_start':
+                if (data.sender_id !== this.userId) {
+                    this.showTypingIndicator(data.sender_username);
+                }
+                break;
+            case 'typing_stop':
+                if (data.sender_id !== this.userId) {
+                    this.hideTypingIndicator();
                 }
                 break;
             default:
@@ -827,16 +1246,198 @@ class VideoChat {
     }
     
     async endCall() {
+        // Show confirmation modal instead of immediately ending
+        this.showCallEndModal();
+    }
+    
+    showCallEndModal() {
+        document.getElementById('callEndModal').style.display = 'flex';
+    }
+    
+    hideCallEndModal() {
+        document.getElementById('callEndModal').style.display = 'none';
+    }
+    
+    async confirmEndCall() {
         if (!this.isCallActive) return;
         
-        console.log('Ending call...');
+        console.log('Ending call with enhanced tracking...');
         
-        this.ws.send(JSON.stringify({
-            type: 'call_end'
-        }));
+        // Get form data
+        const endReason = document.getElementById('endReason').value;
+        const connectionQuality = document.getElementById('connectionQuality').value;
+        const endNotes = document.getElementById('endNotes').value;
+        const callDuration = this.callStartTime ? Math.floor((Date.now() - this.callStartTime) / 1000) : 0;
         
-        this.resetCall();
-        this.addChatMessage('📞 Call ended', 'system');
+        // Hide the modal
+        this.hideCallEndModal();
+        
+        try {
+            // Send enhanced call end via WebSocket
+            this.ws.send(JSON.stringify({
+                type: 'call_end',
+                end_reason: endReason,
+                end_notes: endNotes,
+                connection_quality: connectionQuality,
+                call_duration: callDuration,
+                network_issues: this.networkIssuesCount || 0
+            }));
+            
+            // Also send to REST API for additional processing
+            const response = await fetch(`/chats/api/end-call/${this.roomId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: new URLSearchParams({
+                    end_reason: endReason,
+                    end_notes: endNotes,
+                    connection_quality: connectionQuality
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Call ended successfully:', data);
+                
+                // Reset call state
+                this.resetCall();
+                this.addChatMessage('📞 Call ended', 'system');
+                
+                // Instead of showing local summary, redirect to call summary page
+                if (data.session_summaries && data.session_summaries.length > 0) {
+                    const sessionId = data.session_summaries[0].id || data.session_summaries[0].session_id;
+                    const summaryUrl = `/chats/summary/${this.roomId}/${sessionId}/`;
+                    
+                    console.log('Redirecting call initiator to summary page:', summaryUrl);
+                    setTimeout(() => {
+                        window.location.href = summaryUrl;
+                    }, 1500); // Shorter delay for the person who ended the call
+                } else {
+                    console.warn('No session summary available for redirect');
+                }
+            } else {
+                console.error('Failed to end call via API');
+                // Still reset the call locally
+                this.resetCall();
+                this.addChatMessage('📞 Call ended', 'system');
+            }
+            
+        } catch (error) {
+            console.error('Error ending call:', error);
+            // Fallback to simple end
+            this.resetCall();
+            this.addChatMessage('📞 Call ended', 'system');
+        }
+    }
+    
+    showCallSummary(sessionSummary, callDetails) {
+        const summaryContent = document.getElementById('callSummaryContent');
+        
+        const formatDuration = (seconds) => {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        };
+        
+        const getQualityClass = (quality) => {
+            switch (quality) {
+                case 'excellent':
+                case 'good':
+                    return 'success-indicator';
+                case 'fair':
+                    return 'warning-indicator';
+                case 'poor':
+                    return 'error-indicator';
+                default:
+                    return '';
+            }
+        };
+        
+        const getEndReasonDisplay = (reason) => {
+            const reasons = {
+                'user_hangup': 'Normal end',
+                'connection_lost': 'Connection issues',
+                'technical_issue': 'Technical problems',
+                'emergency': 'Emergency',
+                'timeout': 'Session timeout',
+                'network_failure': 'Network failure'
+            };
+            return reasons[reason] || reason;
+        };
+        
+        summaryContent.innerHTML = `
+            <div class="call-summary">
+                <div class="summary-stat">
+                    <span class="label">📞 Call Duration:</span>
+                    <span class="value">${formatDuration(callDetails.callDuration)}</span>
+                </div>
+                
+                <div class="summary-stat">
+                    <span class="label">🎯 End Reason:</span>
+                    <span class="value">${getEndReasonDisplay(callDetails.endReason)}</span>
+                </div>
+                
+                ${callDetails.connectionQuality ? `
+                <div class="summary-stat">
+                    <span class="label">📶 Call Quality:</span>
+                    <span class="value ${getQualityClass(callDetails.connectionQuality)}">
+                        ${callDetails.connectionQuality.charAt(0).toUpperCase() + callDetails.connectionQuality.slice(1)}
+                    </span>
+                </div>
+                ` : ''}
+                
+                <div class="summary-stat">
+                    <span class="label">✅ Status:</span>
+                    <span class="value ${sessionSummary?.was_successful ? 'success-indicator' : 'warning-indicator'}">
+                        ${sessionSummary?.was_successful ? 'Successful' : 'Ended with issues'}
+                    </span>
+                </div>
+                
+                ${callDetails.endNotes ? `
+                <div class="summary-stat">
+                    <span class="label">📝 Notes:</span>
+                    <span class="value">${callDetails.endNotes}</span>
+                </div>
+                ` : ''}
+                
+                <div class="summary-stat">
+                    <span class="label">👥 Participants:</span>
+                    <span class="value">${sessionSummary?.participants?.join(', ') || 'You and partner'}</span>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('callSummaryModal').style.display = 'flex';
+    }
+    
+    hideCallSummary() {
+        document.getElementById('callSummaryModal').style.display = 'none';
+    }
+    
+    getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+    
+    getEndReasonDisplay(reason) {
+        const reasons = {
+            'user_hangup': 'Normal end',
+            'connection_lost': 'Connection issues',
+            'technical_issue': 'Technical problems',
+            'emergency': 'Emergency',
+            'timeout': 'Session timeout',
+            'network_failure': 'Network failure'
+        };
+        return reasons[reason] || reason;
     }
     
     createPeerConnection() {
@@ -887,9 +1488,11 @@ class VideoChat {
                     break;
                 case 'disconnected':
                     this.addChatMessage('⚠️ Connection lost', 'system');
+                    this.networkIssuesCount++;
                     break;
                 case 'failed':
                     this.addChatMessage('❌ Connection failed', 'system');
+                    this.networkIssuesCount++;
                     this.resetCall();
                     break;
                 case 'closed':
@@ -908,9 +1511,11 @@ class VideoChat {
                     break;
                 case 'disconnected':
                     this.addChatMessage('⚠️ ICE connection lost', 'system');
+                    this.networkIssuesCount++;
                     break;
                 case 'failed':
                     this.addChatMessage('❌ ICE connection failed', 'system');
+                    this.networkIssuesCount++;
                     break;
             }
         };
@@ -1075,6 +1680,15 @@ class VideoChat {
     
     toggleChat() {
         this.chatSidebar.classList.toggle('open');
+        
+        // Clear notification when chat is opened
+        if (this.chatSidebar.classList.contains('open')) {
+            this.clearChatNotification();
+            // Scroll to bottom to show latest messages
+            setTimeout(() => {
+                this.scrollChatToBottom();
+            }, 100);
+        }
     }
     
     async shareScreen() {
@@ -1126,18 +1740,71 @@ class VideoChat {
     
     sendChatMessage() {
         const message = this.chatInput.value.trim();
-        if (message) {
+        if (message && message.length > 0) {
+            // Check message length
+            if (message.length > 500) {
+                this.showError('Message too long (max 500 characters)');
+                return;
+            }
+            
+            // Check WebSocket connection
+            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+                this.showError('Not connected to chat server');
+                return;
+            }
+            
+            // Hide typing indicator when sending message
+            this.hideTypingIndicator();
+            
+            // Send typing stop signal
             this.ws.send(JSON.stringify({
-                type: 'chat_message',
-                message: message
+                type: 'typing_stop'
             }));
-            this.chatInput.value = '';
+            
+            // Immediately add the message to the local chat display
+            this.addChatMessage(message, '{{ user.username }}');
+            
+            // Send the message through WebSocket
+            try {
+                this.ws.send(JSON.stringify({
+                    type: 'chat_message',
+                    message: message
+                }));
+                this.chatInput.value = '';
+            } catch (error) {
+                console.error('Error sending message:', error);
+                this.showError('Failed to send message');
+            }
         }
     }
     
-    addChatMessage(message, sender) {
+    showError(message) {
+        // Create a temporary error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'mb-4';
+        errorDiv.innerHTML = `
+            <div class="text-center">
+                <span class="text-xs text-red-600 bg-red-100 rounded-full px-3 py-2">❌ ${message}</span>
+            </div>
+        `;
+        this.chatMessages.appendChild(errorDiv);
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        
+        // Remove error message after 5 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.parentNode.removeChild(errorDiv);
+            }
+        }, 5000);
+    }
+    
+    addChatMessage(message, sender, timestamp = null) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'mb-4';
+        messageDiv.className = 'mb-4 message-fade-in';
+        
+        // Format timestamp
+        const time = timestamp ? new Date(timestamp) : new Date();
+        const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
         if (sender === 'system') {
             messageDiv.innerHTML = `
@@ -1148,23 +1815,60 @@ class VideoChat {
         } else {
             const isOwnMessage = sender === '{{ user.username }}';
             messageDiv.className += isOwnMessage ? ' text-right' : '';
+            
+            // Escape HTML to prevent XSS
+            const escapedMessage = message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
             messageDiv.innerHTML = `
                 <div class="inline-block max-w-xs ${isOwnMessage ? 'bg-blue-500 text-white' : 'bg-white shadow-md'} rounded-xl px-4 py-3">
-                    <p class="text-sm">${message}</p>
-                    <p class="text-xs opacity-75 mt-1">Now</p>
+                    ${!isOwnMessage ? `<p class="text-xs font-semibold mb-1 opacity-75">${sender}</p>` : ''}
+                    <p class="text-sm">${escapedMessage}</p>
+                    <p class="text-xs opacity-75 mt-1">${timeString}</p>
                 </div>
             `;
         }
         
         this.chatMessages.appendChild(messageDiv);
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
         
-        // Show notification if chat is closed
-        if (!this.chatSidebar.classList.contains('open')) {
-            this.toggleChatBtn.style.animation = 'pulse 0.5s ease-in-out 3';
-            setTimeout(() => {
-                this.toggleChatBtn.style.animation = '';
-            }, 1500);
+        // Auto-scroll to bottom
+        this.scrollChatToBottom();
+        
+        // Show notification if chat is closed and this is a real message
+        if (!this.chatSidebar.classList.contains('open') && sender !== 'system' && sender !== '{{ user.username }}') {
+            this.showChatNotification();
+        }
+    }
+    
+    scrollChatToBottom() {
+        // Smooth scroll to bottom
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+    
+    showChatNotification() {
+        // Add a pulse animation to the chat button
+        this.toggleChatBtn.style.animation = 'pulse 0.5s ease-in-out 3';
+        this.toggleChatBtn.style.transform = 'scale(1.1)';
+        
+        // Add a notification badge
+        let badge = this.toggleChatBtn.querySelector('.notification-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center';
+            badge.textContent = '!';
+            this.toggleChatBtn.style.position = 'relative';
+            this.toggleChatBtn.appendChild(badge);
+        }
+        
+        setTimeout(() => {
+            this.toggleChatBtn.style.animation = '';
+            this.toggleChatBtn.style.transform = '';
+        }, 1500);
+    }
+    
+    clearChatNotification() {
+        const badge = this.toggleChatBtn.querySelector('.notification-badge');
+        if (badge) {
+            badge.remove();
         }
     }
     
@@ -1198,6 +1902,74 @@ class VideoChat {
             this.timerInterval = null;
         }
         this.callTimer.textContent = '00:00';
+    }
+    
+    loadRecentMessages() {
+        // Clear existing static messages first
+        this.chatMessages.innerHTML = '';
+        
+        // Load recent messages via AJAX
+        fetch(`/chats/room/${this.roomId}/messages/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.messages && data.messages.length > 0) {
+                    // Add each message to the chat
+                    data.messages.forEach(message => {
+                        this.messageIds.add(message.id);
+                        this.addChatMessage(
+                            message.content, 
+                            message.sender_username, 
+                            message.timestamp
+                        );
+                    });
+                } else {
+                    // Show empty state
+                    this.showEmptyState();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading recent messages:', error);
+                this.showEmptyState();
+            });
+    }
+    
+    showEmptyState() {
+        this.chatMessages.innerHTML = `
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">💬</div>
+                <p class="text-gray-500">No messages yet</p>
+                <p class="text-sm text-gray-400 mt-2">Start the conversation!</p>
+            </div>
+        `;
+    }
+    
+    showTypingIndicator(username) {
+        // Remove existing typing indicator
+        this.hideTypingIndicator();
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typingIndicator';
+        typingDiv.className = 'mb-4 typing-indicator';
+        typingDiv.innerHTML = `
+            <div class="inline-block bg-gray-200 rounded-xl px-4 py-3">
+                <p class="text-xs text-gray-500 mb-1">${username} is typing</p>
+                <div class="flex space-x-1">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                </div>
+            </div>
+        `;
+        
+        this.chatMessages.appendChild(typingDiv);
+        this.scrollChatToBottom();
+    }
+    
+    hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
     }
 }
 

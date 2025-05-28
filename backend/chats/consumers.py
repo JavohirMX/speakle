@@ -4,6 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.db.models import Q
 from django.db import models
+from django.urls import reverse
 
 class VideoCallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -121,6 +122,10 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                     'message': 'Test message received successfully!',
                     'echo': data
                 }))
+            elif message_type == 'typing_start':
+                await self.handle_typing_start(data)
+            elif message_type == 'typing_stop':
+                await self.handle_typing_stop(data)
             else:
                 print(f"Unknown message type: {message_type}")
                 await self.send(text_data=json.dumps({
@@ -150,8 +155,12 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 'message': 'No offer data provided'
             }))
             return
-            
+        
         print(f"Broadcasting offer from {self.user.username}")
+        
+        # Add this user as a participant to any active session (they're accepting the call)
+        await self.add_participant_to_session()
+        
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -172,8 +181,12 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 'message': 'No answer data provided'
             }))
             return
-            
+        
         print(f"Broadcasting answer from {self.user.username}")
+        
+        # Add this user as a participant to any active session
+        await self.add_participant_to_session()
+        
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -210,6 +223,10 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def handle_peer_ready(self, data):
         """Handle peer ready notification"""
         print(f"Peer ready notification from {self.user.username}")
+        
+        # Add this user as a participant to any active session
+        await self.add_participant_to_session()
+        
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -260,32 +277,55 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             }))
             return
             
+        # Validate message length (prevent extremely long messages)
+        if len(message_content) > 500:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Message too long (max 500 characters)'
+            }))
+            return
+            
         print(f"Chat message from {self.user.username}: {message_content}")
         
-        # Save message to database
-        await self.save_chat_message(message_content)
-        
-        # Get current timestamp
-        from django.utils import timezone
-        current_time = timezone.now()
-        
-        # Broadcast to room
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': message_content,
-                'sender_id': self.user.id,
-                'sender_username': self.user.username,
-                'timestamp': str(current_time),
-                'room_id': self.room_id
-            }
-        )
+        try:
+            # Save message to database
+            message_obj = await self.save_chat_message(message_content)
+            
+            # Get current timestamp for consistent timing
+            from django.utils import timezone
+            current_time = timezone.now()
+            
+            # Broadcast to room (including sender for confirmation)
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': message_content,
+                    'sender_id': self.user.id,
+                    'sender_username': self.user.username,
+                    'timestamp': current_time.isoformat(),
+                    'message_id': message_obj.id if message_obj else None,
+                    'room_id': self.room_id
+                }
+            )
+            
+        except Exception as e:
+            print(f"Error handling chat message: {e}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Failed to send message'
+            }))
 
     async def handle_call_start(self, data):
         """Handle call session start"""
         print(f"Call start from {self.user.username}")
-        await self.create_call_session(data)
+        
+        # Create or get existing call session and ensure user is a participant
+        session = await self.create_call_session(data)
+        
+        # Also ensure user is added to any existing active sessions
+        await self.add_participant_to_session()
+        
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -299,13 +339,68 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         )
 
     async def handle_call_end(self, data):
-        """Handle call session end"""
+        """Handle call session end with enhanced tracking"""
         print(f"Call end from {self.user.username}")
-        await self.end_call_session()
+        
+        # Extract end reason and notes from data
+        end_reason = data.get('end_reason', 'user_hangup')
+        end_notes = data.get('end_notes', '')
+        call_duration = data.get('call_duration', 0)  # Duration in seconds
+        connection_quality = data.get('connection_quality', '')
+        network_issues = data.get('network_issues', 0)
+        
+        # End the call session with detailed information
+        session_summary = await self.end_call_session_enhanced(
+            ended_by=self.user,
+            end_reason=end_reason,
+            end_notes=end_notes,
+            connection_quality=connection_quality,
+            network_issues=network_issues
+        )
+        
+        # Build the redirect URL for call summary page
+        redirect_url = None
+        if session_summary:
+            redirect_url = reverse('chats:call_summary', kwargs={
+                'room_id': self.room_id,
+                'session_id': session_summary['session_id']
+            })
+        
+        # Broadcast call end with summary and redirect URL to all participants
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                'type': 'call_ended',
+                'type': 'call_ended_enhanced',
+                'sender_id': self.user.id,
+                'sender_username': self.user.username,
+                'end_reason': end_reason,
+                'end_notes': end_notes,
+                'session_summary': session_summary,
+                'redirect_url': redirect_url,
+                'room_id': self.room_id
+            }
+        )
+
+    async def handle_typing_start(self, data):
+        """Handle typing start notification"""
+        print(f"Typing start from {self.user.username}")
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'typing_start',
+                'sender_id': self.user.id,
+                'sender_username': self.user.username,
+                'room_id': self.room_id
+            }
+        )
+
+    async def handle_typing_stop(self, data):
+        """Handle typing stop notification"""
+        print(f"Typing stop from {self.user.username}")
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'typing_stop',
                 'sender_id': self.user.id,
                 'sender_username': self.user.username,
                 'room_id': self.room_id
@@ -407,6 +502,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             'sender_id': event['sender_id'],
             'sender_username': event['sender_username'],
             'timestamp': event['timestamp'],
+            'message_id': event.get('message_id'),
             'room_id': event.get('room_id', self.room_id)
         }))
 
@@ -422,13 +518,46 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         }))
 
     async def call_ended(self, event):
-        """Forward call ended notification"""
+        """Send call ended notification to client"""
         await self.send(text_data=json.dumps({
             'type': 'call_ended',
             'sender_id': event['sender_id'],
             'sender_username': event['sender_username'],
             'room_id': event.get('room_id', self.room_id)
         }))
+
+    async def call_ended_enhanced(self, event):
+        """Send enhanced call ended notification with session summary to client"""
+        await self.send(text_data=json.dumps({
+            'type': 'call_ended_enhanced',
+            'sender_id': event['sender_id'],
+            'sender_username': event['sender_username'],
+            'end_reason': event['end_reason'],
+            'end_notes': event['end_notes'],
+            'session_summary': event['session_summary'],
+            'redirect_url': event.get('redirect_url'),
+            'room_id': event.get('room_id', self.room_id)
+        }))
+
+    async def typing_start(self, event):
+        """Forward typing start notification to other users (not sender)"""
+        if hasattr(self, 'user') and event['sender_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'typing_start',
+                'sender_id': event['sender_id'],
+                'sender_username': event['sender_username'],
+                'room_id': event.get('room_id', self.room_id)
+            }))
+
+    async def typing_stop(self, event):
+        """Forward typing stop notification to other users (not sender)"""
+        if hasattr(self, 'user') and event['sender_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'typing_stop',
+                'sender_id': event['sender_id'],
+                'sender_username': event['sender_username'],
+                'room_id': event.get('room_id', self.room_id)
+            }))
 
     # Database operations
     @database_sync_to_async
@@ -483,9 +612,11 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 content=content
             )
             print(f"Saved chat message: {message.id}")
+            return message
             
         except Exception as e:
             print(f"Error saving chat message: {e}")
+            return None
 
     @database_sync_to_async
     def create_call_session(self, data):
@@ -502,7 +633,16 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             if created:
                 print(f"Created new room: {self.room_id}")
             
-            # Create session
+            # Check if there's already an active session
+            existing_session = room.sessions.filter(status='active').first()
+            if existing_session:
+                # Add this user as a participant if not already added
+                if not existing_session.participants.filter(id=self.user.id).exists():
+                    existing_session.participants.add(self.user)
+                    print(f"Added {self.user.username} to existing session: {existing_session.id}")
+                return existing_session
+            
+            # Create new session
             session = CallSession.objects.create(
                 room=room,
                 video_enabled=data.get('video_enabled', True),
@@ -516,9 +656,28 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             room.save()
             
             print(f"Created call session: {session.id}")
+            return session
             
         except Exception as e:
             print(f"Error creating call session: {e}")
+            return None
+
+    @database_sync_to_async
+    def add_participant_to_session(self):
+        """Add current user as participant to any active session in this room"""
+        try:
+            from .models import VideoRoom
+            
+            room = VideoRoom.objects.get(room_id=self.room_id)
+            active_sessions = room.sessions.filter(status='active')
+            
+            for session in active_sessions:
+                if not session.participants.filter(id=self.user.id).exists():
+                    session.participants.add(self.user)
+                    print(f"Added {self.user.username} as participant to session: {session.id}")
+            
+        except Exception as e:
+            print(f"Error adding participant to session: {e}")
 
     @database_sync_to_async
     def end_call_session(self):
@@ -544,6 +703,69 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             
         except Exception as e:
             print(f"Error ending call session: {e}")
+
+    @database_sync_to_async
+    def end_call_session_enhanced(self, ended_by, end_reason, end_notes, connection_quality, network_issues):
+        """End the current call session with detailed information"""
+        try:
+            from django.utils import timezone
+            from .models import VideoRoom
+            
+            room = VideoRoom.objects.get(room_id=self.room_id)
+            
+            # End all active sessions with enhanced tracking
+            active_sessions = room.sessions.filter(status='active')
+            session_summary = None
+            
+            for session in active_sessions:
+                # Ensure all users with room access are participants (retroactive fix)
+                match = room.match
+                for user in [match.user1, match.user2]:
+                    if not session.participants.filter(id=user.id).exists():
+                        session.participants.add(user)
+                        print(f"Retroactively added {user.username} as participant to session {session.id}")
+                
+                session.status = 'ended'
+                session.ended_at = timezone.now()
+                session.ended_by = ended_by
+                session.end_reason = end_reason
+                session.end_notes = end_notes
+                if connection_quality:
+                    session.connection_quality = connection_quality
+                session.network_issues_count = network_issues
+                session.calculate_duration()
+                session.save()
+                
+                print(f"Ended call session: {session.id} - Reason: {end_reason}")
+                
+                # Get all participants for the summary
+                participants = list(session.participants.values_list('username', flat=True))
+                
+                # Create session summary for the frontend
+                session_summary = {
+                    'session_id': session.id,
+                    'ended_by': ended_by.id,
+                    'ended_by_username': ended_by.username,
+                    'end_reason': end_reason,
+                    'end_notes': end_notes,
+                    'duration': session.get_duration_display(),
+                    'connection_quality': session.connection_quality,
+                    'network_issues': network_issues,
+                    'was_successful': session.was_successful(),
+                    'started_at': session.started_at.isoformat(),
+                    'ended_at': session.ended_at.isoformat(),
+                    'participants': participants
+                }
+            
+            # Update room status
+            room.is_active = False
+            room.save()
+            
+            return session_summary
+            
+        except Exception as e:
+            print(f"Error ending call session: {e}")
+            return None
 
 class UserNotificationConsumer(AsyncWebsocketConsumer):
     """WebSocket consumer for user-specific notifications like call invitations."""

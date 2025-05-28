@@ -17,135 +17,463 @@
                class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition ml-2">
                 📩 View Requests
             </a>
+            <button onclick="refreshMatches()" 
+               class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition ml-2">
+                🔄 Refresh
+            </button>
         </div>
     </div>
 
-    <!-- My Matches -->
-    {% if match_data %}
-        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {% for data in match_data %}
-                <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                    <!-- Partner Info -->
-                    <div class="flex items-center mb-4">
-                        {% if data.partner.profile_picture %}
-                            <img src="{{ data.partner.profile_picture.url }}" 
-                                 alt="{{ data.partner.username }}" 
-                                 class="w-16 h-16 rounded-full object-cover mr-4">
-                        {% else %}
-                            <div class="w-16 h-16 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-xl mr-4">
-                                {{ data.partner.username|first|upper }}
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" class="hidden text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+        <p class="text-gray-600">Loading matches...</p>
+    </div>
+
+    <!-- My Matches Container -->
+    <div id="matchesContainer">
+        {% if match_data %}
+            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {% for data in match_data %}
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition" data-match-id="{{ data.match.id }}">
+                        <!-- Partner Info -->
+                        <div class="flex items-center mb-4">
+                            {% if data.partner.profile_picture %}
+                                <img src="{{ data.partner.profile_picture.url }}" 
+                                     alt="{{ data.partner.username }}" 
+                                     class="w-16 h-16 rounded-full object-cover mr-4">
+                            {% else %}
+                                <div class="w-16 h-16 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-xl mr-4">
+                                    {{ data.partner.username|first|upper }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-900">{{ data.partner.username }}</h3>
+                                <p class="text-sm text-gray-600">
+                                    Matched {{ data.match.created_at|timesince }} ago
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Language Exchange Info -->
+                        <div class="mb-6">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                    <div class="text-xl mb-1">{{ data.user_teaches.flag_emoji }}</div>
+                                    <p class="text-xs text-gray-600">You teach</p>
+                                    <p class="font-semibold text-blue-600 text-sm">{{ data.user_teaches.name }}</p>
+                                </div>
+                                <div class="text-center p-3 bg-green-50 rounded-lg">
+                                    <div class="text-xl mb-1">{{ data.user_learns.flag_emoji }}</div>
+                                    <p class="text-xs text-gray-600">You learn</p>
+                                    <p class="font-semibold text-green-600 text-sm">{{ data.user_learns.name }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Partner Languages -->
+                        <div class="mb-6">
+                            <h4 class="font-medium text-gray-900 mb-2">{{ data.partner.username }}'s Languages</h4>
+                            <div class="space-y-1">
+                                {% for user_lang in data.partner.userlanguage_set.all %}
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="flex items-center">
+                                            {{ user_lang.language.flag_emoji }}
+                                            <span class="ml-2">{{ user_lang.language.name }}</span>
+                                        </span>
+                                        <span class="text-xs px-2 py-1 rounded-full
+                                            {% if user_lang.language_type == 'native' %}bg-red-100 text-red-800
+                                            {% elif user_lang.language_type == 'fluent' %}bg-blue-100 text-blue-800
+                                            {% else %}bg-green-100 text-green-800{% endif %}">
+                                            {{ user_lang.get_language_type_display }}
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Quick Info -->
+                        {% if data.partner.bio %}
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600 line-clamp-2">
+                                    {{ data.partner.bio|truncatewords:15 }}
+                                </p>
                             </div>
                         {% endif %}
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">{{ data.partner.username }}</h3>
-                            <p class="text-sm text-gray-600">
-                                Matched {{ data.match.created_at|timesince }} ago
-                            </p>
-                        </div>
-                    </div>
 
-                    <!-- Language Exchange Info -->
-                    <div class="mb-6">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                <div class="text-xl mb-1">{{ data.user_teaches.flag_emoji }}</div>
-                                <p class="text-xs text-gray-600">You teach</p>
-                                <p class="font-semibold text-blue-600 text-sm">{{ data.user_teaches.name }}</p>
+                        {% if data.partner.interests %}
+                            <div class="mb-4">
+                                <p class="text-xs text-gray-500 mb-1">Interests:</p>
+                                <p class="text-sm text-gray-600">
+                                    {{ data.partner.interests|truncatewords:8 }}
+                                </p>
                             </div>
-                            <div class="text-center p-3 bg-green-50 rounded-lg">
-                                <div class="text-xl mb-1">{{ data.user_learns.flag_emoji }}</div>
-                                <p class="text-xs text-gray-600">You learn</p>
-                                <p class="font-semibold text-green-600 text-sm">{{ data.user_learns.name }}</p>
-                            </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-2 mb-4">
+                            <button onclick="initiateVideoCallGlobal({{ data.match.id }}, '{{ data.partner.username }}')" 
+                               class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition text-sm text-center">
+                                🎥 Video Chat
+                            </button>
+                            <a href="{% url 'matches:match_detail' data.match.id %}" 
+                               class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition text-sm text-center">
+                                👤 View Profile
+                            </a>
+                        </div>
+
+                        <!-- Additional Actions -->
+                        <div class="flex space-x-2 mb-4">
+                            <button onclick="getMatchStatistics({{ data.match.id }})" 
+                               class="flex-1 bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition text-sm text-center">
+                                📊 Statistics
+                            </button>
+                            <button onclick="openEndMatchModal({{ data.match.id }}, '{{ data.partner.username }}')" 
+                               class="flex-1 bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition text-sm text-center">
+                                ❌ End Match
+                            </button>
+                        </div>
+
+                        <!-- Match Status -->
+                        <div class="text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                         {% if data.match.status == 'active' %}bg-green-100 text-green-800
+                                         {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {% if data.match.status == 'active' %}
+                                    ✅ Active Match
+                                {% else %}
+                                    ⏳ {{ data.match.get_status_display }}
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
-
-                    <!-- Partner Languages -->
-                    <div class="mb-6">
-                        <h4 class="font-medium text-gray-900 mb-2">{{ data.partner.username }}'s Languages</h4>
-                        <div class="space-y-1">
-                            {% for user_lang in data.partner.userlanguage_set.all %}
-                                <div class="flex items-center justify-between text-sm">
-                                    <span class="flex items-center">
-                                        {{ user_lang.language.flag_emoji }}
-                                        <span class="ml-2">{{ user_lang.language.name }}</span>
-                                    </span>
-                                    <span class="text-xs px-2 py-1 rounded-full
-                                        {% if user_lang.language_type == 'native' %}bg-red-100 text-red-800
-                                        {% elif user_lang.language_type == 'fluent' %}bg-blue-100 text-blue-800
-                                        {% else %}bg-green-100 text-green-800{% endif %}">
-                                        {{ user_lang.get_language_type_display }}
-                                    </span>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Quick Info -->
-                    {% if data.partner.bio %}
-                        <div class="mb-4">
-                            <p class="text-sm text-gray-600 line-clamp-2">
-                                {{ data.partner.bio|truncatewords:15 }}
-                            </p>
-                        </div>
-                    {% endif %}
-
-                    {% if data.partner.interests %}
-                        <div class="mb-4">
-                            <p class="text-xs text-gray-500 mb-1">Interests:</p>
-                            <p class="text-sm text-gray-600">
-                                {{ data.partner.interests|truncatewords:8 }}
-                            </p>
-                        </div>
-                    {% endif %}
-
-                    <!-- Action Buttons -->
-                    <div class="flex space-x-2">
-                        <button onclick="initiateVideoCallGlobal({{ data.match.id }}, '{{ data.partner.username }}')" 
-                           class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition text-sm text-center">
-                            🎥 Video Chat
-                        </button>
-                        <a href="{% url 'matches:match_detail' data.match.id %}" 
-                           class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition text-sm text-center">
-                            👤 View Profile
-                        </a>
-                    </div>
-
-                    <!-- Match Status -->
-                    <div class="mt-4 text-center">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                     {% if data.match.status == 'active' %}bg-green-100 text-green-800
-                                     {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                            {% if data.match.status == 'active' %}
-                                ✅ Active Match
-                            {% else %}
-                                ⏳ {{ data.match.get_status_display }}
-                            {% endif %}
-                        </span>
-                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <div class="mb-6 text-8xl">🤝</div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No matches yet</h3>
+                <p class="text-gray-600 mb-6">
+                    You haven't matched with anyone yet. Start by finding language partners!
+                </p>
+                <div class="space-x-4">
+                    <a href="{% url 'matches:find_matches' %}" 
+                       class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
+                        🔍 Find Partners
+                    </a>
+                    <a href="{% url 'matches:requests' %}" 
+                       class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition">
+                        📩 Check Requests
+                    </a>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-12">
-            <div class="mb-6 text-8xl">🤝</div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">No matches yet</h3>
-            <p class="text-gray-600 mb-6">
-                You haven't matched with anyone yet. Start by finding language partners!
-            </p>
-            <div class="space-x-4">
-                <a href="{% url 'matches:find_matches' %}" 
-                   class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
-                    🔍 Find Partners
-                </a>
-                <a href="{% url 'matches:requests' %}" 
-                   class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition">
-                    📩 Check Requests
-                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- End Match Modal -->
+<div id="endMatchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-semibold mb-4 text-red-600">❌ End Match</h3>
+            
+            <div id="endMatchPartnerInfo" class="mb-4 p-3 bg-red-50 rounded-lg">
+                <!-- Partner info will be populated here -->
+            </div>
+            
+            <div class="mb-4">
+                <label for="endReason" class="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for ending this match (optional):
+                </label>
+                <textarea id="endReason" rows="3" 
+                          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                          placeholder="Let us know why you're ending this match..."></textarea>
+            </div>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                <p class="text-sm text-yellow-800">
+                    ⚠️ <strong>Warning:</strong> This action cannot be undone. Ending this match will prevent you from having video calls with this partner.
+                </p>
+            </div>
+            
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeEndMatchModal()" 
+                        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
+                    Cancel
+                </button>
+                <button onclick="confirmEndMatch()" 
+                        class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">
+                    End Match
+                </button>
             </div>
         </div>
-    {% endif %}
+    </div>
 </div>
+
+<!-- Statistics Modal -->
+<div id="statisticsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg p-6 max-w-lg w-full">
+            <h3 class="text-lg font-semibold mb-4">📊 Match Statistics</h3>
+            
+            <div id="statisticsContent" class="space-y-4">
+                <!-- Statistics will be populated here -->
+            </div>
+            
+            <div class="flex justify-end mt-6">
+                <button onclick="closeStatisticsModal()" 
+                        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentEndMatchId = null;
+
+// Refresh matches
+function refreshMatches() {
+    document.getElementById('loadingIndicator').classList.remove('hidden');
+    
+    fetch('/matches/api/my-matches/')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateMatchesDisplay(data.matches);
+            showNotification('success', 'Matches refreshed successfully!');
+        } else {
+            showNotification('error', 'Failed to refresh matches');
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing matches:', error);
+        showNotification('error', 'Failed to refresh matches. Please try again.');
+    })
+    .finally(() => {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+    });
+}
+
+// Update matches display
+function updateMatchesDisplay(matches) {
+    const container = document.getElementById('matchesContainer');
+    
+    if (matches.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <div class="mb-6 text-8xl">🤝</div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No matches yet</h3>
+                <p class="text-gray-600 mb-6">
+                    You haven't matched with anyone yet. Start by finding language partners!
+                </p>
+                <div class="space-x-4">
+                    <a href="{% url 'matches:find_matches' %}" 
+                       class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
+                        🔍 Find Partners
+                    </a>
+                    <a href="{% url 'matches:requests' %}" 
+                       class="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition">
+                        📩 Check Requests
+                    </a>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    const matchesHtml = matches.map(match => `
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition" data-match-id="${match.id}">
+            <div class="flex items-center mb-4">
+                <div class="w-16 h-16 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-xl mr-4">
+                    ${match.partner.username.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900">${match.partner.username}</h3>
+                    <p class="text-sm text-gray-600">
+                        Matched ${new Date(match.created_at).toLocaleDateString()}
+                    </p>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <p class="text-xs text-gray-600">You teach</p>
+                        <p class="font-semibold text-blue-600 text-sm">${match.user_teaches || 'N/A'}</p>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <p class="text-xs text-gray-600">You learn</p>
+                        <p class="font-semibold text-green-600 text-sm">${match.user_learns || 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex space-x-2 mb-4">
+                <button onclick="initiateVideoCallGlobal(${match.id}, '${match.partner.username}')" 
+                   class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition text-sm text-center">
+                    🎥 Video Chat
+                </button>
+                <a href="/matches/match/${match.id}/" 
+                   class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition text-sm text-center">
+                    👤 View Profile
+                </a>
+            </div>
+
+            <div class="flex space-x-2 mb-4">
+                <button onclick="getMatchStatistics(${match.id})" 
+                   class="flex-1 bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition text-sm text-center">
+                    📊 Statistics
+                </button>
+                <button onclick="openEndMatchModal(${match.id}, '${match.partner.username}')" 
+                   class="flex-1 bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition text-sm text-center">
+                    ❌ End Match
+                </button>
+            </div>
+
+            <div class="text-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    ✅ Active Match
+                </span>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = `<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">${matchesHtml}</div>`;
+}
+
+// Open end match modal
+function openEndMatchModal(matchId, partnerName) {
+    currentEndMatchId = matchId;
+    
+    document.getElementById('endMatchPartnerInfo').innerHTML = `
+        <div class="flex items-center">
+            <div class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white font-bold mr-3">
+                ${partnerName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+                <h4 class="font-semibold text-red-900">End match with ${partnerName}</h4>
+                <p class="text-sm text-red-700">This will permanently end your language exchange partnership</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('endReason').value = '';
+    document.getElementById('endMatchModal').classList.remove('hidden');
+}
+
+// Close end match modal
+function closeEndMatchModal() {
+    document.getElementById('endMatchModal').classList.add('hidden');
+    currentEndMatchId = null;
+}
+
+// Confirm end match
+function confirmEndMatch() {
+    if (!currentEndMatchId) return;
+    
+    const reason = document.getElementById('endReason').value;
+    const formData = new FormData();
+    formData.append('reason', reason);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/matches/api/end-match/${currentEndMatchId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', 'Match ended successfully');
+            closeEndMatchModal();
+            
+            // Remove the match from the UI
+            const matchElement = document.querySelector(`[data-match-id="${currentEndMatchId}"]`);
+            if (matchElement) {
+                matchElement.remove();
+            }
+            
+            // Check if no matches remain
+            const remainingMatches = document.querySelectorAll('[data-match-id]');
+            if (remainingMatches.length === 0) {
+                updateMatchesDisplay([]);
+            }
+        } else {
+            showNotification('error', data.error || 'Failed to end match');
+        }
+    })
+    .catch(error => {
+        console.error('Error ending match:', error);
+        showNotification('error', 'Failed to end match. Please try again.');
+    });
+}
+
+// Get match statistics
+function getMatchStatistics(matchId) {
+    fetch(`/matches/api/match-statistics/${matchId}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatistics(data.statistics);
+        } else {
+            showNotification('error', 'Failed to load statistics');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading statistics:', error);
+        showNotification('error', 'Failed to load statistics. Please try again.');
+    });
+}
+
+// Show statistics modal
+function showStatistics(stats) {
+    const content = document.getElementById('statisticsContent');
+    
+    content.innerHTML = `
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-blue-50 rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600">${stats.days_active}</div>
+                <p class="text-sm text-blue-800">Days Active</p>
+            </div>
+            <div class="bg-green-50 rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-green-600">${stats.total_calls || 0}</div>
+                <p class="text-sm text-green-800">Total Calls</p>
+            </div>
+        </div>
+        
+        ${stats.total_call_duration ? `
+            <div class="bg-purple-50 rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600">${Math.round(stats.total_call_duration)} min</div>
+                <p class="text-sm text-purple-800">Total Call Time</p>
+            </div>
+        ` : ''}
+        
+        <div class="bg-gray-50 rounded-lg p-4">
+            <h4 class="font-semibold mb-2">Partner: ${stats.partner.username}</h4>
+            <p class="text-sm text-gray-600">Match created: ${new Date(stats.created_at).toLocaleDateString()}</p>
+            <p class="text-sm text-gray-600">Status: ${stats.status}</p>
+        </div>
+    `;
+    
+    document.getElementById('statisticsModal').classList.remove('hidden');
+}
+
+// Close statistics modal
+function closeStatisticsModal() {
+    document.getElementById('statisticsModal').classList.add('hidden');
+}
+
+// Notification system
+function showNotification(type, message) {
+    if (typeof showNotificationToast === 'function') {
+        const icon = type === 'success' ? '✅' : '❌';
+        showNotificationToast(type === 'success' ? 'Success' : 'Error', message, icon);
+    } else {
+        alert(message);
+    }
+}
+</script>
 
 <style>
     .line-clamp-2 {
