@@ -10,6 +10,15 @@
            class="inline-flex items-center text-blue-600 hover:text-blue-800 transition">
             ← Back to My Matches
         </a>
+        
+        <!-- Testing: Online Status Toggle -->
+        <div class="float-right">
+            <button id="statusToggle" onclick="toggleOnlineStatus()" 
+                    class="bg-gray-500 text-white px-3 py-1 rounded-full text-sm hover:bg-gray-600 transition">
+                🔘 Set Online
+            </button>
+            <span id="currentStatus" class="ml-2 text-sm text-gray-600">Status: Unknown</span>
+        </div>
     </div>
 
     <div class="bg-white rounded-lg shadow-lg p-8">
@@ -34,16 +43,24 @@
                 </div>
                 
                 <!-- Quick Action Buttons -->
-                <div class="flex space-x-3">
-                    <a href="{% url 'chats:create_room' match.id %}" 
-                       class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                <div class="space-y-3">
+                    <button onclick="initiateVideoCall({{ match.id }})"
+                           class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition flex items-center justify-center w-full">
                         🎥 Start Video Chat
-                    </a>
+                    </button>
+                    
+                    <!-- Quick Join Button (if room exists) -->
                     {% if match.video_room %}
+                    <div class="flex space-x-2">
+                        <a href="{% url 'chats:video_room' match.video_room.room_id %}"
+                           class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition text-sm text-center">
+                            ⚡ Quick Join Room
+                        </a>
                         <a href="{% url 'chats:call_history' match.video_room.room_id %}" 
-                           class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition">
+                           class="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition text-sm text-center">
                             📊 Call History
                         </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -174,4 +191,337 @@
         </div>
     </div>
 </div>
+
+<!-- Call Invitation Modal -->
+<div id="callInvitationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-semibold mb-4">📞 Start Video Call</h3>
+            
+            <!-- Partner Status -->
+            <div id="partnerStatus" class="mb-4 p-3 rounded-lg border">
+                <div class="flex items-center">
+                    <div id="statusIndicator" class="w-3 h-3 rounded-full mr-2"></div>
+                    <span id="statusText">Checking {{ partner.username }}'s availability...</span>
+                </div>
+            </div>
+            
+            <!-- Call invitation form -->
+            <div id="invitationForm" style="display: none;">
+                <div class="mb-4">
+                    <label for="callMessage" class="block text-sm font-medium text-gray-700 mb-2">
+                        Optional message (will be sent with invitation):
+                    </label>
+                    <textarea id="callMessage" rows="3" 
+                              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Hey! Want to practice some language exchange?"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button onclick="closeCallModal()" 
+                            class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
+                        Cancel
+                    </button>
+                    <button onclick="sendCallInvitation()" 
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                        📞 Send Invitation
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Waiting for response -->
+            <div id="waitingResponse" style="display: none;">
+                <div class="text-center">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                    <p class="text-gray-600 mb-4">Invitation sent! Waiting for {{ partner.username }} to respond...</p>
+                    <div class="text-sm text-gray-500 mb-4">
+                        Invitation expires in <span id="timeRemaining">2:00</span>
+                    </div>
+                    <button onclick="cancelInvitation()" 
+                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">
+                        Cancel Invitation
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Offline message -->
+            <div id="offlineMessage" style="display: none;">
+                <p class="text-gray-600 mb-4">{{ partner.username }} is currently offline.</p>
+                <div class="text-sm text-gray-500 mb-4">
+                    Last seen: <span id="lastSeenTime"></span>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button onclick="closeCallModal()" 
+                            class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
+                        Close
+                    </button>
+                    <a href="{% url 'chats:create_room' match.id %}" 
+                       class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                        Enter Room Anyway
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentMatchId = null;
+let currentInvitationId = null;
+let invitationTimer = null;
+let statusCheckInterval = null;
+
+function initiateVideoCall(matchId) {
+    currentMatchId = matchId;
+    document.getElementById('callInvitationModal').classList.remove('hidden');
+    
+    // Reset modal state
+    document.getElementById('invitationForm').style.display = 'none';
+    document.getElementById('waitingResponse').style.display = 'none';
+    document.getElementById('offlineMessage').style.display = 'none';
+    
+    // Check partner availability
+    checkPartnerAvailability();
+}
+
+function checkPartnerAvailability() {
+    // Actually check partner availability via API
+    fetch(`/chats/api/partner-availability/${currentMatchId}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.is_online) {
+            showPartnerOnline();
+        } else {
+            showPartnerOffline(data.last_seen);
+        }
+    })
+    .catch(error => {
+        console.error('Error checking partner availability:', error);
+        // Default to showing offline if API fails
+        showPartnerOffline();
+    });
+}
+
+function showPartnerOnline() {
+    const indicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    
+    indicator.className = 'w-3 h-3 rounded-full mr-2 bg-green-500';
+    statusText.textContent = '{{ partner.username }} is online';
+    
+    setTimeout(() => {
+        document.getElementById('invitationForm').style.display = 'block';
+    }, 500);
+}
+
+function showPartnerOffline(lastSeen) {
+    const indicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    
+    indicator.className = 'w-3 h-3 rounded-full mr-2 bg-gray-400';
+    statusText.textContent = '{{ partner.username }} is offline';
+    
+    if (lastSeen) {
+        document.getElementById('lastSeenTime').textContent = new Date(lastSeen).toLocaleString();
+    }
+    
+    setTimeout(() => {
+        document.getElementById('offlineMessage').style.display = 'block';
+    }, 500);
+}
+
+function sendCallInvitation() {
+    const message = document.getElementById('callMessage').value;
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/chats/invite/${currentMatchId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentInvitationId = data.invitation_id;
+            showWaitingForResponse();
+            startInvitationTimer();
+            startStatusPolling();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Failed to send invitation. Please try again.');
+    });
+}
+
+function showWaitingForResponse() {
+    document.getElementById('invitationForm').style.display = 'none';
+    document.getElementById('waitingResponse').style.display = 'block';
+}
+
+function startInvitationTimer() {
+    let timeLeft = 120; // 2 minutes in seconds
+    const timeDisplay = document.getElementById('timeRemaining');
+    
+    invitationTimer = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        timeLeft--;
+        
+        if (timeLeft < 0) {
+            clearInterval(invitationTimer);
+            invitationExpired();
+        }
+    }, 1000);
+}
+
+function startStatusPolling() {
+    statusCheckInterval = setInterval(() => {
+        if (currentInvitationId) {
+            fetch(`/chats/invitation/${currentInvitationId}/status/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'accepted') {
+                    clearInterval(statusCheckInterval);
+                    clearInterval(invitationTimer);
+                    invitationAccepted();
+                } else if (data.status === 'declined') {
+                    clearInterval(statusCheckInterval);
+                    clearInterval(invitationTimer);
+                    invitationDeclined();
+                } else if (data.is_expired) {
+                    clearInterval(statusCheckInterval);
+                    clearInterval(invitationTimer);
+                    invitationExpired();
+                }
+            })
+            .catch(error => console.error('Error checking status:', error));
+        }
+    }, 5000); // Check every 5 seconds since we have WebSocket notifications for faster updates
+}
+
+function invitationAccepted() {
+    closeCallModal();
+    if (typeof showNotificationToast === 'function') {
+        showNotificationToast('Call Accepted!', '{{ partner.username }} accepted your call! Redirecting...', '✅');
+    }
+    // Note: Redirection will be handled by the global notification system
+    // The global WebSocket listener will receive the call_invitation_accepted event
+    // and redirect to the correct room URL automatically
+}
+
+function invitationDeclined() {
+    closeCallModal();
+    if (typeof showNotificationToast === 'function') {
+        showNotificationToast('Call Declined', '{{ partner.username }} declined your call invitation.', '❌');
+    } else {
+        alert('{{ partner.username }} declined your call invitation.');
+    }
+}
+
+function invitationExpired() {
+    closeCallModal();
+    if (typeof showNotificationToast === 'function') {
+        showNotificationToast('Call Expired', 'Call invitation expired. {{ partner.username }} did not respond in time.', '⏰');
+    } else {
+        alert('Call invitation expired. {{ partner.username }} did not respond in time.');
+    }
+}
+
+function cancelInvitation() {
+    if (currentInvitationId) {
+        // Call API endpoint to cancel invitation
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch(`/chats/invitation/${currentInvitationId}/cancel/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Invitation cancelled successfully');
+            } else {
+                console.error('Failed to cancel invitation:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error cancelling invitation:', error);
+        });
+        
+        clearInterval(invitationTimer);
+        clearInterval(statusCheckInterval);
+    }
+    closeCallModal();
+}
+
+function closeCallModal() {
+    document.getElementById('callInvitationModal').classList.add('hidden');
+    if (invitationTimer) clearInterval(invitationTimer);
+    if (statusCheckInterval) clearInterval(statusCheckInterval);
+    currentInvitationId = null;
+    currentMatchId = null;
+}
+
+// Initialize and check current online status
+let isCurrentlyOnline = false;
+
+function toggleOnlineStatus() {
+    const newStatus = !isCurrentlyOnline;
+    const formData = new FormData();
+    formData.append('is_online', newStatus.toString());
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch('/chats/api/set-online-status/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            isCurrentlyOnline = data.is_online;
+            updateStatusUI();
+        } else {
+            alert('Failed to update status');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating status:', error);
+        alert('Failed to update status');
+    });
+}
+
+function updateStatusUI() {
+    const toggleBtn = document.getElementById('statusToggle');
+    const statusText = document.getElementById('currentStatus');
+    
+    if (isCurrentlyOnline) {
+        toggleBtn.className = 'bg-green-500 text-white px-3 py-1 rounded-full text-sm hover:bg-green-600 transition';
+        toggleBtn.textContent = '🟢 Go Offline';
+        statusText.textContent = 'Status: Online';
+        statusText.className = 'ml-2 text-sm text-green-600';
+    } else {
+        toggleBtn.className = 'bg-gray-500 text-white px-3 py-1 rounded-full text-sm hover:bg-gray-600 transition';
+        toggleBtn.textContent = '🔘 Go Online';
+        statusText.textContent = 'Status: Offline';
+        statusText.className = 'ml-2 text-sm text-red-600';
+    }
+}
+
+// Check current status when page loads
+function checkCurrentStatus() {
+    // Set to online by default when viewing the page
+    isCurrentlyOnline = false;
+    toggleOnlineStatus(); // This will set the user online
+}
+
+// Initialize status check
+checkCurrentStatus();
+</script>
+
 {% endblock %} 

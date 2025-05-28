@@ -543,4 +543,95 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             room.save()
             
         except Exception as e:
-            print(f"Error ending call session: {e}") 
+            print(f"Error ending call session: {e}")
+
+class UserNotificationConsumer(AsyncWebsocketConsumer):
+    """WebSocket consumer for user-specific notifications like call invitations."""
+    
+    async def connect(self):
+        self.user = self.scope['user']
+        
+        if not self.user.is_authenticated:
+            print("User not authenticated for notification websocket")
+            await self.close()
+            return
+        
+        # Create user-specific group
+        self.user_group_name = f'user_notifications_{self.user.id}'
+        
+        # Accept connection
+        await self.accept()
+        print(f"User {self.user.username} connected to notification websocket")
+        
+        # Join user's notification group
+        await self.channel_layer.group_add(
+            self.user_group_name,
+            self.channel_name
+        )
+        
+        # Send connection confirmation
+        await self.send(text_data=json.dumps({
+            'type': 'notification_connected',
+            'message': f'Notification websocket connected for {self.user.username}'
+        }))
+    
+    async def disconnect(self, close_code):
+        # Leave user's notification group
+        if hasattr(self, 'user_group_name'):
+            await self.channel_layer.group_discard(
+                self.user_group_name,
+                self.channel_name
+            )
+        print(f"User {self.user.username} disconnected from notification websocket")
+    
+    async def receive(self, text_data):
+        # This consumer is mainly for receiving notifications, but we can handle basic messages
+        try:
+            data = json.loads(text_data)
+            message_type = data.get('type')
+            
+            if message_type == 'ping':
+                await self.send(text_data=json.dumps({
+                    'type': 'pong',
+                    'message': 'Notification websocket alive'
+                }))
+        except Exception as e:
+            print(f"Error in notification consumer receive: {e}")
+    
+    # Event handlers for different types of notifications
+    async def call_invitation_received(self, event):
+        """Handle incoming call invitation notification."""
+        await self.send(text_data=json.dumps({
+            'type': 'call_invitation_received',
+            'invitation_id': event['invitation_id'],
+            'caller_username': event['caller_username'],
+            'caller_id': event['caller_id'],
+            'message': event.get('message', ''),
+            'match_id': event['match_id'],
+            'expires_at': event['expires_at']
+        }))
+    
+    async def call_invitation_accepted(self, event):
+        """Handle call invitation accepted notification."""
+        await self.send(text_data=json.dumps({
+            'type': 'call_invitation_accepted',
+            'invitation_id': event['invitation_id'],
+            'accepter_username': event['accepter_username'],
+            'room_url': event['room_url']
+        }))
+    
+    async def call_invitation_declined(self, event):
+        """Handle call invitation declined notification."""
+        await self.send(text_data=json.dumps({
+            'type': 'call_invitation_declined',
+            'invitation_id': event['invitation_id'],
+            'decliner_username': event['decliner_username']
+        }))
+    
+    async def call_invitation_cancelled(self, event):
+        """Handle call invitation cancelled notification."""
+        await self.send(text_data=json.dumps({
+            'type': 'call_invitation_cancelled',
+            'invitation_id': event['invitation_id'],
+            'canceller_username': event['canceller_username']
+        })) 

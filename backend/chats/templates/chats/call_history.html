@@ -8,10 +8,10 @@
     <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
             <h1 class="text-3xl font-bold text-gray-900">Call History</h1>
-            <a href="{% url 'chats:video_room' room.room_id %}" 
+            <button onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username }}')" 
                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
                 🎥 Start New Call
-            </a>
+            </button>
         </div>
         
         <div class="flex items-center space-x-4 text-gray-600">
@@ -166,10 +166,10 @@
                 <div class="text-gray-400 text-6xl mb-4">📞</div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No call history yet</h3>
                 <p class="text-gray-500 mb-6">Start your first video call with {{ partner.username }} to begin building your conversation history.</p>
-                <a href="{% url 'chats:video_room' room.room_id %}" 
+                <button onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username }}')" 
                    class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition inline-flex items-center">
                     🎥 Start First Call
-                </a>
+                </button>
             </div>
         {% endif %}
     </div>

@@ -432,6 +432,7 @@ class VideoChat {
         this.remoteStream = null;
         this.ws = null;
         this.isCallActive = false;
+        this.isAutoStarting = false;
         this.callStartTime = null;
         this.timerInterval = null;
         this.participantCount = 1;
@@ -533,6 +534,8 @@ class VideoChat {
             
             this.updateLocalVideoInfo();
             
+            this.signalPeerReady();
+            
         } catch (error) {
             console.error('Error accessing media devices:', error);
             this.loadingStatus.textContent = 'Error accessing camera/microphone';
@@ -575,6 +578,14 @@ class VideoChat {
                 type: 'test',
                 message: 'Connection test from client'
             }));
+            
+            // If we already have local media ready, signal peer ready
+            if (this.localStream && !this.isCallActive) {
+                console.log('WebSocket connected and media ready, signaling peer ready');
+                setTimeout(() => {
+                    this.signalPeerReady();
+                }, 1000); // Small delay to ensure other users have time to connect
+            }
         };
         
         this.ws.onmessage = (event) => {
@@ -622,10 +633,10 @@ class VideoChat {
                     this.addChatMessage(`${data.username} joined the room`, 'system');
                     this.participantCount += 1;
                     this.updateParticipantCount();
-                    // If we have local stream ready, we can be the initiator
+                    // Automatically signal readiness when someone joins and we have media ready
                     if (this.localStream && !this.isCallActive) {
-                        console.log('Becoming initiator since we have local stream');
-                        this.isInitiator = true;
+                        console.log('New user joined and we have media ready, signaling peer ready');
+                        this.signalPeerReady();
                     }
                 }
                 break;
@@ -637,6 +648,9 @@ class VideoChat {
                     this.showRemoteVideoPlaceholder();
                     this.resetPeerConnection();
                 }
+                break;
+            case 'peer_ready':
+                this.handlePeerReady(data);
                 break;
             case 'offer':
                 this.handleOffer(data);
@@ -686,6 +700,49 @@ class VideoChat {
         this.participantCountEl.style.display = this.participantCount > 1 ? 'block' : 'none';
     }
     
+    signalPeerReady() {
+        // Only signal if WebSocket is connected
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            console.log('Signaling peer ready');
+            this.ws.send(JSON.stringify({
+                type: 'peer_ready'
+            }));
+        } else {
+            console.log('WebSocket not ready, delaying peer ready signal');
+            // Retry after a short delay if WebSocket is not ready
+            setTimeout(() => {
+                this.signalPeerReady();
+            }, 500);
+        }
+    }
+    
+    async handlePeerReady(data) {
+        console.log('Peer ready signal received from:', data.sender_username);
+        
+        // If we have media ready and no active call, decide who should initiate
+        if (this.localStream && !this.isCallActive && !this.isAutoStarting && this.participantCount > 1) {
+            // Use user IDs to deterministically decide who should initiate (higher ID initiates)
+            const shouldInitiate = this.userId > data.sender_id;
+            
+            if (shouldInitiate) {
+                console.log('Auto-starting call as initiator (higher user ID)');
+                this.addChatMessage('🚀 Both users ready, starting call automatically...', 'system');
+                this.isAutoStarting = true;
+                this.updateCallButtons();
+                
+                // Small delay to ensure both sides are fully ready
+                setTimeout(() => {
+                    this.startCall();
+                }, 500);
+            } else {
+                console.log('Waiting for partner to initiate call (lower user ID)');
+                this.addChatMessage('🚀 Both users ready, connecting...', 'system');
+                this.isAutoStarting = true;
+                this.updateCallButtons();
+            }
+        }
+    }
+    
     showRemoteVideoPlaceholder() {
         this.remoteVideo.style.display = 'none';
         this.remoteVideoPlaceholder.style.display = 'flex';
@@ -712,6 +769,8 @@ class VideoChat {
         this.resetPeerConnection();
         this.showRemoteVideoPlaceholder();
         this.stopTimer();
+        this.isAutoStarting = false;
+        this.updateCallButtons();
         this.updateStatus('Call ended', 'connected');
     }
     
@@ -720,6 +779,7 @@ class VideoChat {
         
         try {
             console.log('Starting call as initiator...');
+            this.isAutoStarting = false;
             this.createPeerConnection();
             
             // Add local stream tracks to peer connection
@@ -760,6 +820,8 @@ class VideoChat {
             
         } catch (error) {
             console.error('Error starting call:', error);
+            this.isAutoStarting = false;
+            this.updateCallButtons();
             this.addChatMessage(`❌ Error starting call: ${error.message}`, 'system');
         }
     }
@@ -870,6 +932,8 @@ class VideoChat {
     
     async handleOffer(data) {
         console.log('Handling incoming offer from:', data.sender_username);
+        
+        this.isAutoStarting = false; // Reset auto-starting flag since call is starting
         
         if (!this.pc) {
             console.log('Creating peer connection to handle offer...');
@@ -1110,8 +1174,13 @@ class VideoChat {
     }
     
     updateCallButtons() {
-        this.startCallBtn.style.display = this.isCallActive ? 'none' : 'flex';
-        this.endCallBtn.style.display = this.isCallActive ? 'flex' : 'none';
+        if (this.isAutoStarting) {
+            this.startCallBtn.style.display = 'none';
+            this.endCallBtn.style.display = 'none';
+        } else {
+            this.startCallBtn.style.display = this.isCallActive ? 'none' : 'flex';
+            this.endCallBtn.style.display = this.isCallActive ? 'flex' : 'none';
+        }
     }
     
     startTimer() {
