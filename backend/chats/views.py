@@ -5,11 +5,13 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.db.models import Q, Count
+from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from matches.models import Match
 from .models import VideoRoom, CallSession, CallInvitation, UserPresence
 import uuid
+from django.db import transaction
 
 # Utility function for sending WebSocket notifications
 def send_user_notification(user_id, notification_type, data):
@@ -110,6 +112,9 @@ def send_call_invitation(request, match_id):
         message=request.POST.get('message', ''),
     )
     
+    # Invalidate pending invitations cache for the receiver
+    cache.delete(f"pending_invitations_{partner.id}")
+    
     # Send real-time notification to partner via WebSocket
     send_user_notification(partner.id, 'call_invitation_received', {
         'invitation_id': invitation.id,
@@ -143,6 +148,9 @@ def respond_to_invitation(request, invitation_id):
         invitation.responded_at = timezone.now()
         invitation.save()
         
+        # Invalidate pending invitations cache for the receiver
+        cache.delete(f"pending_invitations_{request.user.id}")
+        
         # Notify caller via WebSocket
         send_user_notification(invitation.caller.id, 'call_invitation_accepted', {
             'invitation_id': invitation.id,
@@ -161,6 +169,9 @@ def respond_to_invitation(request, invitation_id):
         invitation.responded_at = timezone.now()
         invitation.save()
         
+        # Invalidate pending invitations cache for the receiver
+        cache.delete(f"pending_invitations_{request.user.id}")
+        
         # Notify caller via WebSocket
         send_user_notification(invitation.caller.id, 'call_invitation_declined', {
             'invitation_id': invitation.id,
@@ -178,18 +189,37 @@ def respond_to_invitation(request, invitation_id):
 @login_required
 def get_pending_invitations(request):
     """Get pending call invitations for the current user."""
-    invitations = CallInvitation.objects.filter(
-        receiver=request.user,
-        status='pending'
-    ).select_related('caller', 'room__match')
+    user_id = request.user.id
+    cache_key = f"pending_invitations_{user_id}"
+    cache_timeout = 10  # Cache for 10 seconds to reduce frequent DB hits
     
-    # Filter out expired invitations
-    valid_invitations = [inv for inv in invitations if not inv.is_expired()]
+    # Try to get from cache first
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return JsonResponse({'invitations': cached_data})
     
-    # Mark expired ones
-    expired_ids = [inv.id for inv in invitations if inv.is_expired()]
-    if expired_ids:
-        CallInvitation.objects.filter(id__in=expired_ids).update(status='expired')
+    # Use database-level filtering for expired invitations instead of Python filtering
+    now = timezone.now()
+    
+    with transaction.atomic():
+        # First, mark truly expired pending invitations as expired in the database
+        expired_count = CallInvitation.objects.filter(
+            receiver=request.user,
+            status='pending',
+            expires_at__lt=now
+        ).update(status='expired')
+        
+        if expired_count > 0:
+            print(f"Marked {expired_count} expired invitations for user {request.user.username}")
+            # Clear cache if we updated any invitations
+            cache.delete(cache_key)
+        
+        # Get only valid pending invitations
+        valid_invitations = CallInvitation.objects.filter(
+            receiver=request.user,
+            status='pending',
+            expires_at__gte=now  # Only get non-expired ones
+        ).select_related('caller', 'room__match').order_by('-created_at')
     
     invitation_data = []
     for invitation in valid_invitations:
@@ -202,6 +232,9 @@ def get_pending_invitations(request):
             'expires_at': invitation.expires_at.isoformat(),
             'match_id': invitation.room.match.id
         })
+    
+    # Cache the results
+    cache.set(cache_key, invitation_data, cache_timeout)
     
     return JsonResponse({'invitations': invitation_data})
 
@@ -361,6 +394,9 @@ def cancel_invitation(request, invitation_id):
     invitation.status = 'cancelled'
     invitation.responded_at = timezone.now()
     invitation.save()
+    
+    # Invalidate pending invitations cache for the receiver
+    cache.delete(f"pending_invitations_{invitation.receiver.id}")
     
     # Notify receiver via WebSocket that invitation was cancelled
     send_user_notification(invitation.receiver.id, 'call_invitation_cancelled', {

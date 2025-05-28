@@ -260,6 +260,9 @@
             globalNotificationSocket.onopen = function() {
                 console.log('Global notification WebSocket connected');
                 
+                // WebSocket working, reduce polling frequency
+                adjustPollingFrequency(true);
+                
                 // Check for pending invitations on connect
                 checkPendingInvitations();
             };
@@ -267,10 +270,17 @@
             globalNotificationSocket.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 handleGlobalNotificationMessage(data);
+                
+                // WebSocket message received, confirms it's working
+                adjustPollingFrequency(true);
             };
             
             globalNotificationSocket.onclose = function(event) {
                 console.log('Global notification WebSocket disconnected, attempting reconnect...', event.code);
+                
+                // WebSocket failed, increase polling frequency
+                adjustPollingFrequency(false);
+                
                 // Attempt to reconnect after 3 seconds, but not if it was a deliberate close
                 if (event.code !== 1000) {
                     setTimeout(connectGlobalNotificationWebSocket, 3000);
@@ -279,6 +289,9 @@
             
             globalNotificationSocket.onerror = function(error) {
                 console.error('Global notification WebSocket error:', error);
+                
+                // WebSocket error, increase polling frequency
+                adjustPollingFrequency(false);
             };
         }
 
@@ -494,6 +507,77 @@
             }
         }
 
+        // Adaptive polling system - increase interval when WebSocket is reliable
+        let pollInterval = 60000; // Start with 60 seconds instead of 30
+        let maxPollInterval = 300000; // Max 5 minutes
+        let minPollInterval = 15000; // Min 15 seconds when WebSocket fails
+        let pollIntervalId = null;
+        let websocketFailureCount = 0;
+        let isPageVisible = !document.hidden;
+        let lastUserActivity = Date.now();
+
+        function startAdaptivePolling() {
+            if (pollIntervalId) {
+                clearInterval(pollIntervalId);
+            }
+            
+            // Only poll if page is visible and user was recently active
+            if (isPageVisible && (Date.now() - lastUserActivity < 300000)) { // 5 minutes
+                pollIntervalId = setInterval(checkPendingInvitations, pollInterval);
+                console.log(`Polling for invitations every ${pollInterval / 1000} seconds`);
+            } else {
+                console.log('Page not visible or user inactive, pausing polling');
+            }
+        }
+
+        function adjustPollingFrequency(websocketWorking) {
+            if (websocketWorking) {
+                // WebSocket is working, reduce polling frequency
+                websocketFailureCount = 0;
+                pollInterval = Math.min(pollInterval * 1.5, maxPollInterval);
+            } else {
+                // WebSocket failed, increase polling frequency
+                websocketFailureCount++;
+                pollInterval = Math.max(pollInterval / 2, minPollInterval);
+            }
+            
+            // Restart polling with new interval
+            startAdaptivePolling();
+        }
+        
+        // Track user activity
+        function updateUserActivity() {
+            lastUserActivity = Date.now();
+            if (!pollIntervalId && isPageVisible) {
+                startAdaptivePolling();
+            }
+        }
+        
+        // Add activity listeners
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(function(event) {
+            document.addEventListener(event, updateUserActivity, true);
+        });
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            isPageVisible = !document.hidden;
+            if (isPageVisible) {
+                console.log('Page visible again, resuming polling...');
+                updateUserActivity();
+                startAdaptivePolling();
+                // Also reconnect WebSocket if needed
+                if (!globalNotificationSocket || globalNotificationSocket.readyState !== WebSocket.OPEN) {
+                    connectGlobalNotificationWebSocket();
+                }
+            } else {
+                console.log('Page hidden, pausing polling...');
+                if (pollIntervalId) {
+                    clearInterval(pollIntervalId);
+                    pollIntervalId = null;
+                }
+            }
+        });
+
         // Check for pending invitations on page load
         function checkPendingInvitations() {
             fetch('/chats/api/pending-invitations/')
@@ -532,20 +616,12 @@
             }
         });
 
-        // Handle page visibility change to reconnect WebSocket if needed
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && (!globalNotificationSocket || globalNotificationSocket.readyState !== WebSocket.OPEN)) {
-                console.log('Page visible again, reconnecting WebSocket...');
-                connectGlobalNotificationWebSocket();
-            }
-        });
-
         // Initialize global notification system when page loads
         requestNotificationPermission();
         connectGlobalNotificationWebSocket();
 
         // Check for pending invitations periodically (as backup to WebSocket)
-        setInterval(checkPendingInvitations, 30000); // Every 30 seconds
+        startAdaptivePolling();
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {

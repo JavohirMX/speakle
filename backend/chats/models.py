@@ -38,14 +38,22 @@ class CallInvitation(models.Model):
     room = models.ForeignKey(VideoRoom, on_delete=models.CASCADE, related_name='invitations')
     caller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_call_invitations')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_call_invitations')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     responded_at = models.DateTimeField(null=True, blank=True)
-    expires_at = models.DateTimeField()
+    expires_at = models.DateTimeField(db_index=True)
     message = models.TextField(blank=True, help_text="Optional message from caller")
     
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            # Composite index for the most common query: receiver + status + expires_at
+            models.Index(fields=['receiver', 'status', 'expires_at'], name='pending_invitations_idx'),
+            # Index for cleanup operations: status + created_at
+            models.Index(fields=['status', 'created_at'], name='cleanup_invitations_idx'),
+            # Index for caller's sent invitations
+            models.Index(fields=['caller', 'status'], name='sent_invitations_idx'),
+        ]
     
     def __str__(self):
         return f"Call invitation from {self.caller.username} to {self.receiver.username}"
