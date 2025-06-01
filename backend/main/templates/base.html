@@ -48,6 +48,8 @@
                         'slide-up': 'slideUp 0.3s ease-out',
                         'bounce-gentle': 'bounceGentle 0.5s ease-in-out infinite alternate',
                         'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'slide-down': 'slideDown 0.2s ease-out',
+                        'scale-up': 'scaleUp 0.15s ease-out',
                     }
                 }
             }
@@ -62,10 +64,11 @@
     
     <style>
         :root {
-            --nav-height: 4rem;
+            --nav-height: 5rem;
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
             --warning-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            --nav-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
         }
         
         html { 
@@ -78,45 +81,148 @@
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            padding-top: var(--nav-height);
         }
         
         /* Enhanced Navigation */
         .nav-blur {
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            background: rgba(255, 255, 255, 0.9);
-            border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+            box-shadow: var(--nav-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: var(--nav-height);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        
+        .nav-blur.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.12);
+        }
+        
+        .nav-container {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        /* Ensure main content doesn't overlap */
+        #main-content {
+            margin-top: 0;
+            position: relative;
+        }
+        
+        /* Fix for any page-specific containers */
+        .page-container {
+            padding-top: 2rem;
         }
         
         .nav-item {
             position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0.5rem;
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+            border-radius: 0.5rem;
+            opacity: 0;
+            transform: scale(0.95);
             transition: all 0.2s ease;
+        }
+        
+        .nav-item:hover::before {
+            opacity: 1;
+            transform: scale(1);
         }
         
         .nav-item::after {
             content: '';
             position: absolute;
-            bottom: -2px;
+            bottom: -8px;
             left: 50%;
             width: 0;
-            height: 2px;
+            height: 3px;
             background: var(--primary-gradient);
             transition: all 0.3s ease;
             transform: translateX(-50%);
+            border-radius: 2px;
         }
         
-        .nav-item:hover::after {
-            width: 100%;
+        .nav-item:hover::after,
+        .nav-item.active::after {
+            width: 80%;
         }
         
-        /* Mobile menu styles */
+        /* Logo enhancement */
+        .logo-container {
+            transition: all 0.3s ease;
+        }
+        
+        .logo-container:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* User profile dropdown */
+        .user-dropdown {
+            transform: translateY(-10px) scale(0.95);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .user-dropdown.show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .user-dropdown-item {
+            transition: all 0.15s ease;
+        }
+        
+        .user-dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.05));
+            transform: translateX(4px);
+        }
+        
+        /* Mobile menu enhancements */
         .mobile-menu {
             transform: translateX(100%);
-            transition: transform 0.3s ease-in-out;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            top: var(--nav-height);
         }
         
         .mobile-menu.open {
             transform: translateX(0);
+        }
+        
+        .mobile-menu-item {
+            transition: all 0.3s ease;
+            border-radius: 0.75rem;
+        }
+        
+        .mobile-menu-item:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.05));
+            transform: translateX(8px);
         }
         
         /* Enhanced notifications */
@@ -124,12 +230,49 @@
             animation: bounceGentle 0.5s ease-in-out infinite alternate;
             box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
             animation: pulse-notification 2s infinite;
+            position: relative;
+        }
+        
+        .notification-badge::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg, #ef4444, #f87171);
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0.3;
+            animation: glow 2s ease-in-out infinite alternate;
         }
         
         @keyframes pulse-notification {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        
+        @keyframes glow {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+        }
+        
+        @keyframes slideDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes scaleUp {
+            0% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
         
         .notification-toast {
@@ -140,10 +283,16 @@
             transform: translateX(400px);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             max-width: 400px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
         
         .notification-toast.show {
             transform: translateX(0);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
         }
         
         /* Enhanced modals */
@@ -183,13 +332,30 @@
         /* Button enhancements */
         .btn-primary {
             background: var(--primary-gradient);
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 14px 0 rgba(0, 118, 255, 0.39);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px 0 rgba(0, 118, 255, 0.5);
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
         }
         
         .btn-success {
@@ -202,17 +368,49 @@
             box-shadow: 0 8px 25px 0 rgba(34, 197, 94, 0.5);
         }
         
+        /* Hamburger menu animation */
+        .hamburger {
+            transition: all 0.3s ease;
+        }
+        
+        .hamburger.open .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        
+        .hamburger.open .line2 {
+            opacity: 0;
+        }
+        
+        .hamburger.open .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+        
+        .hamburger-line {
+            width: 25px;
+            height: 3px;
+            background-color: currentColor;
+            margin: 3px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+        
         /* Responsive design improvements */
         @media (max-width: 768px) {
             .notification-toast {
                 right: 10px;
                 left: 10px;
                 max-width: none;
-                transform: translateY(-100px);
+                transform: translateX(100%);
+                top: 70px;
             }
             
             .notification-toast.show {
-                transform: translateY(0);
+                transform: translateX(0);
+            }
+            
+            .mobile-menu {
+                width: 100%;
+                max-width: 320px;
             }
         }
         
@@ -265,6 +463,30 @@
             top: 6px;
         }
         
+        /* Online status indicator */
+        .online-indicator {
+            position: relative;
+        }
+        
+        .online-indicator::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border: 2px solid white;
+            border-radius: 50%;
+            animation: pulse-green 2s infinite;
+        }
+        
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
         {% block extra_css %}{% endblock %}
     </style>
 </head>
@@ -272,91 +494,231 @@
     <!-- Skip to content link for accessibility -->
     <a href="#main-content" class="skip-link focus-ring">Skip to main content</a>
     
-    <!-- Navigation -->
-    <nav class="nav-blur fixed top-0 left-0 right-0 z-50 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <a href="{% url 'main:home' %}" class="flex items-center space-x-2 text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors focus-ring rounded-lg px-2 py-1">
-                        <span class="text-3xl">🗣️</span>
-                        <span class="hidden sm:inline">Speakle</span>
-                    </a>
-                </div>
-                
-                <!-- Desktop Navigation -->
-                <div class="hidden md:flex items-center space-x-1">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'matches:find_matches' %}" class="nav-item px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg">
-                            Find Partners
-                        </a>
-                        <a href="{% url 'matches:my_matches' %}" class="nav-item px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative">
-                            My Matches
-                            <span id="pendingCallsBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge" style="display: none;"></span>
-                        </a>
-                        <a href="{% url 'matches:requests' %}" class="nav-item px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg">
-                            Requests
-                        </a>
-                        <a href="{% url 'users:profile' %}" class="nav-item px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg">
-                            Profile
-                        </a>
-                        <a href="{% url 'users:logout' %}" class="ml-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 font-medium focus-ring">
-                            Logout
-                        </a>
-                    {% else %}
-                        <a href="{% url 'users:login' %}" class="nav-item px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg">
-                            Login
-                        </a>
-                        <a href="{% url 'users:register' %}" class="ml-2 btn-primary text-white px-6 py-2 rounded-lg font-medium border-0 focus-ring">
-                            Sign Up
-                        </a>
-                    {% endif %}
-                </div>
-                
-                <!-- Mobile menu button -->
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-gray-700 hover:text-blue-600 focus-ring rounded-lg p-2" aria-label="Toggle mobile menu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                </div>
+    <!-- Enhanced Navigation -->
+    <nav class="nav-blur" id="navbar">
+        <div class="nav-container">
+            <!-- Enhanced Logo -->
+            <div class="flex items-center">
+                <a href="{% url 'main:home' %}" class="logo-container flex items-center space-x-3 text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors focus-ring rounded-xl px-3 py-2">
+                    <div class="relative">
+                        <span class="text-4xl filter drop-shadow-lg">🗣️</span>
+                        <div class="absolute inset-0 text-4xl opacity-20 transform translate-x-1 translate-y-1">🗣️</div>
+                    </div>
+                    <div class="hidden sm:block">
+                        <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-extrabold tracking-tight">Speakle</span>
+                        <div class="text-xs text-gray-500 font-normal -mt-1">Language Exchange</div>
+                    </div>
+                </a>
             </div>
-        </div>
-        
-        <!-- Mobile Navigation -->
-        <div id="mobile-menu" class="mobile-menu md:hidden fixed top-16 right-0 w-64 h-screen bg-white shadow-2xl z-40">
-            <div class="px-4 py-6 space-y-4">
+            
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-2">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'matches:find_matches' %}" class="block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors font-medium focus-ring">
-                        Find Partners
+                    <!-- Navigation Items -->
+                    <a href="{% url 'matches:find_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'find_matches' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>🔍</span>
+                            <span>Find Partners</span>
+                        </span>
                     </a>
-                    <a href="{% url 'matches:my_matches' %}" class="block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors font-medium focus-ring relative">
-                        My Matches
-                        <span id="pendingCallsBadgeMobile" class="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge" style="display: none;"></span>
+                    
+                    <a href="{% url 'matches:my_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'my_matches' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>🤝</span>
+                            <span>My Matches</span>
+                            <span id="pendingCallsBadge" class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                        </span>
                     </a>
-                    <a href="{% url 'matches:requests' %}" class="block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors font-medium focus-ring">
-                        Requests
+                    
+                    <a href="{% url 'chats:chat_list' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.app_name == 'chats' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>💬</span>
+                            <span>Chats</span>
+                            <span id="unreadMessagesBadge" class="notification-badge absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                        </span>
                     </a>
-                    <a href="{% url 'users:profile' %}" class="block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors font-medium focus-ring">
-                        Profile
+                    
+                    <a href="{% url 'matches:requests' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'requests' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>📩</span>
+                            <span>Requests</span>
+                        </span>
                     </a>
-                    <div class="pt-4 border-t border-gray-200">
-                        <a href="{% url 'users:logout' %}" class="block w-full text-center bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium focus-ring">
-                            Logout
-                        </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="relative ml-4">
+                        <button id="userMenuButton" class="flex items-center space-x-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 focus-ring shadow-sm" aria-expanded="false">
+                            <div class="relative">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full object-cover">
+                                {% else %}
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                                        {{ user.username|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div class="online-indicator"></div>
+                            </div>
+                            <div class="text-left">
+                                <div class="text-sm font-semibold text-gray-900">{{ user.username }}</div>
+                                <div class="text-xs text-gray-500">Online</div>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" id="userMenuChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdown" class="user-dropdown absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                            <!-- User Info Header -->
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <div class="flex items-center space-x-3">
+                                    {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-10 h-10 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="font-semibold text-gray-900">{{ user.username }}</div>
+                                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Menu Items -->
+                            <div class="py-2">
+                                <a href="{% url 'users:profile' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">👤</span>
+                                    <span>Profile Settings</span>
+                                </a>
+                                <a href="{% url 'matches:my_matches' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">🤝</span>
+                                    <span>My Matches</span>
+                                </a>
+                                <a href="{% url 'chats:chat_list' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">💬</span>
+                                    <span>My Chats</span>
+                                </a>
+                                <a href="#" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">📊</span>
+                                    <span>Statistics</span>
+                                </a>
+                                <a href="#" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">⚙️</span>
+                                    <span>Settings</span>
+                                </a>
+                            </div>
+                            
+                            <div class="border-t border-gray-100 py-2">
+                                <a href="{% url 'users:logout' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-red-600 hover:text-red-700 font-medium">
+                                    <span class="text-lg">🚪</span>
+                                    <span>Sign Out</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 {% else %}
-                    <a href="{% url 'users:login' %}" class="block px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors font-medium focus-ring">
-                        Login
+                    <!-- Non-authenticated Navigation -->
+                    <a href="{% url 'users:login' %}" class="nav-item px-6 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg">
+                        Sign In
                     </a>
-                    <a href="{% url 'users:register' %}" class="block w-full text-center btn-primary text-white px-4 py-3 rounded-lg font-medium border-0 focus-ring">
-                        Sign Up
+                    <a href="{% url 'users:register' %}" class="btn-primary text-white px-6 py-2.5 rounded-lg font-medium border-0 focus-ring ml-2">
+                        Get Started
                     </a>
                 {% endif %}
             </div>
+            
+            <!-- Enhanced Mobile menu button -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="hamburger text-gray-700 hover:text-blue-600 focus-ring rounded-lg p-2 transition-colors" aria-label="Toggle mobile menu">
+                    <div class="hamburger-line line1"></div>
+                    <div class="hamburger-line line2"></div>
+                    <div class="hamburger-line line3"></div>
+                </button>
+            </div>
         </div>
     </nav>
+
+    <!-- Enhanced Mobile Navigation -->
+    <div id="mobile-menu" class="mobile-menu md:hidden fixed right-0 w-80 h-screen shadow-2xl z-40">
+        <div class="px-6 py-8 space-y-6 h-full overflow-y-auto">
+            {% if user.is_authenticated %}
+                <!-- Mobile User Profile -->
+                <div class="flex items-center space-x-4 pb-6 border-b border-gray-200">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-12 h-12 rounded-full object-cover">
+                    {% else %}
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                            {{ user.username|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="font-semibold text-gray-900 text-lg">{{ user.username }}</div>
+                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+                    </div>
+                </div>
+                
+                <!-- Mobile Menu Items -->
+                <div class="space-y-2">
+                    <a href="{% url 'matches:find_matches' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">🔍</span>
+                        <span>Find Partners</span>
+                    </a>
+                    <a href="{% url 'matches:my_matches' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
+                        <span class="text-xl">🤝</span>
+                        <span>My Matches</span>
+                        <span id="pendingCallsBadgeMobile" class="notification-badge absolute top-3 right-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                    </a>
+                    <a href="{% url 'chats:chat_list' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
+                        <span class="text-xl">💬</span>
+                        <span>Chats</span>
+                        <span id="unreadMessagesBadgeMobile" class="notification-badge absolute top-3 right-3 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                    </a>
+                    <a href="{% url 'matches:requests' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">📩</span>
+                        <span>Requests</span>
+                    </a>
+                    <a href="{% url 'users:profile' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">👤</span>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">📊</span>
+                        <span>Statistics</span>
+                    </a>
+                    <a href="#" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">⚙️</span>
+                        <span>Settings</span>
+                    </a>
+                </div>
+                
+                <!-- Mobile Logout -->
+                <div class="pt-6 border-t border-gray-200">
+                    <a href="{% url 'users:logout' %}" class="block w-full text-center bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-colors font-semibold focus-ring">
+                        <span class="flex items-center justify-center space-x-2">
+                            <span>🚪</span>
+                            <span>Sign Out</span>
+                        </span>
+                    </a>
+                </div>
+            {% else %}
+                <!-- Non-authenticated Mobile Menu -->
+                <div class="space-y-4">
+                    <a href="{% url 'users:login' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">🔐</span>
+                        <span>Sign In</span>
+                    </a>
+                    <a href="{% url 'users:register' %}" class="block w-full text-center btn-primary text-white px-6 py-4 rounded-xl font-semibold border-0 focus-ring">
+                        <span class="flex items-center justify-center space-x-2">
+                            <span>✨</span>
+                            <span>Get Started</span>
+                        </span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
     <!-- Global Enhanced Notification Toast -->
     <div id="notificationToast" class="notification-toast">
@@ -437,7 +799,7 @@
     {% endif %}
 
     <!-- Main Content with proper spacing for fixed nav -->
-    <main id="main-content" class="pt-16 min-h-screen">
+    <main id="main-content" class="min-h-screen">
         {% block content %}
         {% endblock %}
     </main>
@@ -516,54 +878,314 @@
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
             const navbar = document.getElementById('navbar');
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userDropdown = document.getElementById('userDropdown');
+            const userMenuChevron = document.getElementById('userMenuChevron');
             
-            // Mobile menu toggle
+            // Enhanced Mobile menu toggle
             mobileMenuButton?.addEventListener('click', function() {
                 mobileMenu.classList.toggle('open');
+                this.classList.toggle('open');
                 const isOpen = mobileMenu.classList.contains('open');
                 this.setAttribute('aria-expanded', isOpen);
                 
-                // Update icon
-                const icon = this.querySelector('svg');
+                // Prevent body scroll when menu is open
                 if (isOpen) {
-                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+                    document.body.style.overflow = 'hidden';
                 } else {
-                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
+                    document.body.style.overflow = '';
                 }
             });
             
-            // Close mobile menu when clicking outside
+            // User dropdown functionality
+            userMenuButton?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = userDropdown.classList.contains('show');
+                
+                if (isOpen) {
+                    closeUserDropdown();
+                } else {
+                    openUserDropdown();
+                }
+            });
+            
+            function openUserDropdown() {
+                userDropdown.classList.add('show');
+                userMenuButton.setAttribute('aria-expanded', 'true');
+                userMenuChevron.style.transform = 'rotate(180deg)';
+                
+                // Focus first menu item
+                const firstMenuItem = userDropdown.querySelector('a');
+                if (firstMenuItem) {
+                    setTimeout(() => firstMenuItem.focus(), 100);
+                }
+            }
+            
+            function closeUserDropdown() {
+                userDropdown.classList.remove('show');
+                userMenuButton.setAttribute('aria-expanded', 'false');
+                userMenuChevron.style.transform = 'rotate(0deg)';
+            }
+            
+            // Close dropdowns when clicking outside
             document.addEventListener('click', function(e) {
+                // Close mobile menu
                 if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
                     mobileMenu.classList.remove('open');
+                    mobileMenuButton.classList.remove('open');
                     mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    document.body.style.overflow = '';
+                }
+                
+                // Close user dropdown
+                if (userDropdown && !userDropdown.contains(e.target) && !userMenuButton.contains(e.target)) {
+                    closeUserDropdown();
                 }
             });
             
-            // Navbar scroll effect
+            // Keyboard navigation for dropdowns
+            document.addEventListener('keydown', function(e) {
+                // Close dropdowns on Escape
+                if (e.key === 'Escape') {
+                    if (mobileMenu.classList.contains('open')) {
+                        mobileMenu.classList.remove('open');
+                        mobileMenuButton.classList.remove('open');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
+                        mobileMenuButton.focus();
+                        document.body.style.overflow = '';
+                    }
+                    
+                    if (userDropdown?.classList.contains('show')) {
+                        closeUserDropdown();
+                        userMenuButton.focus();
+                    }
+                }
+                
+                // Navigate dropdown with arrow keys
+                if (userDropdown?.classList.contains('show')) {
+                    const menuItems = userDropdown.querySelectorAll('a');
+                    const currentIndex = Array.from(menuItems).indexOf(document.activeElement);
+                    
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const nextIndex = currentIndex < menuItems.length - 1 ? currentIndex + 1 : 0;
+                        menuItems[nextIndex].focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prevIndex = currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
+                        menuItems[prevIndex].focus();
+                    }
+                }
+            });
+            
+            // Enhanced navbar scroll effect with performance optimization
             let lastScrollY = window.scrollY;
-            window.addEventListener('scroll', function() {
+            let ticking = false;
+            
+            function updateNavbar() {
                 const currentScrollY = window.scrollY;
                 
-                if (currentScrollY > 100) {
-                    navbar.classList.add('shadow-lg');
+                // Add scrolled class for enhanced styling
+                if (currentScrollY > 50) {
+                    navbar.classList.add('scrolled');
                 } else {
-                    navbar.classList.remove('shadow-lg');
+                    navbar.classList.remove('scrolled');
                 }
                 
-                // Hide/show navbar on scroll
-                if (currentScrollY > lastScrollY && currentScrollY > 200) {
-                    navbar.style.transform = 'translateY(-100%)';
-                } else {
-                    navbar.style.transform = 'translateY(0)';
-                }
-                
+                // Removed navbar hiding behavior as requested
                 lastScrollY = currentScrollY;
+                ticking = false;
+            }
+            
+            function requestTick() {
+                if (!ticking) {
+                    requestAnimationFrame(updateNavbar);
+                    ticking = true;
+                }
+            }
+            
+            window.addEventListener('scroll', requestTick, { passive: true });
+            
+            // Auto-highlight active navigation items
+            highlightActiveNavItem();
+            
+            // Remove the annoying navbar slide-in animation
+            // The navbar should be immediately visible for better UX during navigation
+        });
+        
+        // Enhanced active navigation highlighting
+        function highlightActiveNavItem() {
+            const currentPath = window.location.pathname;
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                const href = item.getAttribute('href');
+                if (href && currentPath.includes(href) && href !== '/') {
+                    item.classList.add('active');
+                } else if (href === '/' && currentPath === '/') {
+                    item.classList.add('active');
+                }
             });
+        }
+        
+        // Enhanced notification badge updates with animation
+        function updatePendingCallsBadge() {
+            const badges = ['pendingCallsBadge', 'pendingCallsBadgeMobile'];
+            badges.forEach(badgeId => {
+                const badge = document.getElementById(badgeId);
+                if (badge) {
+                    if (pendingCallsCount > 0) {
+                        const displayCount = pendingCallsCount > 99 ? '99+' : pendingCallsCount;
+                        
+                        // Animate number change
+                        if (badge.textContent !== displayCount) {
+                            badge.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                badge.textContent = displayCount;
+                                badge.style.transform = 'scale(1)';
+                            }, 100);
+                        }
+                        
+                        badge.style.display = 'flex';
+                        
+                        // Add pulsing animation for new notifications
+                        badge.classList.add('animate-pulse-slow');
+                        setTimeout(() => {
+                            badge.classList.remove('animate-pulse-slow');
+                        }, 3000);
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Enhanced unread messages badge function
+        let unreadMessagesCount = 0;
+        
+        function updateUnreadMessagesBadge() {
+            const badges = ['unreadMessagesBadge', 'unreadMessagesBadgeMobile'];
+            badges.forEach(badgeId => {
+                const badge = document.getElementById(badgeId);
+                if (badge) {
+                    if (unreadMessagesCount > 0) {
+                        const displayCount = unreadMessagesCount > 99 ? '99+' : unreadMessagesCount;
+                        
+                        // Animate number change
+                        if (badge.textContent !== displayCount) {
+                            badge.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                badge.textContent = displayCount;
+                                badge.style.transform = 'scale(1)';
+                            }, 100);
+                        }
+                        
+                        badge.style.display = 'flex';
+                        
+                        // Add pulsing animation for new messages
+                        badge.classList.add('animate-pulse-slow');
+                        setTimeout(() => {
+                            badge.classList.remove('animate-pulse-slow');
+                        }, 3000);
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Function to check unread messages across all chats
+        function checkUnreadMessages() {
+            {% if user.is_authenticated %}
+            fetch('/chats/api/total-unread-count/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    unreadMessagesCount = data.unread_count || 0;
+                    updateUnreadMessagesBadge();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking unread messages:', error);
+            });
+            {% endif %}
+        }
+        
+        // Enhanced theme and accessibility features
+        function enhanceAccessibility() {
+            // Add loading states to buttons
+            const buttons = document.querySelectorAll('button, a.btn-primary');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.type === 'submit' || this.classList.contains('btn-primary')) {
+                        this.classList.add('loading');
+                        
+                        // Remove loading state after 3 seconds as fallback
+                        setTimeout(() => {
+                            this.classList.remove('loading');
+                        }, 3000);
+                    }
+                });
+            });
+            
+            // Enhanced focus management
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+            
+            document.addEventListener('mousedown', function() {
+                document.body.classList.remove('keyboard-navigation');
+            });
+        }
+        
+        // Performance monitoring and optimization
+        function optimizePerformance() {
+            // Lazy load images when they come into view
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            if (img.dataset.src) {
+                                img.src = img.dataset.src;
+                                img.removeAttribute('data-src');
+                                observer.unobserve(img);
+                            }
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+            
+            // Preload critical resources
+            const criticalResources = [
+                '{% url "matches:find_matches" %}',
+                '{% url "matches:my_matches" %}',
+                '{% url "chats:chat_list" %}',
+                '{% url "users:profile" %}'
+            ];
+            
+            criticalResources.forEach(url => {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = url;
+                document.head.appendChild(link);
+            });
+        }
+        
+        // Initialize enhanced features
+        document.addEventListener('DOMContentLoaded', function() {
+            enhanceAccessibility();
+            optimizePerformance();
         });
 
         {% if user.is_authenticated %}
-        // Enhanced global notification system
+        // Enhanced global notification system (existing code with improvements)
         let globalNotificationSocket = null;
         let currentGlobalIncomingInvitation = null;
         let pendingCallsCount = 0;
@@ -622,6 +1244,11 @@
             const toastIcon = document.getElementById('toastIcon');
             const toastActions = document.getElementById('toastActions');
             
+            // Don't show if title and message are empty
+            if (!title && !message) {
+                return;
+            }
+            
             toastTitle.textContent = title;
             toastMessage.textContent = message;
             toastIcon.textContent = icon;
@@ -659,22 +1286,6 @@
         function hideNotificationToast() {
             const toast = document.getElementById('notificationToast');
             toast.classList.remove('show');
-        }
-
-        // Enhanced pending calls badge
-        function updatePendingCallsBadge() {
-            const badges = ['pendingCallsBadge', 'pendingCallsBadgeMobile'];
-            badges.forEach(badgeId => {
-                const badge = document.getElementById(badgeId);
-                if (badge) {
-                    if (pendingCallsCount > 0) {
-                        badge.textContent = pendingCallsCount > 99 ? '99+' : pendingCallsCount;
-                        badge.style.display = 'flex';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                }
-            });
         }
 
         // Call timer functionality
@@ -842,7 +1453,7 @@
             };
             showGlobalIncomingCall(invitation);
             
-            // Update badge
+            // Update badge with enhanced animation
             pendingCallsCount++;
             updatePendingCallsBadge();
 
@@ -1258,9 +1869,25 @@
         };
 
         // Initialize system
-        requestNotificationPermission();
-        connectGlobalNotificationWebSocket();
-        startAdaptivePolling();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure notification toast is hidden on page load
+            const notificationToast = document.getElementById('notificationToast');
+            if (notificationToast) {
+                notificationToast.classList.remove('show');
+            }
+            
+            {% if user.is_authenticated %}
+            requestNotificationPermission();
+            connectGlobalNotificationWebSocket();
+            startAdaptivePolling();
+            
+            // Initialize unread messages checking
+            checkUnreadMessages();
+            
+            // Add unread messages to polling
+            setInterval(checkUnreadMessages, 30000); // Check every 30 seconds
+            {% endif %}
+        });
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {

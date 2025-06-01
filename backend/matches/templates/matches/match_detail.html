@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ partner.username }} - Match Details - Speakle{% endblock %}
+{% block title %}{{ partner.username }} - Match Profile - Speakle{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+<div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
     <!-- Back Button -->
     <div class="mb-6">
         <a href="{% url 'matches:my_matches' %}" 
@@ -11,7 +11,7 @@
             ← Back to My Matches
         </a>
         
-        <!-- Testing: Online Status Toggle -->
+        <!-- Online Status Toggle -->
         <div class="float-right">
             <button id="statusToggle" onclick="toggleOnlineStatus()" 
                     class="bg-gray-500 text-white px-3 py-1 rounded-full text-sm hover:bg-gray-600 transition">
@@ -21,9 +21,9 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-lg p-8">
+    <div class="bg-white rounded-lg shadow-lg">
         <!-- Partner Header -->
-        <div class="flex items-center mb-8">
+        <div class="flex items-center p-8 border-b">
             {% if partner.profile_picture %}
                 <img src="{{ partner.profile_picture.url }}" 
                      alt="{{ partner.username }}" 
@@ -42,10 +42,130 @@
                     <span>Matched {{ match.created_at|timesince }} ago</span>
                 </div>
                 
-                <!-- Quick Action Buttons -->
-                <div class="space-y-3">
+                <!-- Language Exchange Info -->
+                <div class="grid grid-cols-2 gap-4 max-w-md">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="text-xl mb-1">{{ user_teaches.flag_emoji }}</div>
+                        <p class="text-xs text-gray-600">You teach</p>
+                        <p class="font-semibold text-blue-600 text-sm">{{ user_teaches.name }}</p>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="text-xl mb-1">{{ user_learns.flag_emoji }}</div>
+                        <p class="text-xs text-gray-600">You learn</p>
+                        <p class="font-semibold text-green-600 text-sm">{{ user_learns.name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="border-b">
+            <nav class="flex space-x-8 px-8" role="tablist">
+                <button class="tab-button border-b-2 border-blue-500 text-blue-600 py-4 px-1 text-sm font-medium" 
+                        data-tab="overview" onclick="switchTab('overview')">
+                    📋 Overview
+                </button>
+                <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium" 
+                        data-tab="video-chat" onclick="switchTab('video-chat')">
+                    🎥 Video Chat
+                </button>
+                <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium" 
+                        data-tab="text-chat" onclick="switchTab('text-chat')">
+                    💬 Text Chat
+                </button>
+                <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium" 
+                        data-tab="statistics" onclick="switchTab('statistics')">
+                    📊 Statistics
+                </button>
+                <button class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium" 
+                        data-tab="settings" onclick="switchTab('settings')">
+                    ⚙️ Settings
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="p-8">
+            <!-- Overview Tab -->
+            <div id="overview-content" class="tab-content">
+                <!-- Partner's Languages -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ partner.username }}'s Languages</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {% for user_lang in partner.userlanguage_set.all %}
+                            <div class="border rounded-lg p-4 text-center">
+                                <div class="text-2xl mb-2">{{ user_lang.language.flag_emoji }}</div>
+                                <h3 class="font-semibold text-gray-900">{{ user_lang.language.name }}</h3>
+                                <p class="text-sm text-gray-600">{{ user_lang.get_proficiency_display }}</p>
+                                <span class="inline-block mt-2 px-2 py-1 text-xs rounded-full
+                                    {% if user_lang.language_type == 'native' %}bg-red-100 text-red-800
+                                    {% elif user_lang.language_type == 'fluent' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-green-100 text-green-800{% endif %}">
+                                    {{ user_lang.get_language_type_display }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Partner's Profile -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Bio -->
+                    {% if partner.bio %}
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900 mb-4">About {{ partner.username }}</h2>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-gray-700 leading-relaxed">{{ partner.bio }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Interests -->
+                    {% if partner.interests %}
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900 mb-4">Interests</h2>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-gray-700 leading-relaxed">{{ partner.interests }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Learning Tips Section -->
+                <div class="mt-8 bg-yellow-50 rounded-lg p-6">
+                    <h2 class="text-lg font-semibold text-yellow-800 mb-3">💡 Language Exchange Tips</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-yellow-700">
+                        <div>
+                            <h3 class="font-medium mb-2">For {{ user_teaches.name }} practice:</h3>
+                            <ul class="space-y-1">
+                                <li>• Start with basic conversations</li>
+                                <li>• Focus on pronunciation</li>
+                                <li>• Use everyday vocabulary</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-medium mb-2">For {{ user_learns.name }} learning:</h3>
+                            <ul class="space-y-1">
+                                <li>• Don't be afraid to make mistakes</li>
+                                <li>• Ask for corrections</li>
+                                <li>• Practice regularly</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Chat Tab -->
+            <div id="video-chat-content" class="tab-content hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Video Chat with {{ partner.username }}</h2>
+                    <p class="text-gray-600 mb-6">Start a video conversation to practice your language exchange</p>
+                </div>
+
+                <div class="max-w-md mx-auto space-y-4">
+                    <!-- Start Video Chat Button -->
                     <button onclick="initiateVideoCall({{ match.id }})"
-                           class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition flex items-center justify-center w-full">
+                           class="w-full bg-blue-500 text-white px-6 py-4 rounded-lg hover:bg-blue-600 transition flex items-center justify-center text-lg">
                         🎥 Start Video Chat
                     </button>
                     
@@ -53,140 +173,100 @@
                     {% if match.video_room %}
                     <div class="flex space-x-2">
                         <a href="{% url 'chats:video_room' match.video_room.room_id %}"
-                           class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition text-sm text-center">
+                           class="flex-1 bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition text-center">
                             ⚡ Quick Join Room
                         </a>
                         <a href="{% url 'chats:call_history' match.video_room.room_id %}" 
-                           class="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition text-sm text-center">
+                           class="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition text-center">
                             📊 Call History
                         </a>
                     </div>
                     {% endif %}
                 </div>
-            </div>
-        </div>
 
-        <!-- Language Exchange Section -->
-        <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Language Exchange</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-blue-50 rounded-lg p-6">
-                    <div class="text-center mb-4">
-                        <div class="text-4xl mb-2">{{ user_teaches.flag_emoji }}</div>
-                        <h3 class="text-lg font-semibold text-blue-700">You Teach</h3>
-                        <p class="text-2xl font-bold text-blue-600">{{ user_teaches.name }}</p>
-                    </div>
-                    <div class="text-sm text-gray-600 space-y-1">
-                        {% for user_lang in user.userlanguage_set.all %}
-                            {% if user_lang.language == user_teaches %}
-                                <p><strong>Your Level:</strong> {{ user_lang.get_proficiency_display }} ({{ user_lang.get_language_type_display }})</p>
-                            {% endif %}
-                        {% endfor %}
+                <!-- Recent Call History Preview -->
+                {% if match.video_room %}
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Sessions</h3>
+                    <div id="recentSessions" class="space-y-2">
+                        <p class="text-gray-600">Loading recent sessions...</p>
                     </div>
                 </div>
-                
-                <div class="bg-green-50 rounded-lg p-6">
-                    <div class="text-center mb-4">
-                        <div class="text-4xl mb-2">{{ user_learns.flag_emoji }}</div>
-                        <h3 class="text-lg font-semibold text-green-700">You Learn</h3>
-                        <p class="text-2xl font-bold text-green-600">{{ user_learns.name }}</p>
-                    </div>
-                    <div class="text-sm text-gray-600 space-y-1">
-                        {% for user_lang in user.userlanguage_set.all %}
-                            {% if user_lang.language == user_learns %}
-                                <p><strong>Your Level:</strong> {{ user_lang.get_proficiency_display }}</p>
-                            {% endif %}
-                        {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Text Chat Tab -->
+            <div id="text-chat-content" class="tab-content hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Text Chat with {{ partner.username }}</h2>
+                    <p class="text-gray-600 mb-6">Send messages and practice writing in your target language</p>
+                </div>
+
+                <div class="max-w-md mx-auto space-y-4">
+                    <!-- Start Text Chat Button -->
+                    <a href="{% url 'chats:create_chat_room' match.id %}"
+                       class="block w-full bg-green-500 text-white px-6 py-4 rounded-lg hover:bg-green-600 transition text-center text-lg">
+                        💬 Open Text Chat
+                    </a>
+                    
+                    <!-- Chat History Button -->
+                    <button onclick="loadChatHistory({{ match.id }})"
+                           class="w-full bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition text-center">
+                        📝 View Chat History
+                    </button>
+                </div>
+
+                <!-- Recent Messages Preview -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Messages</h3>
+                    <div id="recentMessages" class="bg-gray-50 rounded-lg p-4 h-64 overflow-y-auto">
+                        <p class="text-gray-600">Loading recent messages...</p>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Partner's Languages -->
-        <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ partner.username }}'s Languages</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {% for user_lang in partner.userlanguage_set.all %}
-                    <div class="border rounded-lg p-4 text-center">
-                        <div class="text-2xl mb-2">{{ user_lang.language.flag_emoji }}</div>
-                        <h3 class="font-semibold text-gray-900">{{ user_lang.language.name }}</h3>
-                        <p class="text-sm text-gray-600">{{ user_lang.get_proficiency_display }}</p>
-                        <span class="inline-block mt-2 px-2 py-1 text-xs rounded-full
-                            {% if user_lang.language_type == 'native' %}bg-red-100 text-red-800
-                            {% elif user_lang.language_type == 'fluent' %}bg-blue-100 text-blue-800
-                            {% else %}bg-green-100 text-green-800{% endif %}">
-                            {{ user_lang.get_language_type_display }}
-                        </span>
-                    </div>
-                {% endfor %}
+            <!-- Statistics Tab -->
+            <div id="statistics-content" class="tab-content hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Match Statistics</h2>
+                    <p class="text-gray-600">Track your language exchange progress</p>
+                </div>
+
+                <div id="statisticsData" class="space-y-6">
+                    <p class="text-center text-gray-600">Loading statistics...</p>
+                </div>
             </div>
-        </div>
 
-        <!-- Partner's Profile -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Bio -->
-            {% if partner.bio %}
-                <div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">About {{ partner.username }}</h2>
+            <!-- Settings Tab -->
+            <div id="settings-content" class="tab-content hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Match Settings</h2>
+                    <p class="text-gray-600">Manage your language exchange partnership</p>
+                </div>
+
+                <div class="max-w-md mx-auto space-y-6">
+                    <!-- Match Info -->
                     <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-gray-700 leading-relaxed">{{ partner.bio }}</p>
+                        <h3 class="font-semibold text-gray-900 mb-2">Match Information</h3>
+                        <div class="text-sm text-gray-600 space-y-1">
+                            <p><strong>Created:</strong> {{ match.created_at|date:"F j, Y" }}</p>
+                            <p><strong>Status:</strong> {{ match.get_status_display }}</p>
+                            <p><strong>Last Activity:</strong> {{ match.last_activity|timesince|default:"Never" }} ago</p>
+                        </div>
+                    </div>
+
+                    <!-- End Match Section -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h3 class="font-semibold text-red-900 mb-2">⚠️ End Match</h3>
+                        <p class="text-sm text-red-700 mb-4">
+                            This will permanently end your language exchange partnership with {{ partner.username }}.
+                        </p>
+                        <button onclick="openEndMatchModal({{ match.id }}, '{{ partner.username }}')"
+                               class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">
+                            End Match
+                        </button>
                     </div>
                 </div>
-            {% endif %}
-
-            <!-- Interests -->
-            {% if partner.interests %}
-                <div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Interests</h2>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-gray-700 leading-relaxed">{{ partner.interests }}</p>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Learning Tips Section -->
-        <div class="mt-8 bg-yellow-50 rounded-lg p-6">
-            <h2 class="text-lg font-semibold text-yellow-800 mb-3">💡 Language Exchange Tips</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-yellow-700">
-                <div>
-                    <h3 class="font-medium mb-2">For {{ user_teaches.name }} practice:</h3>
-                    <ul class="space-y-1">
-                        <li>• Start with basic conversations</li>
-                        <li>• Focus on pronunciation</li>
-                        <li>• Use everyday vocabulary</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-medium mb-2">For {{ user_learns.name }} learning:</h3>
-                    <ul class="space-y-1">
-                        <li>• Don't be afraid to make mistakes</li>
-                        <li>• Ask for corrections</li>
-                        <li>• Practice regularly</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- Match Statistics -->
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div class="bg-blue-50 rounded-lg p-4">
-                <div class="text-2xl font-bold text-blue-600">{{ match.created_at|timesince }}</div>
-                <p class="text-sm text-blue-800">Time since match</p>
-            </div>
-            <div class="bg-green-50 rounded-lg p-4">
-                <div class="text-2xl font-bold text-green-600">
-                    {% if match.video_room %}
-                        {{ match.video_room.sessions.count }}
-                    {% else %}
-                        0
-                    {% endif %}
-                </div>
-                <p class="text-sm text-green-800">Video sessions</p>
-            </div>
-            <div class="bg-purple-50 rounded-lg p-4">
-                <div class="text-2xl font-bold text-purple-600">Active</div>
-                <p class="text-sm text-purple-800">Match status</p>
             </div>
         </div>
     </div>
@@ -264,7 +344,237 @@
     </div>
 </div>
 
+<!-- End Match Modal -->
+<div id="endMatchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-semibold mb-4 text-red-600">❌ End Match</h3>
+            
+            <div id="endMatchPartnerInfo" class="mb-4 p-3 bg-red-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white font-bold mr-3">
+                        {{ partner.username|first|upper }}
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-red-900">End match with {{ partner.username }}</h4>
+                        <p class="text-sm text-red-700">This will permanently end your language exchange partnership</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="endReason" class="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for ending this match (optional):
+                </label>
+                <textarea id="endReason" rows="3" 
+                          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                          placeholder="Let us know why you're ending this match..."></textarea>
+            </div>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                <p class="text-sm text-yellow-800">
+                    ⚠️ <strong>Warning:</strong> This action cannot be undone. Ending this match will prevent you from having video calls with this partner.
+                </p>
+            </div>
+            
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeEndMatchModal()" 
+                        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
+                    Cancel
+                </button>
+                <button onclick="confirmEndMatch()" 
+                        class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">
+                    End Match
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+// Tab functionality
+function switchTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active styling from all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('border-blue-500', 'text-blue-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabName + '-content').classList.remove('hidden');
+    
+    // Add active styling to selected tab button
+    const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+    activeButton.classList.remove('border-transparent', 'text-gray-500');
+    activeButton.classList.add('border-blue-500', 'text-blue-600');
+    
+    // Load tab-specific data
+    loadTabData(tabName);
+}
+
+function loadTabData(tabName) {
+    switch(tabName) {
+        case 'video-chat':
+            loadRecentSessions();
+            break;
+        case 'text-chat':
+            loadRecentMessages();
+            break;
+        case 'statistics':
+            loadStatistics();
+            break;
+    }
+}
+
+// Video chat functions
+function loadRecentSessions() {
+    {% if match.video_room %}
+    fetch(`/chats/api/recent-messages/{{ match.video_room.room_id }}/`)
+    .then(response => response.json())
+    .then(data => {
+        const container = document.getElementById('recentSessions');
+        if (data.sessions && data.sessions.length > 0) {
+            container.innerHTML = data.sessions.map(session => `
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">${new Date(session.start_time).toLocaleDateString()}</span>
+                        <span class="text-sm text-gray-600">${session.duration || 'N/A'} minutes</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">${session.status || 'Completed'}</p>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<p class="text-gray-600">No recent sessions found.</p>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading recent sessions:', error);
+        document.getElementById('recentSessions').innerHTML = '<p class="text-red-600">Failed to load recent sessions.</p>';
+    });
+    {% endif %}
+}
+
+// Text chat functions
+function loadRecentMessages() {
+    // Check if there's a chat room for this match
+    fetch(`/chats/api/chat-url/{{ match.id }}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.room_id) {
+            // Load recent messages
+            fetch(`/chats/api/messages/${data.room_id}/`)
+            .then(response => response.json())
+            .then(messageData => {
+                const container = document.getElementById('recentMessages');
+                if (messageData.messages && messageData.messages.length > 0) {
+                    container.innerHTML = messageData.messages.slice(-10).map(msg => `
+                        <div class="mb-3 ${msg.user_id === {{ user.id }} ? 'text-right' : 'text-left'}">
+                            <div class="inline-block max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${msg.user_id === {{ user.id }} ? 'bg-blue-500 text-white' : 'bg-white border'}">
+                                <p class="text-sm">${msg.content}</p>
+                                <p class="text-xs mt-1 opacity-70">${new Date(msg.timestamp).toLocaleString()}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-gray-600">No messages yet. Start a conversation!</p>';
+                }
+            });
+        } else {
+            document.getElementById('recentMessages').innerHTML = '<p class="text-gray-600">No chat room created yet. Click "Open Text Chat" to start messaging!</p>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading recent messages:', error);
+        document.getElementById('recentMessages').innerHTML = '<p class="text-red-600">Failed to load recent messages.</p>';
+    });
+}
+
+function loadChatHistory(matchId) {
+    fetch(`/chats/api/chat-url/${matchId}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.room_id) {
+            window.open(`/chats/text/${data.room_id}/`, '_blank');
+        } else {
+            alert('No chat history available. Start a conversation first!');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading chat history:', error);
+        alert('Failed to load chat history');
+    });
+}
+
+// Statistics functions
+function loadStatistics() {
+    fetch(`/matches/api/match-statistics/{{ match.id }}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatisticsData(data.statistics);
+        } else {
+            document.getElementById('statisticsData').innerHTML = '<p class="text-red-600">Failed to load statistics.</p>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading statistics:', error);
+        document.getElementById('statisticsData').innerHTML = '<p class="text-red-600">Failed to load statistics.</p>';
+    });
+}
+
+function showStatisticsData(stats) {
+    const container = document.getElementById('statisticsData');
+    
+    container.innerHTML = `
+        <!-- Main Statistics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-blue-50 rounded-lg p-6 text-center">
+                <div class="text-3xl font-bold text-blue-600">${stats.days_active}</div>
+                <p class="text-sm text-blue-800">Days Active</p>
+            </div>
+            <div class="bg-green-50 rounded-lg p-6 text-center">
+                <div class="text-3xl font-bold text-green-600">${stats.total_calls || 0}</div>
+                <p class="text-sm text-green-800">Total Video Calls</p>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-6 text-center">
+                <div class="text-3xl font-bold text-purple-600">${Math.round(stats.total_call_duration || 0)} min</div>
+                <p class="text-sm text-purple-800">Total Call Time</p>
+            </div>
+        </div>
+        
+        <!-- Additional Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Match Information</h4>
+                <div class="space-y-2 text-sm text-gray-600">
+                    <p><strong>Partner:</strong> ${stats.partner.username}</p>
+                    <p><strong>Created:</strong> ${new Date(stats.created_at).toLocaleDateString()}</p>
+                    <p><strong>Status:</strong> ${stats.status}</p>
+                    <p><strong>Last Activity:</strong> ${stats.last_activity ? new Date(stats.last_activity).toLocaleDateString() : 'Never'}</p>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Recent Activity</h4>
+                <div class="space-y-2 text-sm text-gray-600">
+                    ${stats.recent_calls && stats.recent_calls.length > 0 ? 
+                        stats.recent_calls.map(call => `
+                            <p>• Call on ${new Date(call.date).toLocaleDateString()} (${call.duration} min)</p>
+                        `).join('') : 
+                        '<p>No recent calls</p>'
+                    }
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Call invitation and video chat functionality
 let currentMatchId = null;
 let currentInvitationId = null;
 let invitationTimer = null;
@@ -284,7 +594,6 @@ function initiateVideoCall(matchId) {
 }
 
 function checkPartnerAvailability() {
-    // Actually check partner availability via API
     fetch(`/chats/api/partner-availability/${currentMatchId}/`)
     .then(response => response.json())
     .then(data => {
@@ -296,7 +605,6 @@ function checkPartnerAvailability() {
     })
     .catch(error => {
         console.error('Error checking partner availability:', error);
-        // Default to showing offline if API fails
         showPartnerOffline();
     });
 }
@@ -401,7 +709,7 @@ function startStatusPolling() {
             })
             .catch(error => console.error('Error checking status:', error));
         }
-    }, 5000); // Check every 5 seconds since we have WebSocket notifications for faster updates
+    }, 5000);
 }
 
 function invitationAccepted() {
@@ -409,9 +717,6 @@ function invitationAccepted() {
     if (typeof showNotificationToast === 'function') {
         showNotificationToast('Call Accepted!', '{{ partner.username }} accepted your call! Redirecting...', '✅');
     }
-    // Note: Redirection will be handled by the global notification system
-    // The global WebSocket listener will receive the call_invitation_accepted event
-    // and redirect to the correct room URL automatically
 }
 
 function invitationDeclined() {
@@ -434,7 +739,6 @@ function invitationExpired() {
 
 function cancelInvitation() {
     if (currentInvitationId) {
-        // Call API endpoint to cancel invitation
         const formData = new FormData();
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
         
@@ -468,7 +772,52 @@ function closeCallModal() {
     currentMatchId = null;
 }
 
-// Initialize and check current online status
+// End match functionality
+let currentEndMatchId = null;
+
+function openEndMatchModal(matchId, partnerName) {
+    currentEndMatchId = matchId;
+    document.getElementById('endReason').value = '';
+    document.getElementById('endMatchModal').classList.remove('hidden');
+}
+
+function closeEndMatchModal() {
+    document.getElementById('endMatchModal').classList.add('hidden');
+    currentEndMatchId = null;
+}
+
+function confirmEndMatch() {
+    if (!currentEndMatchId) return;
+    
+    const reason = document.getElementById('endReason').value;
+    const formData = new FormData();
+    formData.append('reason', reason);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/matches/api/end-match/${currentEndMatchId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showNotificationToast === 'function') {
+                showNotificationToast('Match Ended', 'Match ended successfully', '✅');
+            }
+            closeEndMatchModal();
+            // Redirect to matches list
+            window.location.href = '{% url "matches:my_matches" %}';
+        } else {
+            alert('Error: ' + (data.error || 'Failed to end match'));
+        }
+    })
+    .catch(error => {
+        console.error('Error ending match:', error);
+        alert('Failed to end match. Please try again.');
+    });
+}
+
+// Online status functionality
 let isCurrentlyOnline = false;
 
 function toggleOnlineStatus() {
@@ -513,15 +862,19 @@ function updateStatusUI() {
     }
 }
 
-// Check current status when page loads
 function checkCurrentStatus() {
-    // Set to online by default when viewing the page
     isCurrentlyOnline = false;
-    toggleOnlineStatus(); // This will set the user online
+    toggleOnlineStatus();
 }
 
-// Initialize status check
-checkCurrentStatus();
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default tab to overview
+    switchTab('overview');
+    
+    // Initialize status check
+    checkCurrentStatus();
+});
 </script>
 
 {% endblock %} 

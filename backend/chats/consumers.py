@@ -851,9 +851,528 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
         }))
     
     async def call_invitation_cancelled(self, event):
-        """Handle call invitation cancelled notification."""
+        """Forward call invitation cancelled notification"""
         await self.send(text_data=json.dumps({
             'type': 'call_invitation_cancelled',
             'invitation_id': event['invitation_id'],
             'canceller_username': event['canceller_username']
-        })) 
+        }))
+
+class TextChatConsumer(AsyncWebsocketConsumer):
+    """WebSocket consumer specifically for text chat functionality."""
+    
+    async def connect(self):
+        self.room_id = self.scope['url_route']['kwargs']['room_id']
+        self.room_group_name = f'text_chat_{self.room_id}'
+        self.user = self.scope['user']
+        
+        print(f"Text chat connection attempt for room: {self.room_id}")
+        print(f"User: {self.user}")
+        
+        # Accept connection first
+        await self.accept()
+        
+        # Check authentication
+        if not self.user.is_authenticated:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Authentication required'
+            }))
+            await self.close()
+            return
+        
+        # Verify user has access to this chat room
+        has_access = await self.check_chat_room_access()
+        if not has_access:
+            await self.send(text_data=json.dumps({
+                'type': 'error', 
+                'message': 'Chat room access denied'
+            }))
+            await self.close()
+            return
+        
+        # Join room group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        
+        print(f"User {self.user.username} joined text chat room group")
+        
+        # Update user's online status for this room
+        await self.set_user_online()
+        
+        # Notify room that user joined
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'user_joined',
+                'user_id': self.user.id,
+                'username': self.user.username,
+                'room_id': self.room_id
+            }
+        )
+        
+        # Send connection confirmation
+        await self.send(text_data=json.dumps({
+            'type': 'connected',
+            'message': 'Connected to text chat',
+            'room_id': self.room_id,
+            'user_id': self.user.id
+        }))
+
+    async def disconnect(self, close_code):
+        print(f"Text chat disconnected with code: {close_code}")
+        
+        # Set user offline and stop typing
+        await self.set_user_offline()
+        await self.stop_typing()
+        
+        # Notify room that user left
+        if hasattr(self, 'user') and hasattr(self, 'room_group_name') and self.user.is_authenticated:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'user_left',
+                    'user_id': self.user.id,
+                    'username': self.user.username,
+                    'room_id': self.room_id
+                }
+            )
+        
+        # Leave room group
+        if hasattr(self, 'room_group_name'):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
+
+    async def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+            message_type = data.get('type')
+            
+            print(f"Received message type: {message_type} from user: {self.user.username}")
+            
+            if message_type == 'send_message':
+                await self.handle_send_message(data)
+            elif message_type == 'edit_message':
+                await self.handle_edit_message(data)
+            elif message_type == 'mark_messages_read':
+                await self.handle_mark_messages_read(data)
+            elif message_type == 'typing_start':
+                await self.handle_typing_start(data)
+            elif message_type == 'typing_stop':
+                await self.handle_typing_stop(data)
+            elif message_type == 'load_messages':
+                await self.handle_load_messages(data)
+            elif message_type == 'ping':
+                await self.send(text_data=json.dumps({
+                    'type': 'pong',
+                    'timestamp': data.get('timestamp')
+                }))
+            else:
+                print(f"Unknown message type: {message_type}")
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': f'Unknown message type: {message_type}'
+                }))
+                
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error: {e}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Invalid JSON data'
+            }))
+        except Exception as e:
+            print(f"Error in receive: {e}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f'Server error: {str(e)}'
+            }))
+
+    async def handle_send_message(self, data):
+        """Handle sending a new text message."""
+        message_content = data.get('message', '').strip()
+        reply_to_id = data.get('reply_to')
+        
+        if not message_content:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Empty message content'
+            }))
+            return
+            
+        # Validate message length
+        if len(message_content) > 1000:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Message too long (max 1000 characters)'
+            }))
+            return
+        
+        try:
+            # Save message to database
+            message_obj = await self.save_chat_message(message_content, reply_to_id)
+            
+            # Stop typing indicator
+            await self.stop_typing()
+            
+            if message_obj:
+                # Update room activity
+                await self.update_room_activity()
+                
+                # Broadcast to room
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'new_message',
+                        'message_id': message_obj.id,
+                        'content': message_content,
+                        'sender_id': self.user.id,
+                        'sender_username': self.user.username,
+                        'timestamp': message_obj.timestamp.isoformat(),
+                        'reply_to': reply_to_id,
+                        'room_id': self.room_id
+                    }
+                )
+            else:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Failed to save message'
+                }))
+                
+        except Exception as e:
+            print(f"Error handling send message: {e}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Failed to send message'
+            }))
+
+    async def handle_edit_message(self, data):
+        """Handle editing an existing message."""
+        message_id = data.get('message_id')
+        new_content = data.get('content', '').strip()
+        
+        if not message_id or not new_content:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Invalid edit request'
+            }))
+            return
+        
+        try:
+            success = await self.edit_chat_message(message_id, new_content)
+            if success:
+                # Broadcast edit to room
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'message_edited',
+                        'message_id': message_id,
+                        'new_content': new_content,
+                        'editor_id': self.user.id,
+                        'editor_username': self.user.username,
+                        'room_id': self.room_id
+                    }
+                )
+            else:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Failed to edit message'
+                }))
+        except Exception as e:
+            print(f"Error handling edit message: {e}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Failed to edit message'
+            }))
+
+    async def handle_mark_messages_read(self, data):
+        """Handle marking messages as read."""
+        message_ids = data.get('message_ids', [])
+        if message_ids:
+            await self.mark_messages_read(message_ids)
+
+    async def handle_typing_start(self, data):
+        """Handle typing start notification."""
+        await self.set_typing_status(True)
+        
+        # Broadcast typing status to others in room
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'typing_start',
+                'user_id': self.user.id,
+                'username': self.user.username,
+                'room_id': self.room_id
+            }
+        )
+
+    async def handle_typing_stop(self, data):
+        """Handle typing stop notification."""
+        await self.set_typing_status(False)
+        
+        # Broadcast typing status to others in room
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'typing_stop',
+                'user_id': self.user.id,
+                'username': self.user.username,
+                'room_id': self.room_id
+            }
+        )
+
+    async def handle_load_messages(self, data):
+        """Handle loading message history."""
+        page = data.get('page', 1)
+        page_size = data.get('page_size', 50)
+        
+        messages = await self.get_message_history(page, page_size)
+        
+        await self.send(text_data=json.dumps({
+            'type': 'message_history',
+            'messages': messages,
+            'page': page
+        }))
+
+    # Group message handlers (events sent TO clients)
+    async def user_joined(self, event):
+        """Send user joined notification to client."""
+        await self.send(text_data=json.dumps({
+            'type': 'user_joined',
+            'user_id': event['user_id'],
+            'username': event['username'],
+            'room_id': event.get('room_id', self.room_id)
+        }))
+
+    async def user_left(self, event):
+        """Send user left notification to client."""
+        await self.send(text_data=json.dumps({
+            'type': 'user_left',
+            'user_id': event['user_id'],
+            'username': event['username'],
+            'room_id': event.get('room_id', self.room_id)
+        }))
+
+    async def new_message(self, event):
+        """Forward new message to clients."""
+        await self.send(text_data=json.dumps({
+            'type': 'new_message',
+            'message_id': event['message_id'],
+            'content': event['content'],
+            'sender_id': event['sender_id'],
+            'sender_username': event['sender_username'],
+            'timestamp': event['timestamp'],
+            'reply_to': event.get('reply_to'),
+            'room_id': event.get('room_id', self.room_id)
+        }))
+
+    async def message_edited(self, event):
+        """Forward message edit to clients."""
+        await self.send(text_data=json.dumps({
+            'type': 'message_edited',
+            'message_id': event['message_id'],
+            'new_content': event['new_content'],
+            'editor_id': event['editor_id'],
+            'editor_username': event['editor_username'],
+            'room_id': event.get('room_id', self.room_id)
+        }))
+
+    async def typing_start(self, event):
+        """Forward typing start notification to other users."""
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'typing_start',
+                'user_id': event['user_id'],
+                'username': event['username'],
+                'room_id': event.get('room_id', self.room_id)
+            }))
+
+    async def typing_stop(self, event):
+        """Forward typing stop notification to other users."""
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'typing_stop',
+                'user_id': event['user_id'],
+                'username': event['username'],
+                'room_id': event.get('room_id', self.room_id)
+            }))
+
+    # Database operations
+    @database_sync_to_async
+    def check_chat_room_access(self):
+        """Check if user has access to the chat room."""
+        try:
+            from .models import ChatRoom
+            
+            room = ChatRoom.objects.get(room_id=self.room_id)
+            return room.can_user_access(self.user)
+        except ChatRoom.DoesNotExist:
+            return False
+        except Exception as e:
+            print(f"Error checking chat room access: {e}")
+            return False
+
+    @database_sync_to_async
+    def save_chat_message(self, content, reply_to_id=None):
+        """Save chat message to database."""
+        try:
+            from .models import ChatRoom, ChatMessage
+            
+            room = ChatRoom.objects.get(room_id=self.room_id)
+            
+            reply_to = None
+            if reply_to_id:
+                try:
+                    reply_to = ChatMessage.objects.get(id=reply_to_id, room=room)
+                except ChatMessage.DoesNotExist:
+                    pass
+            
+            message = ChatMessage.objects.create(
+                room=room,
+                sender=self.user,
+                content=content,
+                reply_to=reply_to
+            )
+            print(f"Saved chat message: {message.id}")
+            return message
+            
+        except Exception as e:
+            print(f"Error saving chat message: {e}")
+            return None
+
+    @database_sync_to_async
+    def edit_chat_message(self, message_id, new_content):
+        """Edit a chat message."""
+        try:
+            from .models import ChatMessage
+            
+            message = ChatMessage.objects.get(
+                id=message_id,
+                sender=self.user,
+                room__room_id=self.room_id
+            )
+            
+            if message.can_edit(self.user):
+                message.edit_content(new_content)
+                return True
+            return False
+            
+        except ChatMessage.DoesNotExist:
+            return False
+        except Exception as e:
+            print(f"Error editing chat message: {e}")
+            return False
+
+    @database_sync_to_async
+    def mark_messages_read(self, message_ids):
+        """Mark messages as read."""
+        try:
+            from .models import ChatMessage
+            
+            ChatMessage.objects.filter(
+                id__in=message_ids,
+                room__room_id=self.room_id
+            ).exclude(sender=self.user).update(is_read=True)
+            
+        except Exception as e:
+            print(f"Error marking messages as read: {e}")
+
+    @database_sync_to_async
+    def get_message_history(self, page=1, page_size=50):
+        """Get message history for the chat room."""
+        try:
+            from django.core.paginator import Paginator
+            from .models import ChatRoom, ChatMessage
+            
+            room = ChatRoom.objects.get(room_id=self.room_id)
+            all_messages = room.messages.select_related('sender', 'reply_to__sender').order_by('-timestamp')
+            
+            paginator = Paginator(all_messages, page_size)
+            page_obj = paginator.get_page(page)
+            
+            messages = []
+            for message in reversed(page_obj.object_list):
+                message_data = {
+                    'id': message.id,
+                    'content': message.content,
+                    'sender_id': message.sender.id,
+                    'sender_username': message.sender.username,
+                    'timestamp': message.timestamp.isoformat(),
+                    'is_read': message.is_read,
+                    'edited_at': message.edited_at.isoformat() if message.edited_at else None,
+                    'message_type': message.message_type,
+                    'reply_to': {
+                        'id': message.reply_to.id,
+                        'content': message.reply_to.content[:50] + '...' if len(message.reply_to.content) > 50 else message.reply_to.content,
+                        'sender_username': message.reply_to.sender.username
+                    } if message.reply_to else None
+                }
+                messages.append(message_data)
+            
+            return messages
+            
+        except Exception as e:
+            print(f"Error getting message history: {e}")
+            return []
+
+    @database_sync_to_async
+    def set_typing_status(self, is_typing):
+        """Set typing status for the user."""
+        try:
+            from .models import ChatRoom, TypingStatus
+            
+            room = ChatRoom.objects.get(room_id=self.room_id)
+            TypingStatus.set_typing(room, self.user, is_typing)
+            
+        except Exception as e:
+            print(f"Error setting typing status: {e}")
+
+    @database_sync_to_async
+    def stop_typing(self):
+        """Stop typing for the user."""
+        try:
+            from .models import ChatRoom, TypingStatus
+            
+            room = ChatRoom.objects.get(room_id=self.room_id)
+            TypingStatus.set_typing(room, self.user, False)
+            
+        except Exception as e:
+            print(f"Error stopping typing: {e}")
+
+    @database_sync_to_async
+    def set_user_online(self):
+        """Set user as online for this chat room."""
+        try:
+            from .models import UserPresence, ChatRoom
+            
+            room = ChatRoom.objects.get(room_id=self.room_id)
+            UserPresence.update_presence(self.user, is_online=True)
+            
+        except Exception as e:
+            print(f"Error setting user online: {e}")
+
+    @database_sync_to_async
+    def set_user_offline(self):
+        """Set user as offline."""
+        try:
+            from .models import UserPresence
+            
+            UserPresence.update_presence(self.user, is_online=False)
+            
+        except Exception as e:
+            print(f"Error setting user offline: {e}")
+
+    @database_sync_to_async
+    def update_room_activity(self):
+        """Update the room's last activity timestamp."""
+        try:
+            from .models import ChatRoom
+            
+            room = ChatRoom.objects.get(room_id=self.room_id)
+            room.update_activity()
+            
+        except Exception as e:
+            print(f"Error updating room activity: {e}") 

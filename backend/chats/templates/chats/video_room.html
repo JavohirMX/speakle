@@ -100,13 +100,6 @@
     .control-btn.call-end {
         background: linear-gradient(135deg, #ef4444, #dc2626);
         box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
-        50% { box-shadow: 0 4px 25px rgba(239, 68, 68, 0.8); }
-        100% { box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
     }
     
     .control-btn:hover {
@@ -181,40 +174,6 @@
         100% { transform: scale(1); }
     }
     
-    .connection-status {
-        position: fixed;
-        top: 24px;
-        left: 24px;
-        background: rgba(0,0,0,0.9);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 25px;
-        font-size: 14px;
-        font-weight: 500;
-        z-index: 1000;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    
-    .status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 10px;
-        animation: pulse-dot 2s infinite;
-    }
-    
-    @keyframes pulse-dot {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    
-    .status-connected { background: #10b981; }
-    .status-connecting { background: #f59e0b; }
-    .status-disconnected { background: #ef4444; }
-    
     .video-info {
         position: absolute;
         top: 16px;
@@ -225,19 +184,6 @@
         border-radius: 20px;
         font-size: 12px;
         backdrop-filter: blur(10px);
-    }
-    
-    .participant-count {
-        position: fixed;
-        top: 24px;
-        right: 24px;
-        background: rgba(16, 185, 129, 0.9);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: 500;
-        z-index: 1000;
     }
     
     .loading-overlay {
@@ -517,17 +463,6 @@
 
 {% block content %}
 <div class="min-h-screen bg-gray-900 relative">
-    <!-- Connection Status -->
-    <div id="connectionStatus" class="connection-status">
-        <span class="status-dot status-disconnected" id="statusDot"></span>
-        <span id="statusText">Connecting...</span>
-    </div>
-    
-    <!-- Participant Count -->
-    <div id="participantCount" class="participant-count" style="display: none;">
-        <span id="participantText">1 participant</span>
-    </div>
-
     <!-- Back Button -->
     <div class="absolute top-6 right-6 z-50">
         <a href="{% url 'matches:match_detail' match.id %}" 
@@ -555,7 +490,6 @@
                 </div>
                 <div class="text-right">
                     <div id="callTimer" class="text-sm font-mono">00:00</div>
-                    <div id="connectionQuality" class="text-xs opacity-75 mt-1">Good</div>
                 </div>
             </div>
             <div class="video-info">
@@ -759,7 +693,6 @@ class VideoChat {
         this.isAutoStarting = false;
         this.callStartTime = null;
         this.timerInterval = null;
-        this.participantCount = 1;
         this.connectionState = 'new';
         this.isVideoEnabled = true;
         this.isAudioEnabled = true;
@@ -800,14 +733,9 @@ class VideoChat {
         this.chatMessages = document.getElementById('chatMessages');
         this.chatInput = document.getElementById('chatInput');
         this.sendChatBtn = document.getElementById('sendChatBtn');
-        this.statusDot = document.getElementById('statusDot');
-        this.statusText = document.getElementById('statusText');
         this.callTimer = document.getElementById('callTimer');
         this.loadingOverlay = document.getElementById('loadingOverlay');
         this.loadingStatus = document.getElementById('loadingStatus');
-        this.participantCountEl = document.getElementById('participantCount');
-        this.participantText = document.getElementById('participantText');
-        this.connectionQuality = document.getElementById('connectionQuality');
         this.localVideoStatus = document.getElementById('localVideoStatus');
         this.remoteVideoStatus = document.getElementById('remoteVideoStatus');
     }
@@ -964,7 +892,6 @@ class VideoChat {
         this.ws.onclose = (event) => {
             console.log('WebSocket connection closed:', event.code, event.reason);
             this.updateStatus('Disconnected', 'disconnected');
-            this.participantCountEl.style.display = 'none';
             
             // Attempt to reconnect after 3 seconds
             setTimeout(() => {
@@ -998,8 +925,6 @@ class VideoChat {
             case 'user_joined':
                 if (data.user_id !== this.userId) {
                     this.addChatMessage(`${data.username} joined the room`, 'system');
-                    this.participantCount += 1;
-                    this.updateParticipantCount();
                     // Automatically signal readiness when someone joins and we have media ready
                     if (this.localStream && !this.isCallActive) {
                         console.log('New user joined and we have media ready, signaling peer ready');
@@ -1010,8 +935,6 @@ class VideoChat {
             case 'user_left':
                 if (data.user_id !== this.userId) {
                     this.addChatMessage(`${data.username} left the room`, 'system');
-                    this.participantCount -= 1;
-                    this.updateParticipantCount();
                     this.showRemoteVideoPlaceholder();
                     this.resetPeerConnection();
                 }
@@ -1114,11 +1037,6 @@ class VideoChat {
         }
     }
     
-    updateParticipantCount() {
-        this.participantText.textContent = `${this.participantCount} participant${this.participantCount !== 1 ? 's' : ''}`;
-        this.participantCountEl.style.display = this.participantCount > 1 ? 'block' : 'none';
-    }
-    
     signalPeerReady() {
         // Only signal if WebSocket is connected
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -1139,7 +1057,7 @@ class VideoChat {
         console.log('Peer ready signal received from:', data.sender_username);
         
         // If we have media ready and no active call, decide who should initiate
-        if (this.localStream && !this.isCallActive && !this.isAutoStarting && this.participantCount > 1) {
+        if (this.localStream && !this.isCallActive && !this.isAutoStarting) {
             // Use user IDs to deterministically decide who should initiate (higher ID initiates)
             const shouldInitiate = this.userId > data.sender_id;
             
@@ -1190,7 +1108,6 @@ class VideoChat {
         this.stopTimer();
         this.isAutoStarting = false;
         this.updateCallButtons();
-        this.updateStatus('Call ended', 'connected');
     }
     
     async startCall() {
@@ -1234,7 +1151,6 @@ class VideoChat {
             this.callStartTime = Date.now();
             this.startTimer();
             this.updateCallButtons();
-            this.updateStatus('Call in progress', 'connected');
             this.addChatMessage('📞 Call started', 'system');
             
         } catch (error) {
@@ -1480,7 +1396,6 @@ class VideoChat {
         this.pc.onconnectionstatechange = () => {
             console.log('Connection state changed to:', this.pc.connectionState);
             this.connectionState = this.pc.connectionState;
-            this.updateConnectionQuality();
             
             switch (this.pc.connectionState) {
                 case 'connected':
@@ -1527,12 +1442,6 @@ class VideoChat {
         this.pc.onsignalingstatechange = () => {
             console.log('Signaling state changed to:', this.pc.signalingState);
         };
-    }
-    
-    updateConnectionQuality() {
-        const quality = this.connectionState === 'connected' ? 'Good' : 
-                       this.connectionState === 'connecting' ? 'Connecting' : 'Poor';
-        this.connectionQuality.textContent = quality;
     }
     
     async handleOffer(data) {
@@ -1873,8 +1782,7 @@ class VideoChat {
     }
     
     updateStatus(text, status) {
-        this.statusText.textContent = text;
-        this.statusDot.className = `status-dot status-${status}`;
+        console.log('Status update:', text, status);
     }
     
     updateCallButtons() {

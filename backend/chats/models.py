@@ -188,3 +188,116 @@ class RoomMessage(models.Model):
     
     def __str__(self):
         return f"Message from {self.sender.username} in {self.room.room_id}"
+
+class ChatRoom(models.Model):
+    """Model for text-only chat rooms linked to matches."""
+    match = models.OneToOneField(Match, on_delete=models.CASCADE, related_name='chat_room')
+    room_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Chat Room {self.room_id} for {self.match}"
+    
+    def get_participants(self):
+        """Get the two users who can access this room."""
+        return [self.match.user1, self.match.user2]
+    
+    def can_user_access(self, user):
+        """Check if a user has access to this room."""
+        return user in self.get_participants()
+    
+    def get_partner(self, user):
+        """Get the partner of the given user in this chat room."""
+        return self.match.get_partner(user)
+    
+    def update_activity(self):
+        """Update last activity timestamp."""
+        self.last_activity = timezone.now()
+        self.save(update_fields=['last_activity'])
+
+class ChatMessage(models.Model):
+    """Enhanced model for text chat messages."""
+    MESSAGE_TYPE_CHOICES = [
+        ('text', 'Text Message'),
+        ('image', 'Image'),
+        ('file', 'File'),
+        ('system', 'System Message'),
+    ]
+    
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_chat_messages')
+    content = models.TextField()
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPE_CHOICES, default='text')
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    is_read = models.BooleanField(default=False, db_index=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies')
+    
+    # File/Image fields (for future enhancement)
+    file_attachment = models.FileField(upload_to='chat_files/', null=True, blank=True)
+    image_attachment = models.ImageField(upload_to='chat_images/', null=True, blank=True)
+    
+    class Meta:
+        ordering = ['timestamp']
+        indexes = [
+            models.Index(fields=['room', 'timestamp'], name='room_timestamp_idx'),
+            models.Index(fields=['sender', 'timestamp'], name='sender_timestamp_idx'),
+            models.Index(fields=['room', 'is_read'], name='room_unread_idx'),
+        ]
+    
+    def __str__(self):
+        return f"Message from {self.sender.username} in {self.room.room_id}"
+    
+    def mark_as_read(self):
+        """Mark this message as read."""
+        if not self.is_read:
+            self.is_read = True
+            self.save(update_fields=['is_read'])
+    
+    def can_edit(self, user):
+        """Check if a user can edit this message."""
+        return self.sender == user and self.message_type == 'text'
+    
+    def edit_content(self, new_content):
+        """Edit the message content."""
+        self.content = new_content
+        self.edited_at = timezone.now()
+        self.save(update_fields=['content', 'edited_at'])
+
+class TypingStatus(models.Model):
+    """Track user typing status in chat rooms."""
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='typing_statuses')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    is_typing = models.BooleanField(default=False)
+    last_typed = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['room', 'user']
+        indexes = [
+            models.Index(fields=['room', 'is_typing'], name='room_typing_idx'),
+        ]
+    
+    def __str__(self):
+        status = "typing" if self.is_typing else "not typing"
+        return f"{self.user.username} is {status} in {self.room.room_id}"
+    
+    @classmethod
+    def set_typing(cls, room, user, is_typing=True):
+        """Set typing status for a user in a room."""
+        typing_status, created = cls.objects.get_or_create(
+            room=room, user=user,
+            defaults={'is_typing': is_typing}
+        )
+        if not created:
+            typing_status.is_typing = is_typing
+            typing_status.save(update_fields=['is_typing', 'last_typed'])
+        return typing_status
+    
+    @classmethod
+    def get_typing_users(cls, room, exclude_user=None):
+        """Get users currently typing in a room."""
+        queryset = cls.objects.filter(room=room, is_typing=True).select_related('user')
+        if exclude_user:
+            queryset = queryset.exclude(user=exclude_user)
+        return [status.user for status in queryset]

@@ -32,4 +32,16 @@ urlpatterns = [
     
     # Call summary
     path('summary/<uuid:room_id>/<int:session_id>/', views.call_summary, name='call_summary'),
+    
+    # Text Chat URLs
+    path('', views.chat_list, name='chat_list'),
+    path('create-chat/<int:match_id>/', views.create_chat_room, name='create_chat_room'),
+    path('text/<uuid:room_id>/', views.text_chat, name='text_chat'),
+    path('api/chat-url/<int:match_id>/', views.get_chat_room_url, name='get_chat_room_url'),
+    path('api/messages/<uuid:room_id>/', views.get_chat_messages, name='get_chat_messages'),
+    path('api/send-message/<uuid:room_id>/', views.send_chat_message, name='send_chat_message'),
+    path('api/edit-message/<int:message_id>/', views.edit_chat_message, name='edit_chat_message'),
+    path('api/mark-read/<uuid:room_id>/', views.mark_messages_read, name='mark_messages_read'),
+    path('api/unread-count/<uuid:room_id>/', views.get_unread_count, name='get_unread_count'),
+    path('api/total-unread-count/', views.get_total_unread_count, name='get_total_unread_count'),
 ] 

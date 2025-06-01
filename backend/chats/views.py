@@ -9,7 +9,7 @@ from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from matches.models import Match
-from .models import VideoRoom, CallSession, CallInvitation, UserPresence
+from .models import VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
 import uuid
 from django.db import transaction
 
@@ -631,7 +631,7 @@ def call_summary(request, room_id, session_id):
 @login_required
 @require_POST
 def submit_feedback(request):
-    """Submit feedback for a call session."""
+    """Submit feedback about the call experience."""
     try:
         import json
         data = json.loads(request.body)
@@ -681,3 +681,366 @@ def submit_feedback(request):
         return JsonResponse({'error': 'Room not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+# Text Chat Views
+@login_required
+def create_chat_room(request, match_id):
+    """Create or get existing chat room for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    
+    # Get or create chat room
+    chat_room, created = ChatRoom.objects.get_or_create(match=match)
+    
+    if created:
+        messages.success(request, 'Chat room created successfully!')
+    
+    return redirect('chats:text_chat', room_id=chat_room.room_id)
+
+@login_required
+def text_chat(request, room_id):
+    """Text chat interface."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        # Check if user has access to this room
+        if not room.can_user_access(request.user):
+            messages.error(request, 'You do not have access to this chat room.')
+            return redirect('matches:my_matches')
+        
+        # Get partner and match info
+        partner = room.get_partner(request.user)
+        match = room.match
+        
+        # Get recent messages (last 50)
+        recent_messages = room.messages.select_related('sender', 'reply_to__sender').order_by('-timestamp')[:50]
+        recent_messages = list(reversed(recent_messages))
+        
+        # Mark messages from partner as read
+        unread_messages = room.messages.filter(sender=partner, is_read=False)
+        unread_messages.update(is_read=True)
+        
+        # Update room activity
+        room.update_activity()
+        
+        context = {
+            'room': room,
+            'match': match,
+            'partner': partner,
+            'recent_messages': recent_messages,
+            'room_id': str(room.room_id),
+            'user_teaches': match.get_user_teaches(request.user),
+            'user_learns': match.get_user_learns(request.user),
+        }
+        
+        return render(request, 'chats/text_chat.html', context)
+        
+    except ChatRoom.DoesNotExist:
+        messages.error(request, 'Chat room not found.')
+        return redirect('matches:my_matches')
+
+@login_required
+def get_chat_room_url(request, match_id):
+    """API endpoint to get chat room URL for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Get or create chat room
+    chat_room, created = ChatRoom.objects.get_or_create(match=match)
+    
+    return JsonResponse({
+        'success': True,
+        'chat_url': f'/chats/text/{chat_room.room_id}/',
+        'room_id': str(chat_room.room_id),
+        'created': created
+    })
+
+@login_required
+def get_chat_messages(request, room_id):
+    """API endpoint to get chat messages with pagination."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Get pagination parameters
+        page = int(request.GET.get('page', 1))
+        page_size = min(int(request.GET.get('page_size', 50)), 100)  # Max 100 messages per request
+        
+        # Get messages with pagination
+        from django.core.paginator import Paginator
+        all_messages = room.messages.select_related('sender', 'reply_to__sender').order_by('-timestamp')
+        paginator = Paginator(all_messages, page_size)
+        page_obj = paginator.get_page(page)
+        
+        message_data = []
+        for message in reversed(page_obj.object_list):
+            message_info = {
+                'id': message.id,
+                'content': message.content,
+                'sender_id': message.sender.id,
+                'sender_username': message.sender.username,
+                'timestamp': message.timestamp.isoformat(),
+                'is_read': message.is_read,
+                'edited_at': message.edited_at.isoformat() if message.edited_at else None,
+                'message_type': message.message_type,
+                'is_own_message': message.sender == request.user
+            }
+            
+            # Add reply_to information if exists
+            if message.reply_to:
+                message_info['reply_to'] = {
+                    'id': message.reply_to.id,
+                    'content': message.reply_to.content[:50] + '...' if len(message.reply_to.content) > 50 else message.reply_to.content,
+                    'sender_username': message.reply_to.sender.username
+                }
+            
+            message_data.append(message_info)
+        
+        return JsonResponse({
+            'success': True,
+            'messages': message_data,
+            'page': page,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            'total_pages': paginator.num_pages
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+@require_POST
+def send_chat_message(request, room_id):
+    """API endpoint to send a chat message."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        content = request.POST.get('content', '').strip()
+        reply_to_id = request.POST.get('reply_to')
+        
+        if not content:
+            return JsonResponse({'error': 'Message content is required'}, status=400)
+        
+        if len(content) > 1000:
+            return JsonResponse({'error': 'Message too long (max 1000 characters)'}, status=400)
+        
+        # Handle reply_to
+        reply_to = None
+        if reply_to_id:
+            try:
+                reply_to = ChatMessage.objects.get(id=reply_to_id, room=room)
+            except ChatMessage.DoesNotExist:
+                return JsonResponse({'error': 'Reply message not found'}, status=400)
+        
+        # Create message
+        message = ChatMessage.objects.create(
+            room=room,
+            sender=request.user,
+            content=content,
+            reply_to=reply_to
+        )
+        
+        # Update room activity
+        room.update_activity()
+        
+        # Send real-time notification to partner via WebSocket
+        partner = room.get_partner(request.user)
+        send_user_notification(partner.id, 'new_chat_message', {
+            'room_id': str(room.room_id),
+            'message_id': message.id,
+            'content': content,
+            'sender_username': request.user.username,
+            'timestamp': message.timestamp.isoformat(),
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'message_id': message.id,
+            'timestamp': message.timestamp.isoformat()
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+@require_POST
+def edit_chat_message(request, message_id):
+    """API endpoint to edit a chat message."""
+    try:
+        message = ChatMessage.objects.get(id=message_id, sender=request.user)
+        
+        new_content = request.POST.get('content', '').strip()
+        
+        if not new_content:
+            return JsonResponse({'error': 'Message content is required'}, status=400)
+        
+        if not message.can_edit(request.user):
+            return JsonResponse({'error': 'Cannot edit this message'}, status=403)
+        
+        message.edit_content(new_content)
+        
+        # Send real-time notification about edit
+        partner = message.room.get_partner(request.user)
+        send_user_notification(partner.id, 'message_edited', {
+            'room_id': str(message.room.room_id),
+            'message_id': message.id,
+            'new_content': new_content,
+            'editor_username': request.user.username,
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'edited_at': message.edited_at.isoformat()
+        })
+        
+    except ChatMessage.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+@login_required
+@require_POST
+def mark_messages_read(request, room_id):
+    """API endpoint to mark messages as read."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Mark all unread messages from partner as read
+        partner = room.get_partner(request.user)
+        unread_count = room.messages.filter(sender=partner, is_read=False).update(is_read=True)
+        
+        return JsonResponse({
+            'success': True,
+            'marked_read': unread_count
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+def get_unread_count(request, room_id):
+    """API endpoint to get unread message count."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Count unread messages from partner
+        partner = room.get_partner(request.user)
+        unread_count = room.messages.filter(sender=partner, is_read=False).count()
+        
+        return JsonResponse({
+            'success': True,
+            'unread_count': unread_count
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+def chat_list(request):
+    """Display list of all chat rooms for the user."""
+    from django.db.models import Count, Q
+    
+    # Get all matches for the user
+    user_matches = Match.objects.filter(
+        Q(user1=request.user) | Q(user2=request.user),
+        status='active'
+    ).select_related('user1', 'user2')
+    
+    # Get chat rooms with message counts and last message info
+    chat_rooms = []
+    for match in user_matches:
+        try:
+            room = match.chat_room
+            partner = match.get_partner(request.user)
+            
+            # Get unread count
+            unread_count = room.messages.filter(
+                sender=partner, 
+                is_read=False
+            ).count()
+            
+            # Get last message
+            last_message = room.messages.order_by('-timestamp').first()
+            
+            chat_rooms.append({
+                'room': room,
+                'match': match,
+                'partner': partner,
+                'unread_count': unread_count,
+                'last_message': last_message,
+                'last_activity': room.last_activity,
+            })
+        except ChatRoom.DoesNotExist:
+            # Create chat room for matches that don't have one yet
+            room = ChatRoom.objects.create(match=match)
+            partner = match.get_partner(request.user)
+            
+            chat_rooms.append({
+                'room': room,
+                'match': match,
+                'partner': partner,
+                'unread_count': 0,
+                'last_message': None,
+                'last_activity': room.last_activity,
+            })
+    
+    # Sort by last activity (most recent first)
+    chat_rooms.sort(key=lambda x: x['last_activity'], reverse=True)
+    
+    context = {
+        'chat_rooms': chat_rooms,
+        'total_unread': sum(room['unread_count'] for room in chat_rooms)
+    }
+    
+    return render(request, 'chats/chat_list.html', context)
+
+@login_required
+def get_total_unread_count(request):
+    """API endpoint to get total unread message count across all chats."""
+    from django.db.models import Count, Q
+    
+    # Get all active matches for the user
+    user_matches = Match.objects.filter(
+        Q(user1=request.user) | Q(user2=request.user),
+        status='active'
+    ).select_related('user1', 'user2')
+    
+    total_unread = 0
+    
+    for match in user_matches:
+        try:
+            room = match.chat_room
+            partner = match.get_partner(request.user)
+            
+            # Count unread messages from partner
+            unread_count = room.messages.filter(
+                sender=partner, 
+                is_read=False
+            ).count()
+            
+            total_unread += unread_count
+            
+        except ChatRoom.DoesNotExist:
+            # No chat room yet, so no unread messages
+            continue
+    
+    return JsonResponse({
+        'success': True,
+        'unread_count': total_unread
+    })
