@@ -994,7 +994,7 @@ class VideoChat {
                                 callDuration: data.session_summary.duration,
                                 endNotes: data.end_notes
                             });
-                        }, 1000);
+                        }, 100);
                     }
                 } else {
                     // This is the user who ended the call, they already saw the modal
@@ -1006,7 +1006,7 @@ class VideoChat {
                     setTimeout(() => {
                         console.log('Redirecting to call summary:', data.redirect_url);
                         window.location.href = data.redirect_url;
-                    }, 3000); // 3 second delay to allow users to see the summary modal
+                    }, 100); // 3 second delay to allow users to see the summary modal
                 }
                 break;
             case 'video_status_change':
@@ -1229,7 +1229,7 @@ class VideoChat {
                     console.log('Redirecting call initiator to summary page:', summaryUrl);
                     setTimeout(() => {
                         window.location.href = summaryUrl;
-                    }, 1500); // Shorter delay for the person who ended the call
+                    }, 100); // Shorter delay for the person who ended the call
                 } else {
                     console.warn('No session summary available for redirect');
                 }
