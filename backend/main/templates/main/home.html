@@ -1,0 +1,709 @@
+{% extends 'base.html' %}
+
+{% block title %}Speakle - Find Your Perfect Language Exchange Partner{% endblock %}
+
+{% block meta_description %}Find your perfect language exchange partner on Speakle. Practice speaking with native speakers worldwide through video chat. Join thousands of learners improving their language skills naturally.{% endblock %}
+
+{% block extra_css %}
+
+    /* Hero section enhancements */
+    .hero-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+        background-size: 300% 300%;
+        animation: gradientShift 8s ease infinite;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a"><stop offset="0" stop-opacity=".1"/><stop offset="1" stop-opacity="0"/></radialGradient></defs><g opacity=".5"><circle fill="url(%23a)" cx="500" cy="300" r="400"/><circle fill="url(%23a)" cx="200" cy="700" r="300"/><circle fill="url(%23a)" cx="800" cy="600" r="350"/></g></svg>') center/cover;
+        opacity: 0.3;
+    }
+    
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+    
+    /* Card hover effects */
+    .feature-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(0);
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .feature-icon {
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    /* Language card animations */
+    .language-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .language-card:hover {
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .language-flag {
+        font-size: 2rem;
+        transition: all 0.3s ease;
+    }
+    
+    .language-card:hover .language-flag {
+        transform: scale(1.2);
+        filter: brightness(1.1);
+    }
+    
+    /* Step animations */
+    .step-number {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .step-number::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .step-number:hover::before {
+        left: 100%;
+    }
+    
+    /* Button enhancements */
+    .cta-button {
+        position: relative;
+        overflow: hidden;
+        transform: translateY(0);
+        transition: all 0.3s ease;
+    }
+    
+    .cta-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .cta-button:hover::before {
+        left: 100%;
+    }
+    
+    .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Scroll animations */
+    .fade-in-up {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.6s ease;
+    }
+    
+    .fade-in-up.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* Statistics counter */
+    .stat-number {
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Testimonial styles */
+    .testimonial-card {
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        border-left: 4px solid #667eea;
+    }
+    
+    /* Interactive elements */
+    .interactive-demo {
+        background: linear-gradient(135deg, #f6f9fc 0%, #e9ecef 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+    
+    .pulse-dot {
+        width: 12px;
+        height: 12px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Hero Section -->
+<section class="hero-bg text-white relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 relative z-10">
+        <div class="text-center">
+            <div class="mb-8">
+                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white border border-white border-opacity-30 backdrop-blur-sm">
+                    <span class="pulse-dot"></span>
+                    <span id="userCount">10,000+</span> active learners worldwide
+                </span>
+            </div>
+            
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                Connect. Learn. <span class="relative">
+                    <span class="text-yellow-300">Speak.</span>
+                    <svg class="absolute -bottom-2 left-0 w-full h-3" viewBox="0 0 200 12" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 8c66-6 131-6 190 0" stroke="#fde047" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    </svg>
+                </span>
+            </h1>
+            
+            <p class="text-lg sm:text-xl lg:text-2xl mb-8 max-w-4xl mx-auto leading-relaxed text-blue-50">
+                Join thousands of language learners worldwide. Find your perfect language exchange partner 
+                and practice speaking through real conversations via video chat.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                <a href="{% url 'users:register' %}" 
+                   class="cta-button bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-semibold hover:bg-yellow-300 transition text-lg w-full sm:w-auto focus-ring">
+                    Start Learning Today
+                    <span class="ml-2">🚀</span>
+                </a>
+                <a href="#how-it-works" 
+                   class="cta-button border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-blue-600 transition text-lg w-full sm:w-auto focus-ring">
+                    How It Works
+                    <span class="ml-2">👀</span>
+                </a>
+            </div>
+            
+            <!-- Quick stats -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto text-center">
+                <div class="p-4">
+                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-languages">50+</div>
+                    <div class="text-sm text-blue-100">Languages</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-countries">120+</div>
+                    <div class="text-sm text-blue-100">Countries</div>
+                </div>
+                <div class="p-4">
+                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-matches">1M+</div>
+                    <div class="text-sm text-blue-100">Successful Matches</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+        </svg>
+    </div>
+</section>
+
+<!-- Enhanced Features Section -->
+<section class="py-20 lg:py-28 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mb-4">
+                ✨ Why Choose Speakle?
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                The Most Effective Way to Learn
+            </h2>
+            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+                Experience natural language learning through real conversations with native speakers from around the world.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
+            <div class="feature-card text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all fade-in-up">
+                <div class="feature-icon w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <span class="text-4xl">🌍</span>
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-900">Global Community</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Connect with native speakers from over 120 countries. Practice with real people, not bots, and experience authentic cultural exchange.
+                </p>
+                <div class="mt-6 text-sm text-blue-600 font-medium">
+                    Join 10,000+ active learners →
+                </div>
+            </div>
+
+            <div class="feature-card text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all fade-in-up">
+                <div class="feature-icon w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <span class="text-4xl">💬</span>
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-900">HD Video Chat</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Practice speaking face-to-face through our crystal-clear video chat. Build confidence naturally with instant feedback and corrections.
+                </p>
+                <div class="mt-6 text-sm text-green-600 font-medium">
+                    Start speaking today →
+                </div>
+            </div>
+
+            <div class="feature-card text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all fade-in-up">
+                <div class="feature-icon w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <span class="text-4xl">🎯</span>
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-900">Smart Matching</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Our AI algorithm matches you with the perfect partner based on your language goals, interests, and learning style for optimal results.
+                </p>
+                <div class="mt-6 text-sm text-purple-600 font-medium">
+                    Find your match →
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced How It Works Section -->
+<section id="how-it-works" class="py-20 lg:py-28">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
+                🚀 Getting Started
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">How It Works</h2>
+            <p class="text-lg sm:text-xl text-gray-600">Get started in just 3 simple steps and start speaking within minutes</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 lg:gap-12 relative">
+            <!-- Connection lines for desktop -->
+            <div class="hidden md:block absolute top-20 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-blue-200 via-green-200 to-purple-200"></div>
+            
+            <div class="text-center fade-in-up">
+                <div class="step-number w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 text-2xl font-bold relative z-10">
+                    1
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-900">Create Your Profile</h3>
+                <p class="text-gray-600 leading-relaxed mb-6">
+                    Sign up and tell us about your native language, what you want to learn, your interests, and your learning goals.
+                </p>
+                <div class="interactive-demo">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600">👤</span>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-900">Complete profile setup</div>
+                            <div class="text-xs text-gray-500">Takes 2-3 minutes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center fade-in-up">
+                <div class="step-number w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 text-2xl font-bold relative z-10">
+                    2
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-900">Find Your Match</h3>
+                <p class="text-gray-600 leading-relaxed mb-6">
+                    Browse verified profiles and connect with speakers who want to learn your language while teaching you theirs.
+                </p>
+                <div class="interactive-demo">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <span class="text-green-600">🔍</span>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-900">Smart matching algorithm</div>
+                            <div class="text-xs text-gray-500">99% compatibility rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center fade-in-up">
+                <div class="step-number w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 text-2xl font-bold relative z-10">
+                    3
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-gray-900">Start Speaking</h3>
+                <p class="text-gray-600 leading-relaxed mb-6">
+                    Jump into HD video chats and start practicing! Learn naturally through real conversations with built-in tools.
+                </p>
+                <div class="interactive-demo">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <span class="text-purple-600">🎥</span>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-900">Instant video calls</div>
+                            <div class="text-xs text-gray-500">No downloads required</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced Languages Section -->
+<section class="py-20 lg:py-28 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 mb-4">
+                🌎 Popular Languages
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Learn Any Language</h2>
+            <p class="text-lg sm:text-xl text-gray-600">Practice with native speakers in these popular languages and many more</p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-12">
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇺🇸</div>
+                <p class="font-semibold text-gray-900 text-sm">English</p>
+                <p class="text-xs text-gray-500 mt-1">5.2k speakers</p>
+            </div>
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇪🇸</div>
+                <p class="font-semibold text-gray-900 text-sm">Spanish</p>
+                <p class="text-xs text-gray-500 mt-1">3.8k speakers</p>
+            </div>
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇫🇷</div>
+                <p class="font-semibold text-gray-900 text-sm">French</p>
+                <p class="text-xs text-gray-500 mt-1">2.1k speakers</p>
+            </div>
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇩🇪</div>
+                <p class="font-semibold text-gray-900 text-sm">German</p>
+                <p class="text-xs text-gray-500 mt-1">1.9k speakers</p>
+            </div>
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇮🇹</div>
+                <p class="font-semibold text-gray-900 text-sm">Italian</p>
+                <p class="text-xs text-gray-500 mt-1">1.5k speakers</p>
+            </div>
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇯🇵</div>
+                <p class="font-semibold text-gray-900 text-sm">Japanese</p>
+                <p class="text-xs text-gray-500 mt-1">2.3k speakers</p>
+            </div>
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇰🇷</div>
+                <p class="font-semibold text-gray-900 text-sm">Korean</p>
+                <p class="text-xs text-gray-500 mt-1">1.7k speakers</p>
+            </div>
+            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
+                <div class="language-flag mb-3">🇨🇳</div>
+                <p class="font-semibold text-gray-900 text-sm">Chinese</p>
+                <p class="text-xs text-gray-500 mt-1">2.8k speakers</p>
+            </div>
+        </div>
+        
+        <div class="text-center fade-in-up">
+            <p class="text-gray-600 mb-6">Don't see your language? We support 50+ languages with new ones added regularly.</p>
+            <a href="{% url 'users:register' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors focus-ring">
+                View All Languages
+                <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="py-20 lg:py-28">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-800 mb-4">
+                💬 Success Stories
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">What Our Users Say</h2>
+            <p class="text-lg sm:text-xl text-gray-600">Real stories from language learners who found success on Speakle</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        M
+                    </div>
+                    <div class="ml-3">
+                        <div class="font-semibold text-gray-900">Maria Rodriguez</div>
+                        <div class="text-sm text-gray-500">Learning English • Spain</div>
+                    </div>
+                </div>
+                <p class="text-gray-600 leading-relaxed">
+                    "I've improved my English so much in just 3 months! The video chats feel natural and my conversation partner is now a great friend."
+                </p>
+                <div class="flex mt-4 text-yellow-400">
+                    ⭐⭐⭐⭐⭐
+                </div>
+            </div>
+
+            <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                        J
+                    </div>
+                    <div class="ml-3">
+                        <div class="font-semibold text-gray-900">James Chen</div>
+                        <div class="text-sm text-gray-500">Learning Spanish • USA</div>
+                    </div>
+                </div>
+                <p class="text-gray-600 leading-relaxed">
+                    "The matching system is incredible. I found someone with similar interests and now we practice twice a week. My Spanish has never been better!"
+                </p>
+                <div class="flex mt-4 text-yellow-400">
+                    ⭐⭐⭐⭐⭐
+                </div>
+            </div>
+
+            <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                        A
+                    </div>
+                    <div class="ml-3">
+                        <div class="font-semibold text-gray-900">Akiko Tanaka</div>
+                        <div class="text-sm text-gray-500">Learning French • Japan</div>
+                    </div>
+                </div>
+                <p class="text-gray-600 leading-relaxed">
+                    "Speakle made learning French fun and social. I love how easy it is to schedule calls and the video quality is always perfect."
+                </p>
+                <div class="flex mt-4 text-yellow-400">
+                    ⭐⭐⭐⭐⭐
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enhanced CTA Section -->
+<section class="bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 text-white py-20 lg:py-28 relative overflow-hidden">
+    <div class="absolute inset-0 bg-black opacity-10"></div>
+    <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white border border-white border-opacity-30 backdrop-blur-sm mb-6">
+                🎉 Join the Community
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
+                Ready to Start Your Language Journey?
+            </h2>
+            <p class="text-lg sm:text-xl mb-8 text-blue-100">
+                Join thousands of learners who are already improving their language skills through real conversations. 
+                It's free to get started!
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+                <a href="{% url 'users:register' %}" 
+                   class="cta-button bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-semibold hover:bg-yellow-300 transition text-lg w-full sm:w-auto focus-ring">
+                    Sign Up for Free
+                    <span class="ml-2">🚀</span>
+                </a>
+                <a href="{% url 'users:login' %}" 
+                   class="cta-button border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-blue-600 transition text-lg w-full sm:w-auto focus-ring">
+                    Already have an account?
+                </a>
+            </div>
+            
+            <div class="text-sm text-blue-200">
+                ✓ No credit card required ✓ Start chatting in minutes ✓ Cancel anytime
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating elements -->
+    <div class="absolute top-20 left-10 text-6xl opacity-10 animate-bounce">💬</div>
+    <div class="absolute bottom-20 right-10 text-4xl opacity-10 animate-pulse">🌍</div>
+    <div class="absolute top-1/2 left-20 text-3xl opacity-10 animate-ping">✨</div>
+</section>
+
+<!-- Enhanced JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, observerOptions);
+    
+    // Observe all fade-in elements
+    document.querySelectorAll('.fade-in-up').forEach(el => {
+        observer.observe(el);
+    });
+    
+    // Counter animations
+    function animateCounters() {
+        const counters = [
+            { id: 'stat-languages', target: 50, suffix: '+' },
+            { id: 'stat-countries', target: 120, suffix: '+' },
+            { id: 'stat-matches', target: 1000000, suffix: '+', format: 'short' },
+            { id: 'userCount', target: 10000, suffix: '+', format: 'short' }
+        ];
+        
+        counters.forEach(counter => {
+            const element = document.getElementById(counter.id);
+            if (!element) return;
+            
+            let current = 0;
+            const increment = counter.target / 100;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= counter.target) {
+                    current = counter.target;
+                    clearInterval(timer);
+                }
+                
+                let displayValue = Math.floor(current);
+                if (counter.format === 'short' && displayValue >= 1000) {
+                    if (displayValue >= 1000000) {
+                        displayValue = (displayValue / 1000000).toFixed(1) + 'M';
+                    } else {
+                        displayValue = (displayValue / 1000).toFixed(1) + 'K';
+                    }
+                }
+                element.textContent = displayValue + counter.suffix;
+            }, 20);
+        });
+    }
+    
+    // Trigger counter animation when stats section is visible
+    const statsSection = document.querySelector('.hero-bg');
+    if (statsSection) {
+        const statsObserver = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting) {
+                animateCounters();
+                statsObserver.unobserve(statsSection);
+            }
+        }, { threshold: 0.5 });
+        
+        statsObserver.observe(statsSection);
+    }
+    
+    // Language card interactions
+    document.querySelectorAll('.language-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const language = this.querySelector('p').textContent;
+            showNotificationToast(
+                `${language} Selected! 🎉`,
+                `Great choice! Sign up to find ${language} speakers`,
+                '🗣️',
+                4000
+            );
+        });
+    });
+    
+    // Feature card interactions
+    document.querySelectorAll('.feature-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.background = 'linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.background = 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)';
+        });
+    });
+    
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // Add dynamic content
+    const testimonials = [
+        { name: "Lisa Wang", country: "China", learning: "English", rating: 5 },
+        { name: "Carlos Silva", country: "Brazil", learning: "German", rating: 5 },
+        { name: "Emma Johnson", country: "UK", learning: "Spanish", rating: 5 }
+    ];
+    
+    // Rotate testimonials every 10 seconds
+    let currentTestimonial = 0;
+    setInterval(() => {
+        currentTestimonial = (currentTestimonial + 1) % testimonials.length;
+        // Could implement testimonial rotation here
+    }, 10000);
+    
+    // Add particles effect to hero section
+    createParticles();
+});
+
+function createParticles() {
+    const hero = document.querySelector('.hero-bg');
+    if (!hero) return;
+    
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'absolute w-2 h-2 bg-white rounded-full opacity-20';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animation = `float ${3 + Math.random() * 4}s ease-in-out infinite`;
+        particle.style.animationDelay = Math.random() * 2 + 's';
+        hero.appendChild(particle);
+    }
+}
+
+// Add float animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %} 

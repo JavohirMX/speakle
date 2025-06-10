@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+
+{% block title %}Match Requests - Speakle{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Match Requests</h1>
+        <p class="text-lg text-gray-600">Manage your incoming and outgoing match requests</p>
+        <div class="mt-4">
+            <a href="{% url 'matches:find_matches' %}" 
+               class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                🔍 Find Partners
+            </a>
+            <a href="{% url 'matches:my_matches' %}" 
+               class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition ml-2">
+                🤝 My Matches
+            </a>
+            <button onclick="refreshRequests()" 
+               class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition ml-2">
+                🔄 Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" class="hidden text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+        <p class="text-gray-600">Loading requests...</p>
+    </div>
+
+    <!-- Incoming Requests -->
+    <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">📩 Incoming Requests</h2>
+        
+        <div id="incomingRequestsContainer">
+            {% if incoming_requests %}
+                <div class="space-y-4">
+                    {% for request in incoming_requests %}
+                        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500" data-request-id="{{ request.id }}">
+                            <div class="flex items-center justify-between">
+                                <!-- Request Info -->
+                                <div class="flex items-center flex-1">
+                                    {% if request.sender.profile_picture %}
+                                        <img src="{{ request.sender.profile_picture.url }}" 
+                                             alt="{{ request.sender.username }}" 
+                                             class="w-14 h-14 rounded-full object-cover mr-4">
+                                    {% else %}
+                                        <div class="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg mr-4">
+                                            {{ request.sender.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-gray-900">{{ request.sender.username }}</h3>
+                                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                                            <span>Wants to learn: <strong class="text-blue-600">{{ request.sender_learns.name }} {{ request.sender_learns.flag_emoji }}</strong></span>
+                                            <span>Can teach: <strong class="text-green-600">{{ request.sender_teaches.name }} {{ request.sender_teaches.flag_emoji }}</strong></span>
+                                        </div>
+                                        
+                                        {% if request.message %}
+                                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
+                                                <p class="text-sm text-gray-700">"{{ request.message }}"</p>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <p class="text-xs text-gray-500 mt-2">
+                                            Sent {{ request.created_at|timesince }} ago
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="flex space-x-2 ml-4">
+                                    <button onclick="respondToRequest({{ request.id }}, 'accept')" 
+                                            class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition text-sm">
+                                        ✅ Accept
+                                    </button>
+                                    <button onclick="respondToRequest({{ request.id }}, 'decline')" 
+                                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition text-sm">
+                                        ❌ Decline
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 bg-gray-50 rounded-lg">
+                    <div class="text-4xl mb-2">📭</div>
+                    <p class="text-gray-600">No incoming requests</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Outgoing Requests -->
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">📤 Outgoing Requests</h2>
+        
+        <div id="outgoingRequestsContainer">
+            {% if outgoing_requests %}
+                <div class="space-y-4">
+                    {% for request in outgoing_requests %}
+                        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 
+                                    {% if request.status == 'pending' %}border-yellow-500
+                                    {% elif request.status == 'accepted' %}border-green-500
+                                    {% elif request.status == 'cancelled' %}border-gray-500
+                                    {% else %}border-red-500{% endif %}" data-request-id="{{ request.id }}">
+                            
+                            <div class="flex items-center justify-between">
+                                <!-- Request Info -->
+                                <div class="flex items-center flex-1">
+                                    {% if request.receiver.profile_picture %}
+                                        <img src="{{ request.receiver.profile_picture.url }}" 
+                                             alt="{{ request.receiver.username }}" 
+                                             class="w-14 h-14 rounded-full object-cover mr-4">
+                                    {% else %}
+                                        <div class="w-14 h-14 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg mr-4">
+                                            {{ request.receiver.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-gray-900">{{ request.receiver.username }}</h3>
+                                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                                            <span>You teach: <strong class="text-blue-600">{{ request.sender_teaches.name }} {{ request.sender_teaches.flag_emoji }}</strong></span>
+                                            <span>You learn: <strong class="text-green-600">{{ request.sender_learns.name }} {{ request.sender_learns.flag_emoji }}</strong></span>
+                                        </div>
+                                        
+                                        {% if request.message %}
+                                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
+                                                <p class="text-sm text-gray-700">"{{ request.message }}"</p>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <p class="text-xs text-gray-500 mt-2">
+                                            Sent {{ request.created_at|timesince }} ago
+                                            {% if request.responded_at %}
+                                                • Responded {{ request.responded_at|timesince }} ago
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Status Badge and Actions -->
+                                <div class="ml-4 flex items-center space-x-2">
+                                    {% if request.status == 'pending' %}
+                                        <button onclick="cancelRequest({{ request.id }})" 
+                                                class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition text-sm">
+                                            Cancel
+                                        </button>
+                                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                                            ⏳ Pending
+                                        </span>
+                                    {% elif request.status == 'accepted' %}
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                                            ✅ Accepted
+                                        </span>
+                                    {% elif request.status == 'cancelled' %}
+                                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
+                                            🚫 Cancelled
+                                        </span>
+                                    {% else %}
+                                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
+                                            ❌ Declined
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 bg-gray-50 rounded-lg">
+                    <div class="text-4xl mb-2">📤</div>
+                    <p class="text-gray-600">No outgoing requests</p>
+                    <a href="{% url 'matches:find_matches' %}" 
+                       class="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                        Find Partners
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Refresh all requests
+function refreshRequests() {
+    document.getElementById('loadingIndicator').classList.remove('hidden');
+    
+    fetch('/matches/api/pending-requests/')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateIncomingRequests(data.incoming_requests);
+            updateOutgoingRequests(data.outgoing_requests);
+            showNotification('success', 'Requests refreshed successfully!');
+        } else {
+            showNotification('error', 'Failed to refresh requests');
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing requests:', error);
+        showNotification('error', 'Failed to refresh requests. Please try again.');
+    })
+    .finally(() => {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+    });
+}
+
+// Respond to a match request
+function respondToRequest(requestId, action) {
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/matches/api/respond-request/${requestId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (action === 'accept') {
+                showNotification('success', `Match accepted! You can now chat with ${data.partner}.`);
+                // Remove the request from the UI
+                const requestElement = document.querySelector(`[data-request-id="${requestId}"]`);
+                if (requestElement) {
+                    requestElement.remove();
+                }
+                // Optionally redirect to matches page
+                setTimeout(() => {
+                    window.location.href = '{% url "matches:my_matches" %}';
+                }, 2000);
+            } else {
+                showNotification('success', 'Match request declined.');
+                // Remove the request from the UI
+                const requestElement = document.querySelector(`[data-request-id="${requestId}"]`);
+                if (requestElement) {
+                    requestElement.remove();
+                }
+            }
+        } else {
+            showNotification('error', data.error || 'Failed to respond to request');
+        }
+    })
+    .catch(error => {
+        console.error('Error responding to request:', error);
+        showNotification('error', 'Failed to respond to request. Please try again.');
+    });
+}
+
+// Cancel a match request
+function cancelRequest(requestId) {
+    if (!confirm('Are you sure you want to cancel this request?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/matches/api/cancel-request/${requestId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', 'Request cancelled successfully');
+            // Update the UI
+            const requestElement = document.querySelector(`[data-request-id="${requestId}"]`);
+            if (requestElement) {
+                // Update the status badge
+                const statusContainer = requestElement.querySelector('.ml-4');
+                statusContainer.innerHTML = `
+                    <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
+                        🚫 Cancelled
+                    </span>
+                `;
+                // Update border color
+                requestElement.className = requestElement.className.replace('border-yellow-500', 'border-gray-500');
+            }
+        } else {
+            showNotification('error', data.error || 'Failed to cancel request');
+        }
+    })
+    .catch(error => {
+        console.error('Error cancelling request:', error);
+        showNotification('error', 'Failed to cancel request. Please try again.');
+    });
+}
+
+// Update incoming requests display
+function updateIncomingRequests(requests) {
+    const container = document.getElementById('incomingRequestsContainer');
+    
+    if (requests.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 bg-gray-50 rounded-lg">
+                <div class="text-4xl mb-2">📭</div>
+                <p class="text-gray-600">No incoming requests</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const requestsHtml = requests.map(request => `
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500" data-request-id="${request.id}">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center flex-1">
+                    <div class="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg mr-4">
+                        ${request.sender.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900">${request.sender}</h3>
+                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                            <span>Wants to learn: <strong class="text-blue-600">${request.sender_learns}</strong></span>
+                            <span>Can teach: <strong class="text-green-600">${request.sender_teaches}</strong></span>
+                        </div>
+                        ${request.message ? `
+                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
+                                <p class="text-sm text-gray-700">"${request.message}"</p>
+                            </div>
+                        ` : ''}
+                        <p class="text-xs text-gray-500 mt-2">
+                            Sent ${new Date(request.created_at).toLocaleDateString()}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex space-x-2 ml-4">
+                    <button onclick="respondToRequest(${request.id}, 'accept')" 
+                            class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition text-sm">
+                        ✅ Accept
+                    </button>
+                    <button onclick="respondToRequest(${request.id}, 'decline')" 
+                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition text-sm">
+                        ❌ Decline
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = `<div class="space-y-4">${requestsHtml}</div>`;
+}
+
+// Update outgoing requests display
+function updateOutgoingRequests(requests) {
+    const container = document.getElementById('outgoingRequestsContainer');
+    
+    if (requests.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 bg-gray-50 rounded-lg">
+                <div class="text-4xl mb-2">📤</div>
+                <p class="text-gray-600">No outgoing requests</p>
+                <a href="{% url 'matches:find_matches' %}" 
+                   class="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                    Find Partners
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    const requestsHtml = requests.map(request => `
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500" data-request-id="${request.id}">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center flex-1">
+                    <div class="w-14 h-14 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg mr-4">
+                        ${request.receiver.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900">${request.receiver}</h3>
+                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                            <span>You teach: <strong class="text-blue-600">${request.sender_teaches}</strong></span>
+                            <span>You learn: <strong class="text-green-600">${request.sender_learns}</strong></span>
+                        </div>
+                        ${request.message ? `
+                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
+                                <p class="text-sm text-gray-700">"${request.message}"</p>
+                            </div>
+                        ` : ''}
+                        <p class="text-xs text-gray-500 mt-2">
+                            Sent ${new Date(request.created_at).toLocaleDateString()}
+                        </p>
+                    </div>
+                </div>
+                <div class="ml-4 flex items-center space-x-2">
+                    <button onclick="cancelRequest(${request.id})" 
+                            class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition text-sm">
+                        Cancel
+                    </button>
+                    <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                        ⏳ Pending
+                    </span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = `<div class="space-y-4">${requestsHtml}</div>`;
+}
+
+// Notification system
+function showNotification(type, message) {
+    if (typeof showNotificationToast === 'function') {
+        const icon = type === 'success' ? '✅' : '❌';
+        showNotificationToast(type === 'success' ? 'Success' : 'Error', message, icon);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %} 

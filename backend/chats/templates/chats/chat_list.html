@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Chats - Speakle{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-list-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .chat-item {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    
+    .chat-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-color: #3b82f6;
+    }
+    
+    .chat-item.has-unread {
+        border-left: 4px solid #ef4444;
+        background: linear-gradient(135deg, #fef2f2 0%, #fff 50%);
+    }
+    
+    .partner-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    
+    .partner-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        margin-right: 16px;
+    }
+    
+    .partner-details h3 {
+        margin: 0;
+        color: #1f2937;
+        font-size: 18px;
+        font-weight: 600;
+    }
+    
+    .language-exchange {
+        display: flex;
+        align-items: center;
+        color: #6b7280;
+        font-size: 14px;
+        margin-top: 4px;
+    }
+    
+    .language-exchange .flag {
+        margin: 0 4px;
+        font-size: 16px;
+    }
+    
+    .last-message {
+        color: #4b5563;
+        font-size: 14px;
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+    
+    .last-message.no-messages {
+        color: #9ca3af;
+        font-style: italic;
+    }
+    
+    .chat-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .last-activity {
+        color: #9ca3af;
+        font-size: 13px;
+    }
+    
+    .unread-badge {
+        background: #ef4444;
+        color: white;
+        border-radius: 12px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 600;
+        min-width: 20px;
+        text-align: center;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+    
+    .empty-state .icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.6;
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .page-header h1 {
+        color: #1f2937;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    .page-header p {
+        color: #6b7280;
+        font-size: 16px;
+    }
+    
+    .total-unread {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        display: inline-block;
+        margin-left: 12px;
+    }
+    
+    .chat-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    
+    .action-btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    
+    .btn-chat {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+    
+    .btn-chat:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: scale(1.05);
+        color: white;
+    }
+    
+    .btn-video {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+    
+    .btn-video:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: scale(1.05);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-list-container">
+    <div class="page-header">
+        <h1>Your Chats
+            {% if total_unread > 0 %}
+                <span class="total-unread">{{ total_unread }} unread</span>
+            {% endif %}
+        </h1>
+        <p>Continue your language exchange conversations</p>
+    </div>
+    
+    {% if chat_rooms %}
+        {% for chat_data in chat_rooms %}
+            <div class="chat-item {% if chat_data.unread_count > 0 %}has-unread{% endif %}"
+                 onclick="location.href='{% url 'chats:text_chat' chat_data.room.room_id %}'">
+                
+                <div class="partner-info">
+                    <div class="partner-avatar">
+                        {{ chat_data.partner.username|first|upper }}
+                    </div>
+                    <div class="partner-details">
+                        <h3>{{ chat_data.partner.username }}</h3>
+                        <div class="language-exchange">
+                            <span>You teach</span>
+                            <span class="flag">{{ chat_data.match.get_user_teaches.flag }}</span>
+                            <span>{{ chat_data.match.get_user_teaches.name }}</span>
+                            <span style="margin: 0 8px;">•</span>
+                            <span>You learn</span>
+                            <span class="flag">{{ chat_data.match.get_user_learns.flag }}</span>
+                            <span>{{ chat_data.match.get_user_learns.name }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if chat_data.last_message %}
+                    <div class="last-message">
+                        <strong>{{ chat_data.last_message.sender.username }}:</strong>
+                        {{ chat_data.last_message.content|truncatechars:100 }}
+                    </div>
+                {% else %}
+                    <div class="last-message no-messages">
+                        No messages yet - start the conversation!
+                    </div>
+                {% endif %}
+                
+                <div class="chat-meta">
+                    <span class="last-activity">
+                        {% if chat_data.last_message %}
+                            {{ chat_data.last_message.timestamp|timesince }} ago
+                        {% else %}
+                            Created {{ chat_data.room.created_at|timesince }} ago
+                        {% endif %}
+                    </span>
+                    
+                    {% if chat_data.unread_count > 0 %}
+                        <span class="unread-badge">{{ chat_data.unread_count }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="chat-actions" onclick="event.stopPropagation();">
+                    <a href="{% url 'chats:text_chat' chat_data.room.room_id %}" class="action-btn btn-chat">
+                        💬 Open Chat
+                    </a>
+                    <a href="{% url 'chats:create_video_room' chat_data.match.id %}" class="action-btn btn-video">
+                        📹 Video Call
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="icon">💬</div>
+            <h3>No chats yet</h3>
+            <p>Once you have active matches, you'll be able to start conversations here.</p>
+            <a href="{% url 'matches:my_matches' %}" class="action-btn btn-chat" style="margin-top: 20px;">
+                View Your Matches
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,3 +1,1046 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.db.models import Q, Count
+from django.core.cache import cache
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from matches.models import Match
+from .models import VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
+import uuid
+from django.db import transaction
+
+# Utility function for sending WebSocket notifications
+def send_user_notification(user_id, notification_type, data):
+    """Send a WebSocket notification to a specific user."""
+    channel_layer = get_channel_layer()
+    group_name = f'user_notifications_{user_id}'
+    
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {
+            'type': notification_type,
+            **data
+        }
+    )
 
 # Create your views here.
+
+@login_required
+def create_video_room(request, match_id):
+    """Create or get existing video room for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    
+    # Get or create video room
+    video_room, created = VideoRoom.objects.get_or_create(match=match)
+    
+    if created:
+        messages.success(request, 'Video room created successfully!')
+    
+    return redirect('chats:video_room', room_id=video_room.room_id)
+
+@login_required
+def get_video_room_url(request, match_id):
+    """API endpoint to get video room URL for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Get or create video room
+    video_room, created = VideoRoom.objects.get_or_create(match=match)
+    
+    return JsonResponse({
+        'success': True,
+        'room_url': f'/chats/room/{video_room.room_id}/',
+        'room_id': str(video_room.room_id),
+        'created': created
+    })
+
+@login_required 
+@require_POST
+def send_call_invitation(request, match_id):
+    """Send a call invitation to the match partner."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Get partner
+    partner = match.get_partner(request.user)
+    
+    # Check if partner is online (create presence if doesn't exist)
+    partner_presence, created = UserPresence.objects.get_or_create(
+        user=partner,
+        defaults={'is_online': False}
+    )
+    
+    if not partner_presence.is_online:
+        return JsonResponse({
+            'error': 'Partner is not online',
+            'last_seen': partner_presence.last_seen.isoformat()
+        }, status=400)
+    
+    # Get or create video room
+    video_room, created = VideoRoom.objects.get_or_create(match=match)
+    
+    # Check for existing pending invitation
+    existing_invitation = CallInvitation.objects.filter(
+        room=video_room,
+        caller=request.user,
+        status='pending'
+    ).first()
+    
+    if existing_invitation and not existing_invitation.is_expired():
+        return JsonResponse({'error': 'You already have a pending invitation'}, status=400)
+    
+    # Create new invitation
+    invitation = CallInvitation.objects.create(
+        room=video_room,
+        caller=request.user,
+        receiver=partner,
+        message=request.POST.get('message', ''),
+    )
+    
+    # Invalidate pending invitations cache for the receiver
+    cache.delete(f"pending_invitations_{partner.id}")
+    
+    # Send real-time notification to partner via WebSocket
+    send_user_notification(partner.id, 'call_invitation_received', {
+        'invitation_id': invitation.id,
+        'caller_username': request.user.username,
+        'caller_id': request.user.id,
+        'message': invitation.message,
+        'match_id': match.id,
+        'expires_at': invitation.expires_at.isoformat(),
+        'room_url': f'/chats/room/{video_room.room_id}/'
+    })
+    
+    return JsonResponse({
+        'success': True,
+        'invitation_id': invitation.id,
+        'expires_at': invitation.expires_at.isoformat()
+    })
+
+@login_required
+@require_POST
+def respond_to_invitation(request, invitation_id):
+    """Accept or decline a call invitation."""
+    invitation = get_object_or_404(CallInvitation, id=invitation_id, receiver=request.user)
+    
+    if not invitation.can_accept():
+        return JsonResponse({'error': 'Invitation expired or already responded'}, status=400)
+    
+    response = request.POST.get('response')  # 'accept' or 'decline'
+    
+    if response == 'accept':
+        invitation.status = 'accepted'
+        invitation.responded_at = timezone.now()
+        invitation.save()
+        
+        # Invalidate pending invitations cache for the receiver
+        cache.delete(f"pending_invitations_{request.user.id}")
+        
+        # Notify caller via WebSocket
+        send_user_notification(invitation.caller.id, 'call_invitation_accepted', {
+            'invitation_id': invitation.id,
+            'accepter_username': request.user.username,
+            'room_url': f'/chats/room/{invitation.room.room_id}/'
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'action': 'accepted',
+            'room_url': f'/chats/room/{invitation.room.room_id}/'
+        })
+    
+    elif response == 'decline':
+        invitation.status = 'declined'
+        invitation.responded_at = timezone.now()
+        invitation.save()
+        
+        # Invalidate pending invitations cache for the receiver
+        cache.delete(f"pending_invitations_{request.user.id}")
+        
+        # Notify caller via WebSocket
+        send_user_notification(invitation.caller.id, 'call_invitation_declined', {
+            'invitation_id': invitation.id,
+            'decliner_username': request.user.username
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'action': 'declined'
+        })
+    
+    else:
+        return JsonResponse({'error': 'Invalid response'}, status=400)
+
+@login_required
+def get_pending_invitations(request):
+    """Get pending call invitations for the current user."""
+    user_id = request.user.id
+    cache_key = f"pending_invitations_{user_id}"
+    cache_timeout = 10  # Cache for 10 seconds to reduce frequent DB hits
+    
+    # Try to get from cache first
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return JsonResponse({'invitations': cached_data})
+    
+    # Use database-level filtering for expired invitations instead of Python filtering
+    now = timezone.now()
+    
+    with transaction.atomic():
+        # First, mark truly expired pending invitations as expired in the database
+        expired_count = CallInvitation.objects.filter(
+            receiver=request.user,
+            status='pending',
+            expires_at__lt=now
+        ).update(status='expired')
+        
+        if expired_count > 0:
+            print(f"Marked {expired_count} expired invitations for user {request.user.username}")
+            # Clear cache if we updated any invitations
+            cache.delete(cache_key)
+        
+        # Get only valid pending invitations
+        valid_invitations = CallInvitation.objects.filter(
+            receiver=request.user,
+            status='pending',
+            expires_at__gte=now  # Only get non-expired ones
+        ).select_related('caller', 'room__match').order_by('-created_at')
+    
+    invitation_data = []
+    for invitation in valid_invitations:
+        invitation_data.append({
+            'id': invitation.id,
+            'caller': invitation.caller.username,
+            'caller_id': invitation.caller.id,
+            'message': invitation.message,
+            'created_at': invitation.created_at.isoformat(),
+            'expires_at': invitation.expires_at.isoformat(),
+            'match_id': invitation.room.match.id
+        })
+    
+    # Cache the results
+    cache.set(cache_key, invitation_data, cache_timeout)
+    
+    return JsonResponse({'invitations': invitation_data})
+
+@login_required
+def check_invitation_status(request, invitation_id):
+    """Check the status of a sent invitation."""
+    invitation = get_object_or_404(CallInvitation, id=invitation_id, caller=request.user)
+    
+    return JsonResponse({
+        'status': invitation.status,
+        'responded_at': invitation.responded_at.isoformat() if invitation.responded_at else None,
+        'is_expired': invitation.is_expired()
+    })
+
+@login_required
+def video_room(request, room_id):
+    """Main video chat room view."""
+    try:
+        room = VideoRoom.objects.get(room_id=room_id)
+    except VideoRoom.DoesNotExist:
+        messages.error(request, 'Video room not found.')
+        return redirect('matches:my_matches')
+    
+    # Check if user has access to this room
+    if not room.can_user_access(request.user):
+        messages.error(request, 'You do not have access to this room.')
+        return redirect('matches:my_matches')
+    
+    # Get partner and language info
+    partner = room.match.get_partner(request.user)
+    user_teaches = room.match.get_user_teaches(request.user)
+    user_learns = room.match.get_user_learns(request.user)
+    
+    # Get recent messages
+    recent_messages = room.messages.all()[:50]
+    
+    # Get call history
+    call_history = room.sessions.filter(status='ended')[:10]
+    
+    context = {
+        'room': room,
+        'match': room.match,
+        'partner': partner,
+        'user_teaches': user_teaches,
+        'user_learns': user_learns,
+        'recent_messages': recent_messages,
+        'call_history': call_history,
+        'room_id_str': str(room.room_id),
+    }
+    
+    return render(request, 'chats/video_room.html', context)
+
+@login_required
+def room_status(request, room_id):
+    """API endpoint to get room status (AJAX)."""
+    try:
+        room = VideoRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        active_session = room.sessions.filter(status='active').first()
+        
+        return JsonResponse({
+            'is_active': room.is_active,
+            'has_active_session': bool(active_session),
+            'participant_count': active_session.participants.count() if active_session else 0,
+            'last_activity': room.last_activity.isoformat(),
+        })
+        
+    except VideoRoom.DoesNotExist:
+        return JsonResponse({'error': 'Room not found'}, status=404)
+
+@login_required
+def call_history(request, room_id):
+    """View call history for a room."""
+    try:
+        room = VideoRoom.objects.get(room_id=room_id)
+    except VideoRoom.DoesNotExist:
+        messages.error(request, 'Video room not found.')
+        return redirect('matches:my_matches')
+    
+    if not room.can_user_access(request.user):
+        messages.error(request, 'You do not have access to this room.')
+        return redirect('matches:my_matches')
+    
+    sessions = room.sessions.filter(status='ended').order_by('-started_at')
+    
+    context = {
+        'room': room,
+        'sessions': sessions,
+        'partner': room.match.get_partner(request.user),
+    }
+    
+    return render(request, 'chats/call_history.html', context)
+
+@login_required
+def check_partner_availability(request, match_id):
+    """Check if the partner in a match is online and available."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Get partner
+    partner = match.get_partner(request.user)
+    
+    # Get or create partner presence
+    partner_presence, created = UserPresence.objects.get_or_create(
+        user=partner,
+        defaults={'is_online': False}
+    )
+    
+    # Also ensure current user has presence record
+    user_presence, created = UserPresence.objects.get_or_create(
+        user=request.user,
+        defaults={'is_online': True}  # Assume online since they're making this request
+    )
+    user_presence.is_online = True
+    user_presence.save()
+    
+    return JsonResponse({
+        'is_online': partner_presence.is_online,
+        'last_seen': partner_presence.last_seen.isoformat(),
+        'partner_username': partner.username
+    })
+
+@login_required
+@require_POST
+def set_online_status(request):
+    """Set current user's online status (for testing purposes)."""
+    is_online = request.POST.get('is_online', 'true').lower() == 'true'
+    
+    presence, created = UserPresence.objects.get_or_create(
+        user=request.user,
+        defaults={'is_online': is_online}
+    )
+    presence.is_online = is_online
+    presence.save()
+    
+    return JsonResponse({
+        'success': True,
+        'is_online': is_online,
+        'message': f'Status set to {"online" if is_online else "offline"}'
+    })
+
+@login_required
+@require_POST
+def cancel_invitation(request, invitation_id):
+    """Cancel a pending call invitation."""
+    invitation = get_object_or_404(CallInvitation, id=invitation_id, caller=request.user)
+    
+    if invitation.status != 'pending':
+        return JsonResponse({'error': 'Can only cancel pending invitations'}, status=400)
+    
+    invitation.status = 'cancelled'
+    invitation.responded_at = timezone.now()
+    invitation.save()
+    
+    # Invalidate pending invitations cache for the receiver
+    cache.delete(f"pending_invitations_{invitation.receiver.id}")
+    
+    # Notify receiver via WebSocket that invitation was cancelled
+    send_user_notification(invitation.receiver.id, 'call_invitation_cancelled', {
+        'invitation_id': invitation.id,
+        'canceller_username': request.user.username
+    })
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Invitation cancelled successfully'
+    })
+
+@login_required
+def get_recent_messages(request, room_id):
+    """API endpoint to get recent messages for a room."""
+    try:
+        room = VideoRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Get recent messages (last 50)
+        messages = room.messages.select_related('sender').order_by('-timestamp')[:50]
+        messages = list(reversed(messages))  # Reverse to get chronological order
+        
+        message_data = []
+        for message in messages:
+            message_data.append({
+                'id': message.id,
+                'content': message.content,
+                'sender_id': message.sender.id,
+                'sender_username': message.sender.username,
+                'timestamp': message.timestamp.isoformat(),
+                'is_own_message': message.sender == request.user
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'messages': message_data
+        })
+        
+    except VideoRoom.DoesNotExist:
+        return JsonResponse({'error': 'Room not found'}, status=404)
+
+@login_required
+@require_POST
+def end_call_with_reason(request, room_id):
+    """End a call with specified reason and optional feedback."""
+    try:
+        room = VideoRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Get form data
+        end_reason = request.POST.get('end_reason', 'user_hangup')
+        end_notes = request.POST.get('end_notes', '')
+        connection_quality = request.POST.get('connection_quality', '')
+        
+        # End active sessions
+        active_sessions = room.sessions.filter(status='active')
+        session_summaries = []
+        
+        for session in active_sessions:
+            session.status = 'ended'
+            session.ended_at = timezone.now()
+            session.ended_by = request.user
+            session.end_reason = end_reason
+            session.end_notes = end_notes
+            if connection_quality:
+                session.connection_quality = connection_quality
+            session.calculate_duration()
+            session.save()
+            
+            session_summaries.append({
+                'session_id': session.id,
+                'duration': session.get_duration_display(),
+                'was_successful': session.was_successful(),
+                'participants': [user.username for user in session.participants.all()]
+            })
+        
+        # Update room status
+        room.is_active = False
+        room.save()
+        
+        # Send WebSocket notification to other participants
+        send_user_notification(
+            room.match.get_partner(request.user).id,
+            'call_ended_enhanced',
+            {
+                'ended_by': request.user.username,
+                'end_reason': end_reason,
+                'session_summaries': session_summaries
+            }
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Call ended successfully',
+            'session_summaries': session_summaries
+        })
+        
+    except VideoRoom.DoesNotExist:
+        return JsonResponse({'error': 'Room not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def get_call_statistics(request, room_id):
+    """Get call statistics for a room."""
+    try:
+        room = VideoRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Get session statistics
+        sessions = room.sessions.filter(status='ended')
+        total_sessions = sessions.count()
+        successful_sessions = sessions.filter(
+            end_reason__in=['normal', 'user_hangup', 'partner_hangup']
+        ).count()
+        
+        # Calculate total call time
+        total_duration = sum(
+            [session.duration.total_seconds() for session in sessions if session.duration],
+            0
+        )
+        
+        # Average session duration
+        avg_duration = total_duration / total_sessions if total_sessions > 0 else 0
+        
+        # Most common end reasons
+        end_reasons = sessions.values('end_reason').annotate(
+            count=Count('end_reason')
+        ).order_by('-count')
+        
+        statistics = {
+            'total_sessions': total_sessions,
+            'successful_sessions': successful_sessions,
+            'success_rate': (successful_sessions / total_sessions * 100) if total_sessions > 0 else 0,
+            'total_duration_minutes': total_duration / 60,
+            'average_duration_minutes': avg_duration / 60,
+            'end_reasons': list(end_reasons),
+            'recent_sessions': [
+                {
+                    'id': session.id,
+                    'started_at': session.started_at.isoformat(),
+                    'duration': session.get_duration_display(),
+                    'end_reason': session.get_end_reason_display() if session.end_reason else 'Unknown',
+                    'was_successful': session.was_successful(),
+                    'ended_by': session.ended_by.username if session.ended_by else 'Unknown'
+                }
+                for session in sessions[:5]
+            ]
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'statistics': statistics
+        })
+        
+    except VideoRoom.DoesNotExist:
+        return JsonResponse({'error': 'Room not found'}, status=404)
+
+@login_required
+def call_summary(request, room_id, session_id):
+    """Display call summary and statistics after a call ends."""
+    try:
+        room = VideoRoom.objects.get(room_id=room_id)
+        session = CallSession.objects.get(id=session_id, room=room)
+        
+        # Check if user has access to this room and session
+        if not room.can_user_access(request.user):
+            messages.error(request, 'You do not have access to this room.')
+            return redirect('matches:my_matches')
+        
+        # Check if user was a participant in this session
+        # If they weren't but have room access, add them as a participant (retroactive fix)
+        if not session.participants.filter(id=request.user.id).exists():
+            if room.can_user_access(request.user):
+                # User has room access but wasn't marked as participant - fix this
+                session.participants.add(request.user)
+                print(f"Retroactively added {request.user.username} as participant to session {session.id}")
+            else:
+                messages.error(request, 'You were not a participant in this call.')
+                return redirect('matches:my_matches')
+        
+        # Get partner and language info
+        partner = room.match.get_partner(request.user)
+        user_teaches = room.match.get_user_teaches(request.user)
+        user_learns = room.match.get_user_learns(request.user)
+        
+        # Get session statistics
+        total_sessions = room.sessions.filter(status='ended').count()
+        successful_sessions = room.sessions.filter(
+            status='ended',
+            end_reason__in=['normal', 'user_hangup', 'partner_hangup']
+        ).count()
+        
+        # Calculate success rate
+        success_rate = (successful_sessions / total_sessions * 100) if total_sessions > 0 else 0
+        
+        # Get recent call history (last 5 calls excluding current)
+        recent_calls = room.sessions.filter(status='ended').exclude(id=session.id)[:5]
+        
+        context = {
+            'room': room,
+            'session': session,
+            'match': room.match,
+            'partner': partner,
+            'user_teaches': user_teaches,
+            'user_learns': user_learns,
+            'total_sessions': total_sessions,
+            'successful_sessions': successful_sessions,
+            'success_rate': success_rate,
+            'recent_calls': recent_calls,
+        }
+        
+        return render(request, 'chats/call_summary.html', context)
+        
+    except VideoRoom.DoesNotExist:
+        messages.error(request, 'Video room not found.')
+        return redirect('matches:my_matches')
+    except CallSession.DoesNotExist:
+        messages.error(request, 'Call session not found.')
+        return redirect('matches:my_matches')
+    except Exception as e:
+        messages.error(request, f'Error loading call summary: {str(e)}')
+        return redirect('matches:my_matches')
+
+@login_required
+@require_POST
+def submit_feedback(request):
+    """Submit feedback about the call experience."""
+    try:
+        import json
+        data = json.loads(request.body)
+        
+        session_id = data.get('session_id')
+        rating = data.get('rating')
+        room_id = data.get('room_id')
+        
+        if not all([session_id, rating, room_id]):
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        # Validate rating
+        if not isinstance(rating, int) or rating < 1 or rating > 5:
+            return JsonResponse({'error': 'Invalid rating'}, status=400)
+        
+        # Get session and verify user access
+        session = CallSession.objects.get(id=session_id)
+        room = VideoRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        if not session.participants.filter(id=request.user.id).exists():
+            return JsonResponse({'error': 'You were not a participant in this call'}, status=403)
+        
+        # For now, we can store this in the session's end_notes or create a separate model
+        # Let's append it to end_notes for simplicity
+        feedback_text = f"User {request.user.username} rated this call: {rating}/5 stars"
+        
+        if session.end_notes:
+            session.end_notes += f"\n{feedback_text}"
+        else:
+            session.end_notes = feedback_text
+        
+        session.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Feedback submitted successfully'
+        })
+        
+    except (ValueError, json.JSONDecodeError):
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except CallSession.DoesNotExist:
+        return JsonResponse({'error': 'Call session not found'}, status=404)
+    except VideoRoom.DoesNotExist:
+        return JsonResponse({'error': 'Room not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+# Text Chat Views
+@login_required
+def create_chat_room(request, match_id):
+    """Create or get existing chat room for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    
+    # Get or create chat room
+    chat_room, created = ChatRoom.objects.get_or_create(match=match)
+    
+    if created:
+        messages.success(request, 'Chat room created successfully!')
+    
+    return redirect('chats:text_chat', room_id=chat_room.room_id)
+
+@login_required
+def text_chat(request, room_id):
+    """Text chat interface."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        # Check if user has access to this room
+        if not room.can_user_access(request.user):
+            messages.error(request, 'You do not have access to this chat room.')
+            return redirect('matches:my_matches')
+        
+        # Get partner and match info
+        partner = room.get_partner(request.user)
+        match = room.match
+        
+        # Get recent messages (last 50)
+        recent_messages = room.messages.select_related('sender', 'reply_to__sender').order_by('-timestamp')[:50]
+        recent_messages = list(reversed(recent_messages))
+        
+        # Mark messages from partner as read
+        unread_messages = room.messages.filter(sender=partner, is_read=False)
+        unread_messages.update(is_read=True)
+        
+        # Update room activity
+        room.update_activity()
+        
+        context = {
+            'room': room,
+            'match': match,
+            'partner': partner,
+            'recent_messages': recent_messages,
+            'room_id': str(room.room_id),
+            'user_teaches': match.get_user_teaches(request.user),
+            'user_learns': match.get_user_learns(request.user),
+        }
+        
+        return render(request, 'chats/text_chat.html', context)
+        
+    except ChatRoom.DoesNotExist:
+        messages.error(request, 'Chat room not found.')
+        return redirect('matches:my_matches')
+
+@login_required
+def get_chat_room_url(request, match_id):
+    """API endpoint to get chat room URL for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    
+    # Check if user is part of this match
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Get or create chat room
+    chat_room, created = ChatRoom.objects.get_or_create(match=match)
+    
+    return JsonResponse({
+        'success': True,
+        'chat_url': f'/chats/text/{chat_room.room_id}/',
+        'room_id': str(chat_room.room_id),
+        'created': created
+    })
+
+@login_required
+def get_chat_messages(request, room_id):
+    """API endpoint to get chat messages with pagination."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Get pagination parameters
+        page = int(request.GET.get('page', 1))
+        page_size = min(int(request.GET.get('page_size', 50)), 100)  # Max 100 messages per request
+        
+        # Get messages with pagination
+        from django.core.paginator import Paginator
+        all_messages = room.messages.select_related('sender', 'reply_to__sender').order_by('-timestamp')
+        paginator = Paginator(all_messages, page_size)
+        page_obj = paginator.get_page(page)
+        
+        message_data = []
+        for message in reversed(page_obj.object_list):
+            message_info = {
+                'id': message.id,
+                'content': message.content,
+                'sender_id': message.sender.id,
+                'sender_username': message.sender.username,
+                'timestamp': message.timestamp.isoformat(),
+                'is_read': message.is_read,
+                'edited_at': message.edited_at.isoformat() if message.edited_at else None,
+                'message_type': message.message_type,
+                'is_own_message': message.sender == request.user
+            }
+            
+            # Add reply_to information if exists
+            if message.reply_to:
+                message_info['reply_to'] = {
+                    'id': message.reply_to.id,
+                    'content': message.reply_to.content[:50] + '...' if len(message.reply_to.content) > 50 else message.reply_to.content,
+                    'sender_username': message.reply_to.sender.username
+                }
+            
+            message_data.append(message_info)
+        
+        return JsonResponse({
+            'success': True,
+            'messages': message_data,
+            'page': page,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            'total_pages': paginator.num_pages
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+@require_POST
+def send_chat_message(request, room_id):
+    """API endpoint to send a chat message."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        content = request.POST.get('content', '').strip()
+        reply_to_id = request.POST.get('reply_to')
+        
+        if not content:
+            return JsonResponse({'error': 'Message content is required'}, status=400)
+        
+        if len(content) > 1000:
+            return JsonResponse({'error': 'Message too long (max 1000 characters)'}, status=400)
+        
+        # Handle reply_to
+        reply_to = None
+        if reply_to_id:
+            try:
+                reply_to = ChatMessage.objects.get(id=reply_to_id, room=room)
+            except ChatMessage.DoesNotExist:
+                return JsonResponse({'error': 'Reply message not found'}, status=400)
+        
+        # Create message
+        message = ChatMessage.objects.create(
+            room=room,
+            sender=request.user,
+            content=content,
+            reply_to=reply_to
+        )
+        
+        # Update room activity
+        room.update_activity()
+        
+        # Send real-time notification to partner via WebSocket
+        partner = room.get_partner(request.user)
+        send_user_notification(partner.id, 'new_chat_message', {
+            'room_id': str(room.room_id),
+            'message_id': message.id,
+            'content': content,
+            'sender_username': request.user.username,
+            'timestamp': message.timestamp.isoformat(),
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'message_id': message.id,
+            'timestamp': message.timestamp.isoformat()
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+@require_POST
+def edit_chat_message(request, message_id):
+    """API endpoint to edit a chat message."""
+    try:
+        message = ChatMessage.objects.get(id=message_id, sender=request.user)
+        
+        new_content = request.POST.get('content', '').strip()
+        
+        if not new_content:
+            return JsonResponse({'error': 'Message content is required'}, status=400)
+        
+        if not message.can_edit(request.user):
+            return JsonResponse({'error': 'Cannot edit this message'}, status=403)
+        
+        message.edit_content(new_content)
+        
+        # Send real-time notification about edit
+        partner = message.room.get_partner(request.user)
+        send_user_notification(partner.id, 'message_edited', {
+            'room_id': str(message.room.room_id),
+            'message_id': message.id,
+            'new_content': new_content,
+            'editor_username': request.user.username,
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'edited_at': message.edited_at.isoformat()
+        })
+        
+    except ChatMessage.DoesNotExist:
+        return JsonResponse({'error': 'Message not found'}, status=404)
+
+@login_required
+@require_POST
+def mark_messages_read(request, room_id):
+    """API endpoint to mark messages as read."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Mark all unread messages from partner as read
+        partner = room.get_partner(request.user)
+        unread_count = room.messages.filter(sender=partner, is_read=False).update(is_read=True)
+        
+        return JsonResponse({
+            'success': True,
+            'marked_read': unread_count
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+def get_unread_count(request, room_id):
+    """API endpoint to get unread message count."""
+    try:
+        room = ChatRoom.objects.get(room_id=room_id)
+        
+        if not room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        # Count unread messages from partner
+        partner = room.get_partner(request.user)
+        unread_count = room.messages.filter(sender=partner, is_read=False).count()
+        
+        return JsonResponse({
+            'success': True,
+            'unread_count': unread_count
+        })
+        
+    except ChatRoom.DoesNotExist:
+        return JsonResponse({'error': 'Chat room not found'}, status=404)
+
+@login_required
+def chat_list(request):
+    """Display list of all chat rooms for the user."""
+    from django.db.models import Count, Q
+    
+    # Get all matches for the user
+    user_matches = Match.objects.filter(
+        Q(user1=request.user) | Q(user2=request.user),
+        status='active'
+    ).select_related('user1', 'user2')
+    
+    # Get chat rooms with message counts and last message info
+    chat_rooms = []
+    for match in user_matches:
+        try:
+            room = match.chat_room
+            partner = match.get_partner(request.user)
+            
+            # Get unread count
+            unread_count = room.messages.filter(
+                sender=partner, 
+                is_read=False
+            ).count()
+            
+            # Get last message
+            last_message = room.messages.order_by('-timestamp').first()
+            
+            chat_rooms.append({
+                'room': room,
+                'match': match,
+                'partner': partner,
+                'unread_count': unread_count,
+                'last_message': last_message,
+                'last_activity': room.last_activity,
+            })
+        except ChatRoom.DoesNotExist:
+            # Create chat room for matches that don't have one yet
+            room = ChatRoom.objects.create(match=match)
+            partner = match.get_partner(request.user)
+            
+            chat_rooms.append({
+                'room': room,
+                'match': match,
+                'partner': partner,
+                'unread_count': 0,
+                'last_message': None,
+                'last_activity': room.last_activity,
+            })
+    
+    # Sort by last activity (most recent first)
+    chat_rooms.sort(key=lambda x: x['last_activity'], reverse=True)
+    
+    context = {
+        'chat_rooms': chat_rooms,
+        'total_unread': sum(room['unread_count'] for room in chat_rooms)
+    }
+    
+    return render(request, 'chats/chat_list.html', context)
+
+@login_required
+def get_total_unread_count(request):
+    """API endpoint to get total unread message count across all chats."""
+    from django.db.models import Count, Q
+    
+    # Get all active matches for the user
+    user_matches = Match.objects.filter(
+        Q(user1=request.user) | Q(user2=request.user),
+        status='active'
+    ).select_related('user1', 'user2')
+    
+    total_unread = 0
+    
+    for match in user_matches:
+        try:
+            room = match.chat_room
+            partner = match.get_partner(request.user)
+            
+            # Count unread messages from partner
+            unread_count = room.messages.filter(
+                sender=partner, 
+                is_read=False
+            ).count()
+            
+            total_unread += unread_count
+            
+        except ChatRoom.DoesNotExist:
+            # No chat room yet, so no unread messages
+            continue
+    
+    return JsonResponse({
+        'success': True,
+        'unread_count': total_unread
+    })

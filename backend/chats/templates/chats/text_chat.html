@@ -1,0 +1,988 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with {{ partner.username }} - Speakle{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
+    }
+    
+    .chat-header {
+        background: linear-gradient(135deg, #1f2937, #374151);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .partner-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .partner-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        margin-right: 16px;
+    }
+    
+    .partner-details h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+    }
+    
+    .language-info {
+        font-size: 14px;
+        opacity: 0.8;
+        margin-top: 4px;
+    }
+    
+    .language-info .flag {
+        margin: 0 4px;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .header-btn {
+        padding: 8px 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        color: white;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .header-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+    }
+    
+    .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8fafc;
+        scroll-behavior: smooth;
+    }
+    
+    .message {
+        margin-bottom: 16px;
+        animation: messageSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .message.own {
+        text-align: right;
+    }
+    
+    .message-content {
+        display: inline-block;
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        position: relative;
+        word-wrap: break-word;
+    }
+    
+    .message.own .message-content {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+    
+    .message.other .message-content {
+        background: white;
+        color: #1f2937;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .message-text {
+        font-size: 15px;
+        line-height: 1.4;
+        margin: 0;
+    }
+    
+    .message-meta {
+        font-size: 12px;
+        opacity: 0.7;
+        margin-top: 6px;
+    }
+    
+    .message.own .message-meta {
+        text-align: right;
+    }
+    
+    .message.other .message-meta {
+        text-align: left;
+    }
+    
+    .message-actions {
+        position: absolute;
+        top: -8px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 4px;
+        display: none;
+        gap: 4px;
+    }
+    
+    .message.own .message-actions {
+        left: -60px;
+    }
+    
+    .message.other .message-actions {
+        right: -60px;
+    }
+    
+    .message:hover .message-actions {
+        display: flex;
+    }
+    
+    .action-btn {
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn:hover {
+        background: #f3f4f6;
+    }
+    
+    .reply-indicator {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        border-left: 3px solid #3b82f6;
+    }
+    
+    .message.own .reply-indicator {
+        background: rgba(255, 255, 255, 0.2);
+        border-left-color: white;
+    }
+    
+    .edited-indicator {
+        font-style: italic;
+        opacity: 0.7;
+        margin-left: 6px;
+    }
+    
+    .typing-indicator {
+        display: none;
+        align-items: center;
+        padding: 12px 20px;
+        color: #6b7280;
+        font-size: 14px;
+        font-style: italic;
+    }
+    
+    .typing-dots {
+        display: inline-flex;
+        margin-left: 8px;
+    }
+    
+    .typing-dot {
+        width: 6px;
+        height: 6px;
+        background: #6b7280;
+        border-radius: 50%;
+        margin: 0 2px;
+        animation: typingBounce 1.4s infinite;
+    }
+    
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typingBounce {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    .message-input-container {
+        padding: 20px;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .reply-preview {
+        background: #f3f4f6;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+        border-left: 3px solid #3b82f6;
+        display: none;
+    }
+    
+    .reply-preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    
+    .reply-preview-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #3b82f6;
+    }
+    
+    .reply-cancel {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0;
+    }
+    
+    .reply-preview-content {
+        font-size: 14px;
+        color: #4b5563;
+    }
+    
+    .input-area {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+    }
+    
+    .message-input {
+        flex: 1;
+        border: 2px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 12px 20px;
+        font-size: 15px;
+        resize: none;
+        max-height: 120px;
+        min-height: 44px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+    
+    .message-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .send-btn {
+        width: 44px;
+        height: 44px;
+        border: none;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: all 0.3s ease;
+    }
+    
+    .send-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .connection-status {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ef4444;
+    }
+    
+    .status-dot.connected {
+        background: #10b981;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+    
+    .empty-state .icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.6;
+    }
+    
+    .error-message {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+        color: #dc2626;
+        font-size: 14px;
+        display: none;
+    }
+    
+    .edit-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+    
+    .edit-modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 300px;
+    }
+    
+    .edit-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .edit-modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #6b7280;
+        cursor: pointer;
+    }
+    
+    .edit-textarea {
+        width: 100%;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 15px;
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+    }
+    
+    .edit-textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+    }
+    
+    .edit-modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+        justify-content: flex-end;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        color: #374151;
+    }
+    
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border: none;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Chat Header -->
+    <div class="chat-header">
+        <div class="partner-info">
+            <div class="partner-avatar">
+                {{ partner.username|first|upper }}
+            </div>
+            <div class="partner-details">
+                <h2>{{ partner.username }}</h2>
+                <div class="language-info">
+                    You teach <span class="flag">{{ user_teaches.flag }}</span>{{ user_teaches.name }}
+                    • You learn <span class="flag">{{ user_learns.flag }}</span>{{ user_learns.name }}
+                </div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'chats:chat_list' %}" class="header-btn">
+                ← Back to Chats
+            </a>
+            <a href="{% url 'chats:create_video_room' match.id %}" class="header-btn">
+                📹 Video Call
+            </a>
+        </div>
+    </div>
+    
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Connecting...</span>
+    </div>
+    
+    <!-- Messages Container -->
+    <div class="messages-container" id="messagesContainer">
+        <div id="errorMessage" class="error-message"></div>
+        
+        {% if recent_messages %}
+            {% for message in recent_messages %}
+                <div class="message {% if message.sender == user %}own{% else %}other{% endif %}" data-message-id="{{ message.id }}">
+                    <div class="message-content">
+                        {% if message.reply_to %}
+                            <div class="reply-indicator">
+                                <strong>{{ message.reply_to.sender.username }}:</strong>
+                                {{ message.reply_to.content|truncatechars:50 }}
+                            </div>
+                        {% endif %}
+                        
+                        <p class="message-text">{{ message.content|escape }}</p>
+                        
+                        <div class="message-meta">
+                            {{ message.timestamp|timesince }} ago
+                            {% if message.edited_at %}
+                                <span class="edited-indicator">(edited)</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if message.sender == user %}
+                            <div class="message-actions">
+                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩️</button>
+                                <button class="action-btn edit-btn" title="Edit" data-message-id="{{ message.id }}">✏️</button>
+                            </div>
+                        {% else %}
+                            <div class="message-actions">
+                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩️</button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="icon">💬</div>
+                <h3>Start your conversation!</h3>
+                <p>Send a message to {{ partner.username }} to begin your language exchange.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Typing Indicator -->
+    <div id="typingIndicator" class="typing-indicator">
+        <span id="typingUser"></span> is typing
+        <div class="typing-dots">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    </div>
+    
+    <!-- Message Input -->
+    <div class="message-input-container">
+        <div id="replyPreview" class="reply-preview">
+            <div class="reply-preview-header">
+                <span class="reply-preview-title">Replying to</span>
+                <button class="reply-cancel" onclick="cancelReply()">×</button>
+            </div>
+            <div class="reply-preview-content" id="replyPreviewContent"></div>
+        </div>
+        
+        <div class="input-area">
+            <textarea id="messageInput" class="message-input" placeholder="Type your message..." rows="1"></textarea>
+            <button id="sendBtn" class="send-btn" disabled>
+                ➤
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Message Modal -->
+<div id="editModal" class="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-header">
+            <h3 class="edit-modal-title">Edit Message</h3>
+            <button class="close-modal" onclick="closeEditModal()">×</button>
+        </div>
+        <textarea id="editTextarea" class="edit-textarea" placeholder="Edit your message..."></textarea>
+        <div class="edit-modal-actions">
+            <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+class TextChat {
+    constructor(roomId, userId, partnerUsername) {
+        this.roomId = roomId;
+        this.userId = userId;
+        this.partnerUsername = partnerUsername;
+        this.ws = null;
+        this.isConnected = false;
+        this.typingTimeout = null;
+        this.isTyping = false;
+        this.replyToMessage = null;
+        this.editingMessage = null;
+        
+        this.initializeElements();
+        this.setupEventListeners();
+        this.connectWebSocket();
+        this.autoResizeTextarea();
+    }
+    
+    initializeElements() {
+        this.messagesContainer = document.getElementById('messagesContainer');
+        this.messageInput = document.getElementById('messageInput');
+        this.sendBtn = document.getElementById('sendBtn');
+        this.connectionStatus = document.getElementById('connectionStatus');
+        this.statusDot = document.getElementById('statusDot');
+        this.statusText = document.getElementById('statusText');
+        this.typingIndicator = document.getElementById('typingIndicator');
+        this.typingUser = document.getElementById('typingUser');
+        this.errorMessage = document.getElementById('errorMessage');
+        this.replyPreview = document.getElementById('replyPreview');
+        this.replyPreviewContent = document.getElementById('replyPreviewContent');
+        this.editModal = document.getElementById('editModal');
+        this.editTextarea = document.getElementById('editTextarea');
+    }
+    
+    setupEventListeners() {
+        this.sendBtn.addEventListener('click', () => this.sendMessage());
+        this.messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+        
+        this.messageInput.addEventListener('input', () => {
+            this.handleTyping();
+            this.updateSendButton();
+            this.autoResizeTextarea();
+        });
+        
+        // Set up message action listeners
+        this.messagesContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('reply-btn')) {
+                this.replyToMessage(e.target.dataset.messageId);
+            } else if (e.target.classList.contains('edit-btn')) {
+                this.editMessage(e.target.dataset.messageId);
+            }
+        });
+        
+        // Close modal on background click
+        this.editModal.addEventListener('click', (e) => {
+            if (e.target === this.editModal) {
+                this.closeEditModal();
+            }
+        });
+    }
+    
+    connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/text-chat/${this.roomId}/`;
+        
+        this.ws = new WebSocket(wsUrl);
+        
+        this.ws.onopen = () => {
+            console.log('WebSocket connected');
+            this.isConnected = true;
+            this.updateStatus('Connected', 'connected');
+        };
+        
+        this.ws.onclose = (event) => {
+            console.log('WebSocket disconnected:', event.code);
+            this.isConnected = false;
+            this.updateStatus('Disconnected', 'disconnected');
+            
+            // Attempt to reconnect after 3 seconds
+            setTimeout(() => {
+                if (!this.isConnected) {
+                    this.connectWebSocket();
+                }
+            }, 3000);
+        };
+        
+        this.ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            this.showError('Connection error. Please refresh the page.');
+        };
+        
+        this.ws.onmessage = (event) => {
+            this.handleWebSocketMessage(JSON.parse(event.data));
+        };
+    }
+    
+    handleWebSocketMessage(data) {
+        console.log('Received message:', data);
+        
+        switch (data.type) {
+            case 'connected':
+                this.updateStatus('Connected', 'connected');
+                break;
+                
+            case 'new_message':
+                this.addMessage(data);
+                break;
+                
+            case 'message_edited':
+                this.updateMessage(data);
+                break;
+                
+            case 'typing_start':
+                this.showTypingIndicator(data.username);
+                break;
+                
+            case 'typing_stop':
+                this.hideTypingIndicator();
+                break;
+                
+            case 'user_joined':
+                console.log(`${data.username} joined the chat`);
+                break;
+                
+            case 'user_left':
+                console.log(`${data.username} left the chat`);
+                break;
+                
+            case 'error':
+                this.showError(data.message);
+                break;
+                
+            default:
+                console.log('Unknown message type:', data.type);
+        }
+    }
+    
+    sendMessage() {
+        const content = this.messageInput.value.trim();
+        if (!content || !this.isConnected) {
+            return;
+        }
+        
+        const messageData = {
+            type: 'send_message',
+            message: content,
+            reply_to: this.replyToMessage ? this.replyToMessage.id : null
+        };
+        
+        this.ws.send(JSON.stringify(messageData));
+        
+        // Clear input and reply
+        this.messageInput.value = '';
+        this.cancelReply();
+        this.updateSendButton();
+        this.autoResizeTextarea();
+        this.stopTyping();
+    }
+    
+    addMessage(data) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${data.sender_id == this.userId ? 'own' : 'other'}`;
+        messageDiv.dataset.messageId = data.message_id;
+        
+        const isOwn = data.sender_id == this.userId;
+        const replyHtml = data.reply_to ? `
+            <div class="reply-indicator">
+                <strong>${data.reply_to.sender_username}:</strong>
+                ${data.reply_to.content}
+            </div>
+        ` : '';
+        
+        const actionsHtml = isOwn ? `
+            <div class="message-actions">
+                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩️</button>
+                <button class="action-btn edit-btn" title="Edit" data-message-id="${data.message_id}">✏️</button>
+            </div>
+        ` : `
+            <div class="message-actions">
+                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩️</button>
+            </div>
+        `;
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                ${replyHtml}
+                <p class="message-text">${this.escapeHtml(data.content)}</p>
+                <div class="message-meta">
+                    Just now
+                </div>
+                ${actionsHtml}
+            </div>
+        `;
+        
+        // Remove empty state if exists
+        const emptyState = this.messagesContainer.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+        
+        this.messagesContainer.appendChild(messageDiv);
+        this.scrollToBottom();
+    }
+    
+    updateMessage(data) {
+        const messageElement = this.messagesContainer.querySelector(`[data-message-id="${data.message_id}"]`);
+        if (messageElement) {
+            const textElement = messageElement.querySelector('.message-text');
+            const metaElement = messageElement.querySelector('.message-meta');
+            
+            textElement.textContent = data.new_content;
+            metaElement.innerHTML = metaElement.innerHTML + ' <span class="edited-indicator">(edited)</span>';
+        }
+    }
+    
+    replyToMessage(messageId) {
+        const messageElement = this.messagesContainer.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            const messageText = messageElement.querySelector('.message-text').textContent;
+            const senderElement = messageElement.querySelector('.reply-indicator strong') || 
+                                 { textContent: messageElement.classList.contains('own') ? 'You' : this.partnerUsername };
+            
+            this.replyToMessage = {
+                id: messageId,
+                content: messageText,
+                sender: senderElement.textContent.replace(':', '')
+            };
+            
+            this.replyPreviewContent.innerHTML = `<strong>${this.replyToMessage.sender}:</strong> ${this.replyToMessage.content}`;
+            this.replyPreview.style.display = 'block';
+            this.messageInput.focus();
+        }
+    }
+    
+    cancelReply() {
+        this.replyToMessage = null;
+        this.replyPreview.style.display = 'none';
+    }
+    
+    editMessage(messageId) {
+        const messageElement = this.messagesContainer.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            const messageText = messageElement.querySelector('.message-text').textContent;
+            this.editingMessage = {
+                id: messageId,
+                element: messageElement
+            };
+            
+            this.editTextarea.value = messageText;
+            this.editModal.style.display = 'flex';
+            this.editTextarea.focus();
+        }
+    }
+    
+    closeEditModal() {
+        this.editModal.style.display = 'none';
+        this.editingMessage = null;
+    }
+    
+    saveEdit() {
+        const newContent = this.editTextarea.value.trim();
+        if (!newContent || !this.editingMessage) {
+            return;
+        }
+        
+        const messageData = {
+            type: 'edit_message',
+            message_id: this.editingMessage.id,
+            content: newContent
+        };
+        
+        this.ws.send(JSON.stringify(messageData));
+        this.closeEditModal();
+    }
+    
+    handleTyping() {
+        if (!this.isTyping) {
+            this.isTyping = true;
+            this.ws.send(JSON.stringify({ type: 'typing_start' }));
+        }
+        
+        clearTimeout(this.typingTimeout);
+        this.typingTimeout = setTimeout(() => {
+            this.stopTyping();
+        }, 1000);
+    }
+    
+    stopTyping() {
+        if (this.isTyping) {
+            this.isTyping = false;
+            this.ws.send(JSON.stringify({ type: 'typing_stop' }));
+        }
+        clearTimeout(this.typingTimeout);
+    }
+    
+    showTypingIndicator(username) {
+        this.typingUser.textContent = username;
+        this.typingIndicator.style.display = 'flex';
+    }
+    
+    hideTypingIndicator() {
+        this.typingIndicator.style.display = 'none';
+    }
+    
+    updateStatus(text, status) {
+        this.statusText.textContent = text;
+        this.statusDot.className = `status-dot ${status}`;
+    }
+    
+    updateSendButton() {
+        const hasContent = this.messageInput.value.trim().length > 0;
+        this.sendBtn.disabled = !hasContent || !this.isConnected;
+    }
+    
+    autoResizeTextarea() {
+        this.messageInput.style.height = 'auto';
+        this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+    }
+    
+    scrollToBottom() {
+        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    }
+    
+    showError(message) {
+        this.errorMessage.textContent = message;
+        this.errorMessage.style.display = 'block';
+        setTimeout(() => {
+            this.errorMessage.style.display = 'none';
+        }, 5000);
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Global functions for modal interactions
+function cancelReply() {
+    window.textChat.cancelReply();
+}
+
+function closeEditModal() {
+    window.textChat.closeEditModal();
+}
+
+function saveEdit() {
+    window.textChat.saveEdit();
+}
+
+// Initialize chat when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.textChat = new TextChat(
+        '{{ room_id }}',
+        {{ user.id }},
+        '{{ partner.username }}'
+    );
+});
+</script>
+{% endblock %} 

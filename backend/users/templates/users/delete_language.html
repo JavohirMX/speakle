@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Remove Language - Speakle{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b">
+                <h1 class="text-2xl font-bold text-gray-900">Remove Language</h1>
+                <p class="mt-1 text-sm text-gray-600">Are you sure you want to remove this language from your profile?</p>
+            </div>
+
+            <div class="px-6 py-6">
+                <div class="mb-6">
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <span class="text-3xl mr-3">{{ user_language.language.flag_emoji }}</span>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ user_language.language.name }}</h3>
+                            <p class="text-sm text-gray-600">
+                                <span class="font-medium">Type:</span> {{ user_language.get_language_type_display }} · 
+                                <span class="font-medium">Level:</span> {{ user_language.get_proficiency_display }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Warning</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <p>This action cannot be undone. Removing this language will also affect your language matching with other users.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% url 'users:profile' %}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition">
+                            Cancel
+                        </a>
+                        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition">
+                            Remove Language
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

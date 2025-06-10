@@ -1,0 +1,93 @@
+{% if potential_matches %}
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% for match in potential_matches %}
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+                <!-- User Info -->
+                <div class="flex items-center mb-4">
+                    {% if match.potential_partner.profile_picture %}
+                        <img src="{{ match.potential_partner.profile_picture.url }}" 
+                             alt="{{ match.potential_partner.username }}" 
+                             class="w-12 h-12 rounded-full object-cover mr-3">
+                    {% else %}
+                        <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
+                            {{ match.potential_partner.username|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <h3 class="font-semibold text-lg">{{ match.potential_partner.username }}</h3>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-600">Compatibility: </span>
+                            <span class="text-sm font-medium text-green-600 ml-1">{{ match.compatibility_score|floatformat:0 }}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language Exchange Info -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span class="text-gray-600">You teach:</span>
+                        <span class="font-medium text-blue-600">{{ match.user_teaches.name }} {{ match.user_teaches.flag_emoji }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">You learn:</span>
+                        <span class="font-medium text-green-600">{{ match.user_learns.name }} {{ match.user_learns.flag_emoji }}</span>
+                    </div>
+                </div>
+
+                <!-- Bio Preview -->
+                {% if match.potential_partner.bio %}
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600 line-clamp-3">
+                            {{ match.potential_partner.bio|truncatewords:20 }}
+                        </p>
+                    </div>
+                {% endif %}
+
+                <!-- Interests -->
+                {% if match.potential_partner.interests %}
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-500 mb-1">Interests:</p>
+                        <p class="text-sm text-gray-600">{{ match.potential_partner.interests|truncatewords:10 }}</p>
+                    </div>
+                {% endif %}
+
+                <!-- Action Button -->
+                <div class="flex justify-end">
+                    {% if match.potential_partner.id in sent_requests %}
+                        <span class="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
+                            ⏳ Request Sent
+                        </span>
+                    {% elif match.potential_partner.id in confirmed_partner_ids %}
+                        <span class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">
+                            ✅ Already Matched
+                        </span>
+                    {% else %}
+                        <button onclick="openSendRequestModal({{ match.id }}, '{{ match.potential_partner.username }}', '{{ match.user_teaches.name }}', '{{ match.user_learns.name }}')" 
+                           class="bg-blue-500 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                            💌 Send Request
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-12">
+        <div class="mb-4 text-6xl">🔍</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No matches found</h3>
+        <p class="text-gray-600 mb-6">
+            We couldn't find any language partners for you right now. 
+            <br>Make sure you have set up your languages in your profile.
+        </p>
+        <div class="space-x-4">
+            <a href="{% url 'users:profile' %}" 
+               class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
+                Edit Profile
+            </a>
+            <button onclick="refreshMatches()" 
+               class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition">
+                Try Again
+            </button>
+        </div>
+    </div>
+{% endif %} 

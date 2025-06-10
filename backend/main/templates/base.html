@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Connect with language learners worldwide through video chat. Practice speaking with native speakers and improve your language skills naturally.{% endblock %}">
+    <meta name="keywords" content="language exchange, video chat, language learning, native speakers, practice speaking">
+    <meta name="author" content="Speakle">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% block og_title %}Speakle - Connect, Learn, Speak{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Connect with language learners worldwide through video chat{% endblock %}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{% block twitter_title %}Speakle - Connect, Learn, Speak{% endblock %}">
+    <meta property="twitter:description" content="{% block twitter_description %}Connect with language learners worldwide through video chat{% endblock %}">
+    
+    <title>{% block title %}Speakle - Connect, Learn, Speak{% endblock %}</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    
+    <!-- Critical CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand': {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-gentle': 'bounceGentle 0.5s ease-in-out infinite alternate',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'slide-down': 'slideDown 0.2s ease-out',
+                        'scale-up': 'scaleUp 0.15s ease-out',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Web Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗣️</text></svg>">
+    
+    <style>
+        :root {
+            --nav-height: 5rem;
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            --warning-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            --nav-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        html { 
+            scroll-behavior: smooth; 
+            font-size: 16px;
+        }
+        
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding-top: var(--nav-height);
+        }
+        
+        /* Enhanced Navigation */
+        .nav-blur {
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+            box-shadow: var(--nav-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: var(--nav-height);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+        
+        .nav-blur.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.12);
+        }
+        
+        .nav-container {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        /* Ensure main content doesn't overlap */
+        #main-content {
+            margin-top: 0;
+            position: relative;
+        }
+        
+        /* Fix for any page-specific containers */
+        .page-container {
+            padding-top: 2rem;
+        }
+        
+        .nav-item {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0.5rem;
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+            border-radius: 0.5rem;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item:hover::before {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+        
+        .nav-item:hover::after,
+        .nav-item.active::after {
+            width: 80%;
+        }
+        
+        /* Logo enhancement */
+        .logo-container {
+            transition: all 0.3s ease;
+        }
+        
+        .logo-container:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* User profile dropdown */
+        .user-dropdown {
+            transform: translateY(-10px) scale(0.95);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .user-dropdown.show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .user-dropdown-item {
+            transition: all 0.15s ease;
+        }
+        
+        .user-dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.05));
+            transform: translateX(4px);
+        }
+        
+        /* Mobile menu enhancements */
+        .mobile-menu {
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            top: var(--nav-height);
+        }
+        
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu-item {
+            transition: all 0.3s ease;
+            border-radius: 0.75rem;
+        }
+        
+        .mobile-menu-item:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.05));
+            transform: translateX(8px);
+        }
+        
+        /* Enhanced notifications */
+        .notification-badge {
+            animation: bounceGentle 0.5s ease-in-out infinite alternate;
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: pulse-notification 2s infinite;
+            position: relative;
+        }
+        
+        .notification-badge::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg, #ef4444, #f87171);
+            border-radius: inherit;
+            z-index: -1;
+            opacity: 0.3;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse-notification {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        
+        @keyframes glow {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+        }
+        
+        @keyframes slideDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes scaleUp {
+            0% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .notification-toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            transform: translateX(400px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 400px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        
+        .notification-toast.show {
+            transform: translateX(0);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        
+        /* Enhanced modals */
+        .modal-overlay {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .modal-content {
+            animation: slideInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes slideInScale {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -48%) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        @keyframes bounceGentle {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+        
+        /* Button enhancements */
+        .btn-primary {
+            background: var(--primary-gradient);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 14px 0 rgba(0, 118, 255, 0.39);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px 0 rgba(0, 118, 255, 0.5);
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .btn-success {
+            background: var(--success-gradient);
+            box-shadow: 0 4px 14px 0 rgba(34, 197, 94, 0.39);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px 0 rgba(34, 197, 94, 0.5);
+        }
+        
+        /* Hamburger menu animation */
+        .hamburger {
+            transition: all 0.3s ease;
+        }
+        
+        .hamburger.open .line1 {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        
+        .hamburger.open .line2 {
+            opacity: 0;
+        }
+        
+        .hamburger.open .line3 {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+        
+        .hamburger-line {
+            width: 25px;
+            height: 3px;
+            background-color: currentColor;
+            margin: 3px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+        
+        /* Responsive design improvements */
+        @media (max-width: 768px) {
+            .notification-toast {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                transform: translateX(100%);
+                top: 70px;
+            }
+            
+            .notification-toast.show {
+                transform: translateX(0);
+            }
+            
+            .mobile-menu {
+                width: 100%;
+                max-width: 320px;
+            }
+        }
+        
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+        
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Focus improvements for accessibility */
+        .focus-ring:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        /* Skip to content link for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: #000;
+            color: #fff;
+            padding: 8px;
+            text-decoration: none;
+            transition: top 0.3s;
+            z-index: 10000;
+        }
+        
+        .skip-link:focus {
+            top: 6px;
+        }
+        
+        /* Online status indicator */
+        .online-indicator {
+            position: relative;
+        }
+        
+        .online-indicator::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border: 2px solid white;
+            border-radius: 50%;
+            animation: pulse-green 2s infinite;
+        }
+        
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body class="bg-gray-50 antialiased">
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="skip-link focus-ring">Skip to main content</a>
+    
+    <!-- Enhanced Navigation -->
+    <nav class="nav-blur" id="navbar">
+        <div class="nav-container">
+            <!-- Enhanced Logo -->
+            <div class="flex items-center">
+                <a href="{% url 'main:home' %}" class="logo-container flex items-center space-x-3 text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors focus-ring rounded-xl px-3 py-2">
+                    <div class="relative">
+                        <span class="text-4xl filter drop-shadow-lg">🗣️</span>
+                        <div class="absolute inset-0 text-4xl opacity-20 transform translate-x-1 translate-y-1">🗣️</div>
+                    </div>
+                    <div class="hidden sm:block">
+                        <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-extrabold tracking-tight">Speakle</span>
+                        <div class="text-xs text-gray-500 font-normal -mt-1">Language Exchange</div>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-2">
+                {% if user.is_authenticated %}
+                    <!-- Navigation Items -->
+                    <a href="{% url 'matches:find_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'find_matches' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>🔍</span>
+                            <span>Find Partners</span>
+                        </span>
+                    </a>
+                    
+                    <a href="{% url 'matches:my_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'my_matches' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>🤝</span>
+                            <span>My Matches</span>
+                            <span id="pendingCallsBadge" class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                        </span>
+                    </a>
+                    
+                    <a href="{% url 'chats:chat_list' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.app_name == 'chats' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>💬</span>
+                            <span>Chats</span>
+                            <span id="unreadMessagesBadge" class="notification-badge absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                        </span>
+                    </a>
+                    
+                    <a href="{% url 'matches:requests' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'requests' %}active text-blue-600{% endif %}">
+                        <span class="flex items-center space-x-2">
+                            <span>📩</span>
+                            <span>Requests</span>
+                        </span>
+                    </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="relative ml-4">
+                        <button id="userMenuButton" class="flex items-center space-x-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 focus-ring shadow-sm" aria-expanded="false">
+                            <div class="relative">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full object-cover">
+                                {% else %}
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                                        {{ user.username|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div class="online-indicator"></div>
+                            </div>
+                            <div class="text-left">
+                                <div class="text-sm font-semibold text-gray-900">{{ user.username }}</div>
+                                <div class="text-xs text-gray-500">Online</div>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" id="userMenuChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdown" class="user-dropdown absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                            <!-- User Info Header -->
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <div class="flex items-center space-x-3">
+                                    {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-10 h-10 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="font-semibold text-gray-900">{{ user.username }}</div>
+                                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Menu Items -->
+                            <div class="py-2">
+                                <a href="{% url 'users:profile' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">👤</span>
+                                    <span>Profile Settings</span>
+                                </a>
+                                <a href="{% url 'matches:my_matches' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">🤝</span>
+                                    <span>My Matches</span>
+                                </a>
+                                <a href="{% url 'chats:chat_list' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">💬</span>
+                                    <span>My Chats</span>
+                                </a>
+                                <a href="#" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">📊</span>
+                                    <span>Statistics</span>
+                                </a>
+                                <a href="#" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <span class="text-lg">⚙️</span>
+                                    <span>Settings</span>
+                                </a>
+                            </div>
+                            
+                            <div class="border-t border-gray-100 py-2">
+                                <a href="{% url 'users:logout' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-red-600 hover:text-red-700 font-medium">
+                                    <span class="text-lg">🚪</span>
+                                    <span>Sign Out</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Non-authenticated Navigation -->
+                    <a href="{% url 'users:login' %}" class="nav-item px-6 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg">
+                        Sign In
+                    </a>
+                    <a href="{% url 'users:register' %}" class="btn-primary text-white px-6 py-2.5 rounded-lg font-medium border-0 focus-ring ml-2">
+                        Get Started
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Enhanced Mobile menu button -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="hamburger text-gray-700 hover:text-blue-600 focus-ring rounded-lg p-2 transition-colors" aria-label="Toggle mobile menu">
+                    <div class="hamburger-line line1"></div>
+                    <div class="hamburger-line line2"></div>
+                    <div class="hamburger-line line3"></div>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Enhanced Mobile Navigation -->
+    <div id="mobile-menu" class="mobile-menu md:hidden fixed right-0 w-80 h-screen shadow-2xl z-40">
+        <div class="px-6 py-8 space-y-6 h-full overflow-y-auto">
+            {% if user.is_authenticated %}
+                <!-- Mobile User Profile -->
+                <div class="flex items-center space-x-4 pb-6 border-b border-gray-200">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-12 h-12 rounded-full object-cover">
+                    {% else %}
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                            {{ user.username|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="font-semibold text-gray-900 text-lg">{{ user.username }}</div>
+                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+                    </div>
+                </div>
+                
+                <!-- Mobile Menu Items -->
+                <div class="space-y-2">
+                    <a href="{% url 'matches:find_matches' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">🔍</span>
+                        <span>Find Partners</span>
+                    </a>
+                    <a href="{% url 'matches:my_matches' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
+                        <span class="text-xl">🤝</span>
+                        <span>My Matches</span>
+                        <span id="pendingCallsBadgeMobile" class="notification-badge absolute top-3 right-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                    </a>
+                    <a href="{% url 'chats:chat_list' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
+                        <span class="text-xl">💬</span>
+                        <span>Chats</span>
+                        <span id="unreadMessagesBadgeMobile" class="notification-badge absolute top-3 right-3 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                    </a>
+                    <a href="{% url 'matches:requests' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">📩</span>
+                        <span>Requests</span>
+                    </a>
+                    <a href="{% url 'users:profile' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">👤</span>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">📊</span>
+                        <span>Statistics</span>
+                    </a>
+                    <a href="#" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">⚙️</span>
+                        <span>Settings</span>
+                    </a>
+                </div>
+                
+                <!-- Mobile Logout -->
+                <div class="pt-6 border-t border-gray-200">
+                    <a href="{% url 'users:logout' %}" class="block w-full text-center bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-colors font-semibold focus-ring">
+                        <span class="flex items-center justify-center space-x-2">
+                            <span>🚪</span>
+                            <span>Sign Out</span>
+                        </span>
+                    </a>
+                </div>
+            {% else %}
+                <!-- Non-authenticated Mobile Menu -->
+                <div class="space-y-4">
+                    <a href="{% url 'users:login' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl">🔐</span>
+                        <span>Sign In</span>
+                    </a>
+                    <a href="{% url 'users:register' %}" class="block w-full text-center btn-primary text-white px-6 py-4 rounded-xl font-semibold border-0 focus-ring">
+                        <span class="flex items-center justify-center space-x-2">
+                            <span>✨</span>
+                            <span>Get Started</span>
+                        </span>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Global Enhanced Notification Toast -->
+    <div id="notificationToast" class="notification-toast">
+        <div class="bg-white shadow-xl rounded-xl p-5 border border-gray-100">
+            <div class="flex items-start">
+                <div class="flex-shrink-0 pt-1">
+                    <span id="toastIcon" class="text-2xl block">📞</span>
+                </div>
+                <div class="ml-4 flex-1 min-w-0">
+                    <p id="toastTitle" class="text-sm font-semibold text-gray-900 truncate">Notification</p>
+                    <p id="toastMessage" class="text-sm text-gray-600 mt-1 line-clamp-2">Message content</p>
+                    <div id="toastActions" class="mt-3 flex space-x-2" style="display: none;">
+                        <button id="toastActionPrimary" class="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors focus-ring">
+                            Action
+                        </button>
+                        <button id="toastActionSecondary" class="text-xs bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors focus-ring">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+                <div class="ml-3 flex-shrink-0">
+                    <button onclick="hideNotificationToast()" class="text-gray-400 hover:text-gray-600 focus-ring rounded p-1" aria-label="Close notification">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    <!-- Enhanced Global Incoming Call Modal -->
+    <div id="globalIncomingCallModal" class="fixed inset-0 modal-overlay hidden z-[9999]" role="dialog" aria-labelledby="call-modal-title" aria-modal="true">
+        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 modal-content">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-200">
+                <div class="text-center">
+                    <!-- Animated call icon -->
+                    <div class="relative w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse-slow">
+                        <span class="text-4xl">📞</span>
+                        <div class="absolute inset-0 rounded-full bg-blue-400 opacity-20 animate-ping"></div>
+                    </div>
+                    
+                    <h3 id="call-modal-title" class="text-2xl font-bold text-gray-900 mb-3">Incoming Video Call</h3>
+                    <p class="text-lg font-semibold text-gray-800 mb-2" id="globalCallerName"></p>
+                    <p class="text-sm text-gray-600 mb-6">wants to start a video call</p>
+                    
+                    <!-- Optional message -->
+                    <div id="globalCallerMessage" class="mb-6 p-4 bg-blue-50 rounded-xl text-sm text-gray-700 border border-blue-100" style="display: none;">
+                        <div class="flex items-start">
+                            <span class="text-blue-500 mr-3 mt-0.5 text-lg">💬</span>
+                            <div id="globalMessageContent" class="text-left"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action buttons -->
+                    <div class="flex space-x-4">
+                        <button onclick="globalDeclineCall()" 
+                                class="flex-1 bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-all duration-200 font-semibold focus-ring flex items-center justify-center space-x-2">
+                            <span>❌</span>
+                            <span>Decline</span>
+                        </button>
+                        <button onclick="globalAcceptCall()" 
+                                class="flex-1 btn-success text-white px-6 py-4 rounded-xl font-semibold border-0 focus-ring flex items-center justify-center space-x-2">
+                            <span>✅</span>
+                            <span>Accept</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Auto-decline timer -->
+                    <div class="mt-4 text-xs text-gray-500">
+                        <span id="callTimer">Auto-decline in <span id="timerCountdown">30</span>s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content with proper spacing for fixed nav -->
+    <main id="main-content" class="min-h-screen">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Enhanced Footer -->
+    <footer class="bg-gradient-to-r from-gray-900 to-gray-800 text-white mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Main footer content -->
+            <div class="py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand section -->
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <span class="text-3xl">🗣️</span>
+                        <span class="text-2xl font-bold">Speakle</span>
+                    </div>
+                    <p class="text-gray-400 mb-4 max-w-md">
+                        Connect with language learners worldwide through video chat. Practice speaking with native speakers and improve your language skills naturally.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors focus-ring rounded p-1" aria-label="Facebook">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors focus-ring rounded p-1" aria-label="Twitter">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors focus-ring rounded p-1" aria-label="Instagram">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.004 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.297-3.323C5.901 8.248 7.052 7.758 8.349 7.758s2.448.49 3.323 1.297c.896.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323c-.875.807-2.026 1.297-3.323 1.297zm7.009 0c-1.297 0-2.448-.49-3.323-1.297-.896-.875-1.297-2.026-1.297-3.323s.49-2.448 1.297-3.323c.875-.896 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.896.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323c-.875.807-2.026 1.297-3.323 1.297z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Quick links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{% url 'main:home' %}" class="hover:text-white transition-colors focus-ring rounded">Home</a></li>
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'matches:find_matches' %}" class="hover:text-white transition-colors focus-ring rounded">Find Partners</a></li>
+                            <li><a href="{% url 'matches:my_matches' %}" class="hover:text-white transition-colors focus-ring rounded">My Matches</a></li>
+                        {% else %}
+                            <li><a href="{% url 'users:register' %}" class="hover:text-white transition-colors focus-ring rounded">Sign Up</a></li>
+                            <li><a href="{% url 'users:login' %}" class="hover:text-white transition-colors focus-ring rounded">Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <!-- Support -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Terms of Service</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Copyright -->
+            <div class="py-6 border-t border-gray-700 text-center text-gray-400">
+                <p>&copy; 2025 Speakle. All rights reserved. Connect with language learners worldwide.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Enhanced JavaScript -->
+    <script>
+        // Enhanced mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const navbar = document.getElementById('navbar');
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userDropdown = document.getElementById('userDropdown');
+            const userMenuChevron = document.getElementById('userMenuChevron');
+            
+            // Enhanced Mobile menu toggle
+            mobileMenuButton?.addEventListener('click', function() {
+                mobileMenu.classList.toggle('open');
+                this.classList.toggle('open');
+                const isOpen = mobileMenu.classList.contains('open');
+                this.setAttribute('aria-expanded', isOpen);
+                
+                // Prevent body scroll when menu is open
+                if (isOpen) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // User dropdown functionality
+            userMenuButton?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = userDropdown.classList.contains('show');
+                
+                if (isOpen) {
+                    closeUserDropdown();
+                } else {
+                    openUserDropdown();
+                }
+            });
+            
+            function openUserDropdown() {
+                userDropdown.classList.add('show');
+                userMenuButton.setAttribute('aria-expanded', 'true');
+                userMenuChevron.style.transform = 'rotate(180deg)';
+                
+                // Focus first menu item
+                const firstMenuItem = userDropdown.querySelector('a');
+                if (firstMenuItem) {
+                    setTimeout(() => firstMenuItem.focus(), 100);
+                }
+            }
+            
+            function closeUserDropdown() {
+                userDropdown.classList.remove('show');
+                userMenuButton.setAttribute('aria-expanded', 'false');
+                userMenuChevron.style.transform = 'rotate(0deg)';
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                // Close mobile menu
+                if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
+                    mobileMenu.classList.remove('open');
+                    mobileMenuButton.classList.remove('open');
+                    mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    document.body.style.overflow = '';
+                }
+                
+                // Close user dropdown
+                if (userDropdown && !userDropdown.contains(e.target) && !userMenuButton.contains(e.target)) {
+                    closeUserDropdown();
+                }
+            });
+            
+            // Keyboard navigation for dropdowns
+            document.addEventListener('keydown', function(e) {
+                // Close dropdowns on Escape
+                if (e.key === 'Escape') {
+                    if (mobileMenu.classList.contains('open')) {
+                        mobileMenu.classList.remove('open');
+                        mobileMenuButton.classList.remove('open');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
+                        mobileMenuButton.focus();
+                        document.body.style.overflow = '';
+                    }
+                    
+                    if (userDropdown?.classList.contains('show')) {
+                        closeUserDropdown();
+                        userMenuButton.focus();
+                    }
+                }
+                
+                // Navigate dropdown with arrow keys
+                if (userDropdown?.classList.contains('show')) {
+                    const menuItems = userDropdown.querySelectorAll('a');
+                    const currentIndex = Array.from(menuItems).indexOf(document.activeElement);
+                    
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const nextIndex = currentIndex < menuItems.length - 1 ? currentIndex + 1 : 0;
+                        menuItems[nextIndex].focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prevIndex = currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
+                        menuItems[prevIndex].focus();
+                    }
+                }
+            });
+            
+            // Enhanced navbar scroll effect with performance optimization
+            let lastScrollY = window.scrollY;
+            let ticking = false;
+            
+            function updateNavbar() {
+                const currentScrollY = window.scrollY;
+                
+                // Add scrolled class for enhanced styling
+                if (currentScrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+                
+                // Removed navbar hiding behavior as requested
+                lastScrollY = currentScrollY;
+                ticking = false;
+            }
+            
+            function requestTick() {
+                if (!ticking) {
+                    requestAnimationFrame(updateNavbar);
+                    ticking = true;
+                }
+            }
+            
+            window.addEventListener('scroll', requestTick, { passive: true });
+            
+            // Auto-highlight active navigation items
+            highlightActiveNavItem();
+            
+            // Remove the annoying navbar slide-in animation
+            // The navbar should be immediately visible for better UX during navigation
+        });
+        
+        // Enhanced active navigation highlighting
+        function highlightActiveNavItem() {
+            const currentPath = window.location.pathname;
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                const href = item.getAttribute('href');
+                if (href && currentPath.includes(href) && href !== '/') {
+                    item.classList.add('active');
+                } else if (href === '/' && currentPath === '/') {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        // Enhanced notification badge updates with animation
+        function updatePendingCallsBadge() {
+            const badges = ['pendingCallsBadge', 'pendingCallsBadgeMobile'];
+            badges.forEach(badgeId => {
+                const badge = document.getElementById(badgeId);
+                if (badge) {
+                    if (pendingCallsCount > 0) {
+                        const displayCount = pendingCallsCount > 99 ? '99+' : pendingCallsCount;
+                        
+                        // Animate number change
+                        if (badge.textContent !== displayCount) {
+                            badge.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                badge.textContent = displayCount;
+                                badge.style.transform = 'scale(1)';
+                            }, 100);
+                        }
+                        
+                        badge.style.display = 'flex';
+                        
+                        // Add pulsing animation for new notifications
+                        badge.classList.add('animate-pulse-slow');
+                        setTimeout(() => {
+                            badge.classList.remove('animate-pulse-slow');
+                        }, 3000);
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Enhanced unread messages badge function
+        let unreadMessagesCount = 0;
+        
+        function updateUnreadMessagesBadge() {
+            const badges = ['unreadMessagesBadge', 'unreadMessagesBadgeMobile'];
+            badges.forEach(badgeId => {
+                const badge = document.getElementById(badgeId);
+                if (badge) {
+                    if (unreadMessagesCount > 0) {
+                        const displayCount = unreadMessagesCount > 99 ? '99+' : unreadMessagesCount;
+                        
+                        // Animate number change
+                        if (badge.textContent !== displayCount) {
+                            badge.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                badge.textContent = displayCount;
+                                badge.style.transform = 'scale(1)';
+                            }, 100);
+                        }
+                        
+                        badge.style.display = 'flex';
+                        
+                        // Add pulsing animation for new messages
+                        badge.classList.add('animate-pulse-slow');
+                        setTimeout(() => {
+                            badge.classList.remove('animate-pulse-slow');
+                        }, 3000);
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Function to check unread messages across all chats
+        function checkUnreadMessages() {
+            {% if user.is_authenticated %}
+            fetch('/chats/api/total-unread-count/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    unreadMessagesCount = data.unread_count || 0;
+                    updateUnreadMessagesBadge();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking unread messages:', error);
+            });
+            {% endif %}
+        }
+        
+        // Enhanced theme and accessibility features
+        function enhanceAccessibility() {
+            // Add loading states to buttons
+            const buttons = document.querySelectorAll('button, a.btn-primary');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.type === 'submit' || this.classList.contains('btn-primary')) {
+                        this.classList.add('loading');
+                        
+                        // Remove loading state after 3 seconds as fallback
+                        setTimeout(() => {
+                            this.classList.remove('loading');
+                        }, 3000);
+                    }
+                });
+            });
+            
+            // Enhanced focus management
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+            
+            document.addEventListener('mousedown', function() {
+                document.body.classList.remove('keyboard-navigation');
+            });
+        }
+        
+        // Performance monitoring and optimization
+        function optimizePerformance() {
+            // Lazy load images when they come into view
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            if (img.dataset.src) {
+                                img.src = img.dataset.src;
+                                img.removeAttribute('data-src');
+                                observer.unobserve(img);
+                            }
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+            
+            // Preload critical resources
+            const criticalResources = [
+                '{% url "matches:find_matches" %}',
+                '{% url "matches:my_matches" %}',
+                '{% url "chats:chat_list" %}',
+                '{% url "users:profile" %}'
+            ];
+            
+            criticalResources.forEach(url => {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = url;
+                document.head.appendChild(link);
+            });
+        }
+        
+        // Initialize enhanced features
+        document.addEventListener('DOMContentLoaded', function() {
+            enhanceAccessibility();
+            optimizePerformance();
+        });
+
+        {% if user.is_authenticated %}
+        // Enhanced global notification system (existing code with improvements)
+        let globalNotificationSocket = null;
+        let currentGlobalIncomingInvitation = null;
+        let pendingCallsCount = 0;
+        let browserNotificationsEnabled = false;
+        let callTimerInterval = null;
+        let callCountdown = 30;
+
+        // Performance optimizations
+        const WEBSOCKET_RECONNECT_DELAY = 3000;
+        const NOTIFICATION_DURATION = 5000;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        let reconnectAttempts = 0;
+
+        // Request browser notification permission with better UX
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        browserNotificationsEnabled = permission === 'granted';
+                        if (browserNotificationsEnabled) {
+                            showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '🔔');
+                        }
+                    });
+                } else {
+                    browserNotificationsEnabled = Notification.permission === 'granted';
+                }
+            }
+        }
+
+        // Enhanced browser notification
+        function showBrowserNotification(title, message, icon = '📞', tag = 'speakle-call') {
+            if (browserNotificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification(title, {
+                    body: message,
+                    icon: '/static/images/logo.png', // Add your logo here
+                    badge: '/static/images/badge.png', // Add your badge here
+                    requireInteraction: true,
+                    tag: tag,
+                    vibrate: [200, 100, 200], // Vibration pattern for mobile
+                    silent: false
+                });
+                
+                // Auto-close after 15 seconds for calls
+                setTimeout(() => notification.close(), 15000);
+                
+                return notification;
+            }
+            return null;
+        }
+
+        // Enhanced notification toast with actions
+        function showNotificationToast(title, message, icon = '📞', duration = NOTIFICATION_DURATION, actions = null) {
+            const toast = document.getElementById('notificationToast');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastActions = document.getElementById('toastActions');
+            
+            // Don't show if title and message are empty
+            if (!title && !message) {
+                return;
+            }
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            toastIcon.textContent = icon;
+            
+            // Handle actions
+            if (actions) {
+                toastActions.style.display = 'flex';
+                const primaryBtn = document.getElementById('toastActionPrimary');
+                const secondaryBtn = document.getElementById('toastActionSecondary');
+                
+                primaryBtn.textContent = actions.primary.text;
+                primaryBtn.onclick = actions.primary.action;
+                
+                if (actions.secondary) {
+                    secondaryBtn.textContent = actions.secondary.text;
+                    secondaryBtn.onclick = actions.secondary.action;
+                    secondaryBtn.style.display = 'block';
+                } else {
+                    secondaryBtn.style.display = 'none';
+                }
+            } else {
+                toastActions.style.display = 'none';
+            }
+            
+            toast.classList.add('show');
+            
+            // Auto-hide
+            if (duration > 0) {
+                setTimeout(() => {
+                    if (!actions) hideNotificationToast();
+                }, duration);
+            }
+        }
+
+        function hideNotificationToast() {
+            const toast = document.getElementById('notificationToast');
+            toast.classList.remove('show');
+        }
+
+        // Call timer functionality
+        function startCallTimer() {
+            callCountdown = 30;
+            const timerElement = document.getElementById('timerCountdown');
+            
+            callTimerInterval = setInterval(() => {
+                callCountdown--;
+                if (timerElement) {
+                    timerElement.textContent = callCountdown;
+                }
+                
+                if (callCountdown <= 0) {
+                    clearInterval(callTimerInterval);
+                    globalDeclineCall(); // Auto-decline
+                }
+            }, 1000);
+        }
+
+        function stopCallTimer() {
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+        }
+
+        // Enhanced WebSocket connection with retry logic
+        function connectGlobalNotificationWebSocket() {
+            if (globalNotificationSocket?.readyState === WebSocket.OPEN) {
+                return; // Already connected
+            }
+            
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+            
+            try {
+                globalNotificationSocket = new WebSocket(wsUrl);
+                
+                globalNotificationSocket.onopen = function() {
+                    console.log('Global notification WebSocket connected');
+                    reconnectAttempts = 0;
+                    adjustPollingFrequency(true);
+                    checkPendingInvitations();
+                };
+                
+                globalNotificationSocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleGlobalNotificationMessage(data);
+                        adjustPollingFrequency(true);
+                    } catch (error) {
+                        console.error('Error parsing WebSocket message:', error);
+                    }
+                };
+                
+                globalNotificationSocket.onclose = function(event) {
+                    console.log('WebSocket disconnected:', event.code, event.reason);
+                    adjustPollingFrequency(false);
+                    
+                    // Attempt reconnection with exponential backoff
+                    if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        const delay = WEBSOCKET_RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
+                        setTimeout(() => {
+                            reconnectAttempts++;
+                            connectGlobalNotificationWebSocket();
+                        }, delay);
+                    }
+                };
+                
+                globalNotificationSocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    adjustPollingFrequency(false);
+                };
+                
+            } catch (error) {
+                console.error('Failed to create WebSocket:', error);
+                adjustPollingFrequency(false);
+            }
+        }
+
+        function handleGlobalNotificationMessage(data) {
+            console.log('Global notification received:', data);
+            
+            switch (data.type) {
+                case 'notification_connected':
+                    console.log('Global notification system connected');
+                    break;
+                case 'call_invitation_received':
+                    handleGlobalIncomingCallInvitation(data);
+                    break;
+                case 'call_invitation_accepted':
+                    showNotificationToast(
+                        'Call Accepted! 🎉',
+                        `${data.accepter_username} accepted your call`,
+                        '✅',
+                        3000
+                    );
+                    showBrowserNotification(
+                        'Call Accepted!',
+                        `${data.accepter_username} accepted your call`,
+                        '✅'
+                    );
+                    setTimeout(() => {
+                        window.location.href = data.room_url;
+                    }, 1500);
+                    break;
+                case 'call_invitation_declined':
+                    showNotificationToast(
+                        'Call Declined',
+                        `${data.decliner_username} declined your call`,
+                        '❌',
+                        4000
+                    );
+                    break;
+                case 'call_invitation_cancelled':
+                    handleGlobalCallCancelled(data);
+                    break;
+            }
+        }
+
+        function handleGlobalIncomingCallInvitation(data) {
+            // Play notification sound
+            playNotificationSound();
+            
+            // Show enhanced toast notification
+            showNotificationToast(
+                'Incoming Call 📞',
+                `${data.caller_username} wants to video chat`,
+                '📞',
+                0, // Don't auto-hide
+                {
+                    primary: {
+                        text: 'Answer',
+                        action: () => {
+                            hideNotificationToast();
+                            globalAcceptCall();
+                        }
+                    },
+                    secondary: {
+                        text: 'Decline',
+                        action: () => {
+                            hideNotificationToast();
+                            globalDeclineCall();
+                        }
+                    }
+                }
+            );
+
+            // Show browser notification
+            const browserNotif = showBrowserNotification(
+                'Incoming Video Call',
+                `${data.caller_username} wants to start a video call${data.message ? ': ' + data.message : ''}`,
+                '📞'
+            );
+
+            // Show incoming call modal
+            const invitation = {
+                id: data.invitation_id,
+                caller: data.caller_username,
+                caller_id: data.caller_id,
+                message: data.message,
+                match_id: data.match_id,
+                expires_at: data.expires_at
+            };
+            showGlobalIncomingCall(invitation);
+            
+            // Update badge with enhanced animation
+            pendingCallsCount++;
+            updatePendingCallsBadge();
+
+            // Handle browser notification click
+            if (browserNotif) {
+                browserNotif.onclick = function() {
+                    window.focus();
+                    browserNotif.close();
+                    const modal = document.getElementById('globalIncomingCallModal');
+                    if (!modal.classList.contains('hidden')) {
+                        modal.scrollIntoView();
+                    }
+                };
+            }
+        }
+
+        // Play notification sound
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Create a pleasant notification tone
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio notification not available:', e);
+            }
+        }
+
+        function handleGlobalCallCancelled(data) {
+            // Close modal if it's for this invitation
+            if (currentGlobalIncomingInvitation && currentGlobalIncomingInvitation.id == data.invitation_id) {
+                document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                currentGlobalIncomingInvitation = null;
+                stopCallTimer();
+                
+                pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                updatePendingCallsBadge();
+            }
+            
+            showNotificationToast(
+                'Call Cancelled',
+                `${data.canceller_username} cancelled the call`,
+                '🚫'
+            );
+        }
+
+        function showGlobalIncomingCall(invitation) {
+            if (!currentGlobalIncomingInvitation) {
+                currentGlobalIncomingInvitation = invitation;
+                document.getElementById('globalCallerName').textContent = invitation.caller;
+                
+                if (invitation.message && invitation.message.trim()) {
+                    document.getElementById('globalMessageContent').textContent = invitation.message;
+                    document.getElementById('globalCallerMessage').style.display = 'block';
+                } else {
+                    document.getElementById('globalCallerMessage').style.display = 'none';
+                }
+                
+                document.getElementById('globalIncomingCallModal').classList.remove('hidden');
+                startCallTimer();
+                
+                // Focus management for accessibility
+                const modal = document.getElementById('globalIncomingCallModal');
+                const firstButton = modal.querySelector('button');
+                if (firstButton) firstButton.focus();
+            }
+        }
+
+        function globalAcceptCall() {
+            if (currentGlobalIncomingInvitation) {
+                const btn = event.target;
+                btn.classList.add('loading');
+                
+                const formData = new FormData();
+                formData.append('response', 'accept');
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                        currentGlobalIncomingInvitation = null;
+                        stopCallTimer();
+                        
+                        pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                        updatePendingCallsBadge();
+                        
+                        showNotificationToast('Joining call... 🎥', 'Redirecting to video room', '🎥', 2000);
+                        setTimeout(() => {
+                            window.location.href = data.room_url;
+                        }, 1000);
+                    } else {
+                        throw new Error(data.error || 'Failed to accept call');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error accepting call:', error);
+                    showNotificationToast('Error', 'Failed to accept call', '❌');
+                })
+                .finally(() => {
+                    btn.classList.remove('loading');
+                });
+            }
+        }
+
+        function globalDeclineCall() {
+            if (currentGlobalIncomingInvitation) {
+                const btn = event.target;
+                btn.classList.add('loading');
+                
+                const formData = new FormData();
+                formData.append('response', 'decline');
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                    currentGlobalIncomingInvitation = null;
+                    stopCallTimer();
+                    
+                    pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                    updatePendingCallsBadge();
+                    
+                    showNotificationToast('Call declined', 'Call invitation declined', '❌', 3000);
+                })
+                .catch(error => {
+                    console.error('Error declining call:', error);
+                    showNotificationToast('Error', 'Failed to decline call', '❌');
+                })
+                .finally(() => {
+                    btn.classList.remove('loading');
+                });
+            }
+        }
+
+        // Enhanced adaptive polling with better performance
+        let pollInterval = 60000;
+        let maxPollInterval = 300000;
+        let minPollInterval = 15000;
+        let pollIntervalId = null;
+        let websocketFailureCount = 0;
+        let isPageVisible = !document.hidden;
+        let lastUserActivity = Date.now();
+
+        function startAdaptivePolling() {
+            if (pollIntervalId) {
+                clearInterval(pollIntervalId);
+            }
+            
+            if (isPageVisible && (Date.now() - lastUserActivity < 300000)) {
+                pollIntervalId = setInterval(checkPendingInvitations, pollInterval);
+                console.log(`Polling every ${pollInterval / 1000}s`);
+            }
+        }
+
+        function adjustPollingFrequency(websocketWorking) {
+            if (websocketWorking) {
+                websocketFailureCount = 0;
+                pollInterval = Math.min(pollInterval * 1.5, maxPollInterval);
+            } else {
+                websocketFailureCount++;
+                pollInterval = Math.max(pollInterval / 2, minPollInterval);
+            }
+            startAdaptivePolling();
+        }
+        
+        function updateUserActivity() {
+            lastUserActivity = Date.now();
+            if (!pollIntervalId && isPageVisible) {
+                startAdaptivePolling();
+            }
+        }
+        
+        // Activity listeners with throttling
+        let activityThrottle = false;
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(function(event) {
+            document.addEventListener(event, function() {
+                if (!activityThrottle) {
+                    updateUserActivity();
+                    activityThrottle = true;
+                    setTimeout(() => { activityThrottle = false; }, 1000);
+                }
+            }, true);
+        });
+        
+        // Page visibility handling
+        document.addEventListener('visibilitychange', function() {
+            isPageVisible = !document.hidden;
+            if (isPageVisible) {
+                updateUserActivity();
+                startAdaptivePolling();
+                if (!globalNotificationSocket || globalNotificationSocket.readyState !== WebSocket.OPEN) {
+                    connectGlobalNotificationWebSocket();
+                }
+            } else {
+                if (pollIntervalId) {
+                    clearInterval(pollIntervalId);
+                    pollIntervalId = null;
+                }
+            }
+        });
+
+        // Enhanced pending invitations check
+        function checkPendingInvitations() {
+            fetch('/chats/api/pending-invitations/')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.invitations && data.invitations.length > 0) {
+                    pendingCallsCount = data.invitations.length;
+                    updatePendingCallsBadge();
+                    
+                    if (!currentGlobalIncomingInvitation) {
+                        showGlobalIncomingCall(data.invitations[0]);
+                    }
+                    
+                    if (data.invitations.length > 1) {
+                        showNotificationToast(
+                            'Multiple Calls',
+                            `You have ${data.invitations.length} pending invitations`,
+                            '📞',
+                            5000
+                        );
+                    }
+                } else {
+                    pendingCallsCount = 0;
+                    updatePendingCallsBadge();
+                }
+            })
+            .catch(error => console.error('Error checking invitations:', error));
+        }
+
+        // Modal event handlers
+        document.getElementById('globalIncomingCallModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                globalDeclineCall();
+            }
+        });
+
+        // Keyboard navigation for modal
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('globalIncomingCallModal');
+            if (!modal.classList.contains('hidden')) {
+                if (e.key === 'Escape') {
+                    globalDeclineCall();
+                } else if (e.key === 'Enter') {
+                    globalAcceptCall();
+                }
+            }
+        });
+
+        // Enhanced global video call function
+        window.initiateVideoCallGlobal = function(matchId, partnerUsername) {
+            fetch(`/chats/api/partner-availability/${matchId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_online) {
+                    showCallInvitationModal(matchId, partnerUsername);
+                } else {
+                    const lastSeen = data.last_seen ? new Date(data.last_seen).toLocaleString() : 'Unknown';
+                    showNotificationToast(
+                        'Partner Offline 🔴',
+                        `${partnerUsername} was last seen: ${lastSeen}`,
+                        '🔴',
+                        8000
+                    );
+                }
+            })
+            .catch(error => {
+                console.error('Error checking partner availability:', error);
+                showNotificationToast('Error', 'Failed to check partner availability', '❌');
+            });
+        };
+
+        // Enhanced call invitation modal
+        function showCallInvitationModal(matchId, partnerUsername) {
+            let modal = document.getElementById('quickCallModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'quickCallModal';
+                modal.className = 'fixed inset-0 modal-overlay hidden z-[9998]';
+                modal.innerHTML = `
+                    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 modal-content">
+                        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-200">
+                            <div class="text-center">
+                                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <span class="text-3xl">📞</span>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Start Video Call</h3>
+                                <p class="text-lg font-medium text-gray-800 mb-1" id="quickCallPartner"></p>
+                                <p class="text-sm text-gray-600 mb-4">Send a call invitation</p>
+                                
+                                <div class="mb-6">
+                                    <textarea id="quickCallMessage" placeholder="Optional message..." 
+                                            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus-ring resize-none"
+                                            rows="3" maxlength="200"></textarea>
+                                    <div class="text-xs text-gray-500 mt-1 text-right">
+                                        <span id="messageCharCount">0</span>/200
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-4">
+                                    <button onclick="closeQuickCallModal()" 
+                                            class="flex-1 bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition font-medium focus-ring">
+                                        Cancel
+                                    </button>
+                                    <button onclick="sendQuickCallInvitation()" 
+                                            class="flex-1 btn-success text-white px-6 py-3 rounded-lg font-medium border-0 focus-ring">
+                                        📞 Send Invitation
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Character counter
+                const textarea = modal.querySelector('#quickCallMessage');
+                const counter = modal.querySelector('#messageCharCount');
+                textarea.addEventListener('input', function() {
+                    counter.textContent = this.value.length;
+                });
+                
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeQuickCallModal();
+                    }
+                });
+            }
+            
+            document.getElementById('quickCallPartner').textContent = partnerUsername;
+            modal.dataset.matchId = matchId;
+            modal.classList.remove('hidden');
+            
+            // Focus on textarea
+            setTimeout(() => {
+                document.getElementById('quickCallMessage').focus();
+            }, 100);
+        }
+
+        window.closeQuickCallModal = function() {
+            const modal = document.getElementById('quickCallModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.getElementById('quickCallMessage').value = '';
+                document.getElementById('messageCharCount').textContent = '0';
+            }
+        };
+
+        window.sendQuickCallInvitation = function() {
+            const modal = document.getElementById('quickCallModal');
+            const matchId = modal.dataset.matchId;
+            const message = document.getElementById('quickCallMessage').value.trim();
+            const btn = event.target;
+            
+            btn.classList.add('loading');
+            btn.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            fetch(`/chats/api/send-invitation/${matchId}/`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeQuickCallModal();
+                    showNotificationToast(
+                        'Invitation Sent! 📞',
+                        'Waiting for response...',
+                        '📞',
+                        5000
+                    );
+                } else {
+                    throw new Error(data.error || 'Failed to send invitation');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending invitation:', error);
+                showNotificationToast('Error', error.message || 'Failed to send invitation', '❌');
+            })
+            .finally(() => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            });
+        };
+
+        // Initialize system
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure notification toast is hidden on page load
+            const notificationToast = document.getElementById('notificationToast');
+            if (notificationToast) {
+                notificationToast.classList.remove('show');
+            }
+            
+            {% if user.is_authenticated %}
+            requestNotificationPermission();
+            connectGlobalNotificationWebSocket();
+            startAdaptivePolling();
+            
+            // Initialize unread messages checking
+            checkUnreadMessages();
+            
+            // Add unread messages to polling
+            setInterval(checkUnreadMessages, 30000); // Check every 30 seconds
+            {% endif %}
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (globalNotificationSocket) {
+                globalNotificationSocket.close(1000, 'Page unload');
+            }
+            if (pollIntervalId) {
+                clearInterval(pollIntervalId);
+            }
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+            }
+        });
+
+        {% endif %}
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

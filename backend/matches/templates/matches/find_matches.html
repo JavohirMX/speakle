@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Find Language Partners - Speakle{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Find Language Partners</h1>
+        <p class="text-lg text-gray-600">Discover people who can help you learn and practice languages</p>
+        <div class="mt-4">
+            <button onclick="refreshMatches()" 
+               class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                🔄 Refresh Matches
+            </button>
+            <a href="{% url 'matches:requests' %}" 
+               class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition ml-2">
+                📩 Match Requests
+            </a>
+            <a href="{% url 'matches:my_matches' %}" 
+               class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition ml-2">
+                🤝 My Matches
+            </a>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" class="hidden text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+        <p class="text-gray-600">Loading matches...</p>
+    </div>
+
+    <!-- Potential Matches Container -->
+    <div id="matchesContainer">
+        {% include 'matches/partials/potential_matches_list.html' %}
+    </div>
+</div>
+
+<!-- Send Request Modal -->
+<div id="sendRequestModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-semibold mb-4">📩 Send Match Request</h3>
+            
+            <div id="selectedPartnerInfo" class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <!-- Partner info will be populated here -->
+            </div>
+            
+            <div class="mb-4">
+                <label for="requestMessage" class="block text-sm font-medium text-gray-700 mb-2">
+                    Optional message:
+                </label>
+                <textarea id="requestMessage" rows="3" 
+                          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Hi! I'd love to practice language exchange with you."></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeSendRequestModal()" 
+                        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
+                    Cancel
+                </button>
+                <button onclick="sendMatchRequest()" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                    💌 Send Request
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPotentialMatchId = null;
+
+// Load potential matches via API
+function loadPotentialMatches() {
+    document.getElementById('loadingIndicator').classList.remove('hidden');
+    document.getElementById('matchesContainer').style.opacity = '0.5';
+    
+    fetch('/matches/api/potential-matches/')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateMatchesDisplay(data.potential_matches);
+        } else {
+            showNotification('error', data.error || 'Failed to load matches');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading matches:', error);
+        showNotification('error', 'Failed to load matches. Please try again.');
+    })
+    .finally(() => {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+        document.getElementById('matchesContainer').style.opacity = '1';
+    });
+}
+
+// Refresh matches
+function refreshMatches() {
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    document.getElementById('loadingIndicator').classList.remove('hidden');
+    
+    fetch('/matches/api/refresh-matches/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', 'Matches refreshed successfully!');
+            loadPotentialMatches(); // Reload the updated matches
+        } else {
+            showNotification('error', data.error || 'Failed to refresh matches');
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing matches:', error);
+        showNotification('error', 'Failed to refresh matches. Please try again.');
+    })
+    .finally(() => {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+    });
+}
+
+// Update matches display
+function updateMatchesDisplay(matches) {
+    const container = document.getElementById('matchesContainer');
+    
+    if (matches.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <div class="mb-4 text-6xl">🔍</div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No matches found</h3>
+                <p class="text-gray-600 mb-6">
+                    We couldn't find any language partners for you right now. 
+                    <br>Make sure you have set up your languages in your profile.
+                </p>
+                <div class="space-x-4">
+                    <a href="{% url 'users:profile' %}" 
+                       class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
+                        Edit Profile
+                    </a>
+                    <button onclick="refreshMatches()" 
+                       class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    const matchesHtml = matches.map(match => `
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <!-- User Info -->
+            <div class="flex items-center mb-4">
+                <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
+                    ${match.partner.username.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg">${match.partner.username}</h3>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600">Compatibility: </span>
+                        <span class="text-sm font-medium text-green-600 ml-1">${Math.round(match.compatibility_score)}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Exchange Info -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between text-sm mb-2">
+                    <span class="text-gray-600">You teach:</span>
+                    <span class="font-medium text-blue-600">${match.user_teaches}</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600">You learn:</span>
+                    <span class="font-medium text-green-600">${match.user_learns}</span>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="flex justify-end">
+                ${match.has_sent_request ? 
+                    '<span class="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">⏳ Request Sent</span>' :
+                    match.is_confirmed_partner ?
+                    '<span class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">✅ Already Matched</span>' :
+                    `<button onclick="openSendRequestModal(${match.id}, '${match.partner.username}', '${match.user_teaches}', '${match.user_learns}')" 
+                       class="bg-blue-500 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                        💌 Send Request
+                    </button>`
+                }
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = `<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">${matchesHtml}</div>`;
+}
+
+// Open send request modal
+function openSendRequestModal(matchId, partnerName, userTeaches, userLearns) {
+    currentPotentialMatchId = matchId;
+    
+    document.getElementById('selectedPartnerInfo').innerHTML = `
+        <div class="flex items-center justify-between">
+            <div>
+                <h4 class="font-semibold">${partnerName}</h4>
+                <div class="text-sm text-gray-600">
+                    You teach: <span class="text-blue-600">${userTeaches}</span> • 
+                    You learn: <span class="text-green-600">${userLearns}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('requestMessage').value = '';
+    document.getElementById('sendRequestModal').classList.remove('hidden');
+}
+
+// Close send request modal
+function closeSendRequestModal() {
+    document.getElementById('sendRequestModal').classList.add('hidden');
+    currentPotentialMatchId = null;
+}
+
+// Send match request
+function sendMatchRequest() {
+    if (!currentPotentialMatchId) return;
+    
+    const message = document.getElementById('requestMessage').value;
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/matches/api/send-request/${currentPotentialMatchId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', data.message);
+            closeSendRequestModal();
+            loadPotentialMatches(); // Refresh the list
+        } else {
+            showNotification('error', data.error || 'Failed to send request');
+        }
+    })
+    .catch(error => {
+        console.error('Error sending request:', error);
+        showNotification('error', 'Failed to send request. Please try again.');
+    });
+}
+
+// Notification system
+function showNotification(type, message) {
+    if (typeof showNotificationToast === 'function') {
+        const icon = type === 'success' ? '✅' : '❌';
+        showNotificationToast(type === 'success' ? 'Success' : 'Error', message, icon);
+    } else {
+        alert(message);
+    }
+}
+
+// Load matches when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Only load via API if we don't have server-rendered content
+    if (!document.querySelector('.grid')) {
+        loadPotentialMatches();
+    }
+});
+</script>
+
+<style>
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %} 

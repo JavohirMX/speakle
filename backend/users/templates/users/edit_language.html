@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Language - Speakle{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b">
+                <h1 class="text-2xl font-bold text-gray-900">Edit Language</h1>
+                <p class="mt-1 text-sm text-gray-600">Update your proficiency and type for {{ user_language.language.name }}.</p>
+            </div>
+
+            <div class="px-6 py-6">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label for="{{ form.language.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Language
+                        </label>
+                        <div class="mt-1 flex items-center">
+                            <span class="text-2xl mr-2">{{ user_language.language.flag_emoji }}</span>
+                            <span class="text-lg font-medium text-gray-900">{{ user_language.language.name }}</span>
+                        </div>
+                        {{ form.language.as_hidden }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.language_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Language Type
+                        </label>
+                        <div class="mt-1">
+                            {{ form.language_type }}
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Choose "Native" for your mother tongue, "Fluent" for languages you speak very well, or "Learning" for languages you're studying.
+                        </p>
+                        {% if form.language_type.errors %}
+                            {% for error in form.language_type.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.proficiency.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Proficiency Level
+                        </label>
+                        <div class="mt-1">
+                            {{ form.proficiency }}
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Your current skill level in this language.
+                        </p>
+                        {% if form.proficiency.errors %}
+                            {% for error in form.proficiency.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <a href="{% url 'users:profile' %}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition">
+                            Cancel
+                        </a>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                            Update Language
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
