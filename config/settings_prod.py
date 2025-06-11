@@ -6,7 +6,7 @@ This file contains production-specific settings that override the base settings.
 import os
 import dj_database_url
 from decouple import config
-from .settings import *
+from .settings import *  # noqa: F403
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
@@ -53,11 +53,11 @@ SESSION_CACHE_ALIAS = 'default'
 
 # Static files configuration for production
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # noqa: F405
 
 # Media files configuration
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # noqa: F405
 
 # Security settings
 SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
@@ -77,6 +77,10 @@ CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access to CSRF token if needed
 CSRF_USE_SESSIONS = config('CSRF_USE_SESSIONS', default=False, cast=bool)
 CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests for forms
+# Additional CSRF debugging and compatibility
+CSRF_COOKIE_DOMAIN = config('CSRF_COOKIE_DOMAIN', default=None)
+CSRF_COOKIE_PATH = '/'
+CSRF_COOKIE_NAME = 'csrftoken'
 
 # Email configuration
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')

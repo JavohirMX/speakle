@@ -1341,7 +1341,23 @@ class VideoChat {
     }
     
     getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        // Try to get CSRF token from a form field first
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        // Fallback to getting from cookie if no form field exists
+        const csrfCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='));
+        
+        if (csrfCookie) {
+            return csrfCookie.split('=')[1];
+        }
+        
+        // Last fallback - use the template-provided token
+        return '{{ csrf_token }}';
     }
     
     getEndReasonDisplay(reason) {

@@ -18,9 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+# Simple health check view
+@csrf_exempt
+def health_check(request):
+    return JsonResponse({'status': 'healthy'})
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/', health_check, name='health_check'),
     path('', include('main.urls')),
     path('users/', include('users.urls')),
     path('matches/', include('matches.urls')),
