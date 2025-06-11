@@ -29,10 +29,12 @@ COPY . .
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Create non-root user
+# Create non-root user and directories
 RUN adduser --disabled-password --gecos '' appuser && \
+    mkdir -p /app/staticfiles /app/media && \
     chown -R appuser:appuser /app && \
     chown appuser:appuser /entrypoint.sh
+
 USER appuser
 
 # Expose port
