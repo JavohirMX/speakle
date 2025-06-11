@@ -1,0 +1,50 @@
+name: Deploy to Digital Ocean
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to Digital Ocean Droplet
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.DO_HOST }}
+        username: ${{ secrets.DO_USERNAME }}
+        key: ${{ secrets.DO_SSH_KEY }}
+        port: ${{ secrets.DO_PORT }}
+        script: |
+          # Navigate to application directory
+          cd /home/jmx/speakle
+          
+          # Pull latest code from GitHub
+          git pull origin main
+          
+          # Stop existing containers
+          docker-compose down
+          
+          # Rebuild and start containers
+          docker-compose up --build -d
+          
+          # Clean up old images
+          docker image prune -f
+          
+          # Show status
+          docker-compose ps
+          
+          # Wait a bit for services to start
+          sleep 10
+          
+          # Check if application is running
+          if curl -f http://localhost:8001 >/dev/null 2>&1; then
+            echo "✅ Deployment successful - Application is running"
+          else
+            echo "❌ Deployment may have issues - checking logs..."
+            docker-compose logs web
+          fi 
