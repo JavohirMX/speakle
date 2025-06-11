@@ -42,8 +42,6 @@ services:
              python manage.py collectstatic --noinput &&
              daphne -b 0.0.0.0 -p 8000 config.asgi:application"
     volumes:
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media
     ports:
