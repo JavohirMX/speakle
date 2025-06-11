@@ -69,8 +69,14 @@ SECURE_BROWSER_XSS_FILTER = config('SECURE_BROWSER_XSS_FILTER', default=True, ca
 X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', default='DENY')
 
 # CSRF settings
-CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
-SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=True, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+# Add CSRF_TRUSTED_ORIGINS to fix CSRF verification failures
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8001,https://localhost:8001').split(',')
+# Additional CSRF settings for better compatibility
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access to CSRF token if needed
+CSRF_USE_SESSIONS = config('CSRF_USE_SESSIONS', default=False, cast=bool)
+CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests for forms
 
 # Email configuration
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
