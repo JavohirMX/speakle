@@ -1729,30 +1729,19 @@
         });
 
         // Enhanced global video call function
-        window.initiateVideoCallGlobal = function(matchId, partnerUsername) {
-            fetch(`/chats/api/partner-availability/${matchId}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.is_online) {
-                    showCallInvitationModal(matchId, partnerUsername);
-                } else {
-                    const lastSeen = data.last_seen ? new Date(data.last_seen).toLocaleString() : 'Unknown';
-                    showNotificationToast(
-                        'Partner Offline 🔴',
-                        `${partnerUsername} was last seen: ${lastSeen}`,
-                        '🔴',
-                        8000
-                    );
-                }
-            })
-            .catch(error => {
-                console.error('Error checking partner availability:', error);
-                showNotificationToast('Error', 'Failed to check partner availability', '❌');
-            });
-        };
+        window.initiateVideoCallGlobal = function(matchId, partnerUsername, options = {}) {
+            // Set default options
+            const settings = {
+                redirectOnAccept: true,
+                showNotifications: true,
+                onAccept: null,
+                onDecline: null,
+                onExpire: null,
+                onCancel: null,
+                ...options
+            };
 
-        // Enhanced call invitation modal
-        function showCallInvitationModal(matchId, partnerUsername) {
+            // Use existing modal if available, otherwise create one
             let modal = document.getElementById('quickCallModal');
             if (!modal) {
                 modal = document.createElement('div');
@@ -1769,24 +1758,68 @@
                                 <p class="text-lg font-medium text-gray-800 mb-1" id="quickCallPartner"></p>
                                 <p class="text-sm text-gray-600 mb-4">Send a call invitation</p>
                                 
-                                <div class="mb-6">
-                                    <textarea id="quickCallMessage" placeholder="Optional message..." 
-                                            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus-ring resize-none"
-                                            rows="3" maxlength="200"></textarea>
-                                    <div class="text-xs text-gray-500 mt-1 text-right">
-                                        <span id="messageCharCount">0</span>/200
+                                <!-- Partner Status -->
+                                <div id="partnerStatus" class="mb-4 p-3 rounded-lg border">
+                                    <div class="flex items-center justify-center">
+                                        <div id="statusIndicator" class="w-3 h-3 rounded-full mr-2 bg-gray-400"></div>
+                                        <span id="statusText">Checking availability...</span>
                                     </div>
                                 </div>
                                 
-                                <div class="flex space-x-4">
-                                    <button onclick="closeQuickCallModal()" 
-                                            class="flex-1 bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition font-medium focus-ring">
-                                        Cancel
-                                    </button>
-                                    <button onclick="sendQuickCallInvitation()" 
-                                            class="flex-1 btn-success text-white px-6 py-3 rounded-lg font-medium border-0 focus-ring">
-                                        📞 Send Invitation
-                                    </button>
+                                <!-- Call invitation form -->
+                                <div id="invitationForm" style="display: none;">
+                                    <div class="mb-6">
+                                        <textarea id="quickCallMessage" placeholder="Optional message..." 
+                                                class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus-ring resize-none"
+                                                rows="3" maxlength="200"></textarea>
+                                        <div class="text-xs text-gray-500 mt-1 text-right">
+                                            <span id="messageCharCount">0</span>/200
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex space-x-4">
+                                        <button onclick="closeQuickCallModal()" 
+                                                class="flex-1 bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition font-medium focus-ring">
+                                            Cancel
+                                        </button>
+                                        <button onclick="sendQuickCallInvitation()" 
+                                                class="flex-1 btn-success text-white px-6 py-3 rounded-lg font-medium border-0 focus-ring">
+                                            📞 Send Invitation
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Waiting for response -->
+                                <div id="waitingResponse" style="display: none;">
+                                    <div class="text-center">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                                        <p class="text-gray-600 mb-4">Invitation sent! Waiting for response...</p>
+                                        <div class="text-sm text-gray-500 mb-4">
+                                            Invitation expires in <span id="timeRemaining">2:00</span>
+                                        </div>
+                                        <button onclick="cancelInvitation()" 
+                                                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition focus-ring">
+                                            Cancel Invitation
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Offline message -->
+                                <div id="offlineMessage" style="display: none;">
+                                    <p class="text-gray-600 mb-4">This partner is currently offline.</p>
+                                    <div class="text-sm text-gray-500 mb-4">
+                                        Last seen: <span id="lastSeenTime">Unknown</span>
+                                    </div>
+                                    <div class="flex space-x-4">
+                                        <button onclick="closeQuickCallModal()" 
+                                                class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition focus-ring">
+                                            Close
+                                        </button>
+                                        <button onclick="enterRoomAnyway()" 
+                                                class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition focus-ring">
+                                            Enter Room Anyway
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1807,29 +1840,109 @@
                     }
                 });
             }
-            
+
+            // Store current call data globally
+            window.currentCallData = {
+                matchId: matchId,
+                partnerUsername: partnerUsername,
+                invitationId: null,
+                invitationTimer: null,
+                statusCheckInterval: null,
+                settings: settings
+            };
+
+            // Reset modal state
             document.getElementById('quickCallPartner').textContent = partnerUsername;
-            modal.dataset.matchId = matchId;
+            document.getElementById('invitationForm').style.display = 'none';
+            document.getElementById('waitingResponse').style.display = 'none';
+            document.getElementById('offlineMessage').style.display = 'none';
+            document.getElementById('quickCallMessage').value = '';
+            document.getElementById('messageCharCount').textContent = '0';
+
             modal.classList.remove('hidden');
             
-            // Focus on textarea
+            // Check partner availability
+            checkPartnerAvailability();
+        };
+
+        // Global helper functions for call management
+        window.checkPartnerAvailability = function() {
+            const { matchId, partnerUsername } = window.currentCallData;
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = `Checking ${partnerUsername}'s availability...`;
+            
+            fetch(`/chats/api/partner-availability/${matchId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_online) {
+                    showPartnerOnline();
+                } else {
+                    showPartnerOffline(data.last_seen);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking partner availability:', error);
+                showPartnerOffline();
+            });
+        };
+
+        window.showPartnerOnline = function() {
+            const { partnerUsername } = window.currentCallData;
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = 'w-3 h-3 rounded-full mr-2 bg-green-500';
+            statusText.textContent = `${partnerUsername} is online`;
+            
             setTimeout(() => {
+                document.getElementById('invitationForm').style.display = 'block';
+                // Focus on textarea
                 document.getElementById('quickCallMessage').focus();
-            }, 100);
-        }
+            }, 500);
+        };
+
+        window.showPartnerOffline = function(lastSeen) {
+            const { partnerUsername } = window.currentCallData;
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = 'w-3 h-3 rounded-full mr-2 bg-gray-400';
+            statusText.textContent = `${partnerUsername} is offline`;
+            
+            if (lastSeen) {
+                document.getElementById('lastSeenTime').textContent = new Date(lastSeen).toLocaleString();
+            }
+            
+            setTimeout(() => {
+                document.getElementById('offlineMessage').style.display = 'block';
+            }, 500);
+        };
 
         window.closeQuickCallModal = function() {
             const modal = document.getElementById('quickCallModal');
             if (modal) {
                 modal.classList.add('hidden');
-                document.getElementById('quickCallMessage').value = '';
-                document.getElementById('messageCharCount').textContent = '0';
+                
+                // Clean up timers and intervals
+                if (window.currentCallData) {
+                    if (window.currentCallData.invitationTimer) {
+                        clearInterval(window.currentCallData.invitationTimer);
+                    }
+                    if (window.currentCallData.statusCheckInterval) {
+                        clearInterval(window.currentCallData.statusCheckInterval);
+                    }
+                    
+                    // Reset form
+                    document.getElementById('quickCallMessage').value = '';
+                    document.getElementById('messageCharCount').textContent = '0';
+                    
+                    window.currentCallData = null;
+                }
             }
         };
 
         window.sendQuickCallInvitation = function() {
-            const modal = document.getElementById('quickCallModal');
-            const matchId = modal.dataset.matchId;
+            const { matchId } = window.currentCallData;
             const message = document.getElementById('quickCallMessage').value.trim();
             const btn = event.target;
             
@@ -1838,7 +1951,7 @@
             
             const formData = new FormData();
             formData.append('message', message);
-            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            formData.append('csrfmiddlewaretoken', getCSRFToken());
             
             fetch(`/chats/api/send-invitation/${matchId}/`, {
                 method: 'POST',
@@ -1847,13 +1960,10 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    closeQuickCallModal();
-                    showNotificationToast(
-                        'Invitation Sent! 📞',
-                        'Waiting for response...',
-                        '📞',
-                        5000
-                    );
+                    window.currentCallData.invitationId = data.invitation_id;
+                    showWaitingForResponse();
+                    startInvitationTimer();
+                    startStatusPolling();
                 } else {
                     throw new Error(data.error || 'Failed to send invitation');
                 }
@@ -1867,6 +1977,174 @@
                 btn.disabled = false;
             });
         };
+
+        window.showWaitingForResponse = function() {
+            document.getElementById('invitationForm').style.display = 'none';
+            document.getElementById('waitingResponse').style.display = 'block';
+        };
+
+        window.startInvitationTimer = function() {
+            let timeLeft = 120; // 2 minutes in seconds
+            const timeDisplay = document.getElementById('timeRemaining');
+            
+            window.currentCallData.invitationTimer = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                timeLeft--;
+                
+                if (timeLeft < 0) {
+                    clearInterval(window.currentCallData.invitationTimer);
+                    invitationExpired();
+                }
+            }, 1000);
+        };
+
+        window.startStatusPolling = function() {
+            const { invitationId } = window.currentCallData;
+            
+            window.currentCallData.statusCheckInterval = setInterval(() => {
+                if (invitationId) {
+                    fetch(`/chats/api/invitation-status/${invitationId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'accepted') {
+                            clearInterval(window.currentCallData.statusCheckInterval);
+                            clearInterval(window.currentCallData.invitationTimer);
+                            invitationAccepted(data.room_url);
+                        } else if (data.status === 'declined') {
+                            clearInterval(window.currentCallData.statusCheckInterval);
+                            clearInterval(window.currentCallData.invitationTimer);
+                            invitationDeclined();
+                        } else if (data.is_expired) {
+                            clearInterval(window.currentCallData.statusCheckInterval);
+                            clearInterval(window.currentCallData.invitationTimer);
+                            invitationExpired();
+                        }
+                    })
+                    .catch(error => console.error('Error checking status:', error));
+                }
+            }, 3000);
+        };
+
+        window.invitationAccepted = function(roomUrl) {
+            const { partnerUsername, settings } = window.currentCallData;
+            closeQuickCallModal();
+            
+            if (settings.showNotifications) {
+                showNotificationToast(
+                    'Call Accepted! 🎉',
+                    `${partnerUsername} accepted your call`,
+                    '✅',
+                    2000
+                );
+            }
+            
+            if (settings.onAccept) {
+                settings.onAccept(roomUrl);
+            } else if (settings.redirectOnAccept && roomUrl) {
+                setTimeout(() => {
+                    window.location.href = roomUrl;
+                }, 1000);
+            }
+        };
+
+        window.invitationDeclined = function() {
+            const { partnerUsername, settings } = window.currentCallData;
+            closeQuickCallModal();
+            
+            if (settings.showNotifications) {
+                showNotificationToast(
+                    'Call Declined',
+                    `${partnerUsername} declined your call invitation`,
+                    '❌',
+                    4000
+                );
+            }
+            
+            if (settings.onDecline) {
+                settings.onDecline();
+            }
+        };
+
+        window.invitationExpired = function() {
+            const { partnerUsername, settings } = window.currentCallData;
+            closeQuickCallModal();
+            
+            if (settings.showNotifications) {
+                showNotificationToast(
+                    'Call Expired',
+                    `Call invitation expired. ${partnerUsername} did not respond in time`,
+                    '⏰',
+                    5000
+                );
+            }
+            
+            if (settings.onExpire) {
+                settings.onExpire();
+            }
+        };
+
+        window.cancelInvitation = function() {
+            const { invitationId, settings } = window.currentCallData;
+            
+            if (invitationId) {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', getCSRFToken());
+                
+                fetch(`/chats/api/cancel-invitation/${invitationId}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Invitation cancelled successfully');
+                    } else {
+                        console.error('Failed to cancel invitation:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cancelling invitation:', error);
+                });
+            }
+            
+            if (settings.onCancel) {
+                settings.onCancel();
+            }
+            
+            closeQuickCallModal();
+        };
+
+        window.enterRoomAnyway = function() {
+            const { matchId } = window.currentCallData;
+            
+            fetch(`/chats/api/create-video-room/${matchId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.room_url;
+                } else {
+                    throw new Error(data.error || 'Failed to create video room');
+                }
+            })
+            .catch(error => {
+                console.error('Error creating video room:', error);
+                showNotificationToast('Error', 'Failed to create video room. Please try again.', '❌');
+            });
+            
+            closeQuickCallModal();
+        };
+
+        // For backward compatibility, create alias
+        window.initiateVideoCall = window.initiateVideoCallGlobal;
 
         // Initialize system
         document.addEventListener('DOMContentLoaded', function() {
