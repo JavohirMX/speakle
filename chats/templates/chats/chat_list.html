@@ -4,118 +4,16 @@
 
 {% block extra_css %}
 <style>
+    .page-container {
+        padding-top: 2rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
+        min-height: 100vh;
+    }
+    
     .chat-list-container {
-        max-width: 900px;
+        max-width: 1000px;
         margin: 0 auto;
         padding: 20px;
-    }
-    
-    .chat-item {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        cursor: pointer;
-        border: 2px solid transparent;
-    }
-    
-    .chat-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        border-color: #3b82f6;
-    }
-    
-    .chat-item.has-unread {
-        border-left: 4px solid #ef4444;
-        background: linear-gradient(135deg, #fef2f2 0%, #fff 50%);
-    }
-    
-    .partner-info {
-        display: flex;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-    
-    .partner-avatar {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 20px;
-        font-weight: bold;
-        margin-right: 16px;
-    }
-    
-    .partner-details h3 {
-        margin: 0;
-        color: #1f2937;
-        font-size: 18px;
-        font-weight: 600;
-    }
-    
-    .language-exchange {
-        display: flex;
-        align-items: center;
-        color: #6b7280;
-        font-size: 14px;
-        margin-top: 4px;
-    }
-    
-    .language-exchange .flag {
-        margin: 0 4px;
-        font-size: 16px;
-    }
-    
-    .last-message {
-        color: #4b5563;
-        font-size: 14px;
-        margin-bottom: 8px;
-        line-height: 1.4;
-    }
-    
-    .last-message.no-messages {
-        color: #9ca3af;
-        font-style: italic;
-    }
-    
-    .chat-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .last-activity {
-        color: #9ca3af;
-        font-size: 13px;
-    }
-    
-    .unread-badge {
-        background: #ef4444;
-        color: white;
-        border-radius: 12px;
-        padding: 4px 8px;
-        font-size: 12px;
-        font-weight: 600;
-        min-width: 20px;
-        text-align: center;
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #6b7280;
-    }
-    
-    .empty-state .icon {
-        font-size: 64px;
-        margin-bottom: 20px;
-        opacity: 0.6;
     }
     
     .page-header {
@@ -125,18 +23,23 @@
     
     .page-header h1 {
         color: #1f2937;
-        font-size: 32px;
-        font-weight: 700;
-        margin-bottom: 8px;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
     
     .page-header p {
         color: #6b7280;
-        font-size: 16px;
+        font-size: 1.125rem;
+        font-weight: 500;
     }
     
     .total-unread {
-        background: linear-gradient(135deg, #ef4444, #dc2626);
+        background: var(--primary-gradient);
         color: white;
         border-radius: 20px;
         padding: 8px 16px;
@@ -144,125 +47,880 @@
         font-weight: 600;
         display: inline-block;
         margin-left: 12px;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        animation: pulse-notification 2s infinite;
+    }
+    
+    @keyframes pulse-notification {
+        0% { box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+        70% { box-shadow: 0 4px 25px rgba(59, 130, 246, 0.6), 0 0 0 10px rgba(59, 130, 246, 0); }
+        100% { box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+    }
+    
+    .chat-item {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .chat-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .chat-item:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .chat-item:hover::before {
+        left: 100%;
+    }
+    
+    .chat-item.has-unread {
+        border-left: 4px solid var(--primary-gradient);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(255, 255, 255, 0.95) 30%);
+    }
+    
+    .chat-item.has-unread::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: var(--primary-gradient);
+        border-radius: 22px;
+        z-index: -1;
+        opacity: 0.1;
+    }
+    
+    .partner-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .partner-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 22px;
+        font-weight: 700;
+        margin-right: 20px;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .partner-avatar::after {
+        content: '';
+        position: absolute;
+        inset: -3px;
+        background: var(--primary-gradient);
+        border-radius: 50%;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .chat-item:hover .partner-avatar::after {
+        opacity: 0.3;
+    }
+    
+    .partner-details h3 {
+        margin: 0;
+        color: #1f2937;
+        font-size: 1.375rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    
+    .language-exchange {
+        display: flex;
+        align-items: center;
+        color: #6b7280;
+        font-size: 0.875rem;
+        font-weight: 500;
+        gap: 8px;
+    }
+    
+    .language-exchange .flag {
+        font-size: 1.125rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+    
+    .language-badge {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
+    .last-message {
+        color: #4b5563;
+        font-size: 0.9375rem;
+        margin-bottom: 16px;
+        line-height: 1.5;
+        background: rgba(243, 244, 246, 0.8);
+        padding: 12px 16px;
+        border-radius: 12px;
+        border-left: 3px solid #e5e7eb;
+    }
+    
+    .last-message.no-messages {
+        color: #9ca3af;
+        font-style: italic;
+        background: rgba(249, 250, 251, 0.8);
+        border-left-color: #d1d5db;
+    }
+    
+    .last-message strong {
+        color: #374151;
+        font-weight: 600;
+    }
+    
+    .chat-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .last-activity {
+        color: #9ca3af;
+        font-size: 0.8125rem;
+        font-weight: 500;
+    }
+    
+    .unread-badge {
+        background: var(--primary-gradient);
+        color: white;
+        border-radius: 16px;
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        min-width: 24px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        animation: bounce-gentle 1s ease-in-out infinite alternate;
+    }
+    
+    @keyframes bounce-gentle {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.05); }
     }
     
     .chat-actions {
         display: flex;
         gap: 12px;
-        margin-top: 12px;
     }
     
     .action-btn {
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 14px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 0.875rem;
         text-decoration: none;
-        transition: all 0.3s ease;
-        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .action-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .action-btn:hover::before {
+        left: 100%;
     }
     
     .btn-chat {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        background: var(--primary-gradient);
         color: white;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
     }
     
     .btn-chat:hover {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        transform: scale(1.05);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
         color: white;
     }
     
     .btn-video {
-        background: linear-gradient(135deg, #10b981, #059669);
+        background: var(--success-gradient);
         color: white;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
     }
     
     .btn-video:hover {
-        background: linear-gradient(135deg, #059669, #047857);
-        transform: scale(1.05);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
         color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .empty-state .icon {
+        font-size: 5rem;
+        margin-bottom: 24px;
+        opacity: 0.8;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    }
+    
+    .empty-state h3 {
+        color: #1f2937;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state p {
+        color: #6b7280;
+        font-size: 1rem;
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+    
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        animation: modalFadeIn 0.3s ease;
+    }
+    
+    @keyframes modalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .modal-content {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(25px);
+        border-radius: 20px;
+        padding: 32px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes modalSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .close-modal:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(229, 231, 235, 0.6);
+        background: rgba(249, 250, 251, 0.8);
+    }
+    
+    .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 12px;
+    }
+    
+    .modal-textarea {
+        width: 100%;
+        border: 2px solid rgba(229, 231, 235, 0.6);
+        border-radius: 12px;
+        padding: 16px;
+        font-size: 0.9375rem;
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+        font-weight: 500;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    
+    .modal-textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 16px;
+        justify-content: flex-end;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+    }
+    
+    .btn-secondary {
+        background: rgba(243, 244, 246, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(209, 213, 219, 0.6);
+        color: #374151;
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(229, 231, 235, 0.9);
+        transform: translateY(-1px);
+    }
+    
+    .btn-primary {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .chat-list-container {
+            padding: 16px;
+        }
+        
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .chat-item {
+            padding: 20px;
+        }
+        
+        .partner-avatar {
+            width: 56px;
+            height: 56px;
+            font-size: 20px;
+            margin-right: 16px;
+        }
+        
+        .partner-details h3 {
+            font-size: 1.25rem;
+        }
+        
+        .chat-actions {
+            flex-direction: column;
+        }
+        
+        .action-btn {
+            text-align: center;
+        }
+        
+        .modal-content {
+            padding: 24px;
+            margin: 20px;
+        }
+    }
+    
+    /* Focus states for accessibility */
+    .chat-item:focus-within {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+    
+    .action-btn:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="chat-list-container">
-    <div class="page-header">
-        <h1>Your Chats
-            {% if total_unread > 0 %}
-                <span class="total-unread">{{ total_unread }} unread</span>
-            {% endif %}
-        </h1>
-        <p>Continue your language exchange conversations</p>
-    </div>
-    
-    {% if chat_rooms %}
-        {% for chat_data in chat_rooms %}
-            <div class="chat-item {% if chat_data.unread_count > 0 %}has-unread{% endif %}"
-                 onclick="location.href='{% url 'chats:text_chat' chat_data.room.room_id %}'">
-                
-                <div class="partner-info">
-                    <div class="partner-avatar">
-                        {{ chat_data.partner.username|first|upper }}
-                    </div>
-                    <div class="partner-details">
-                        <h3>{{ chat_data.partner.username }}</h3>
-                        <div class="language-exchange">
-                            <span>You teach</span>
-                            <span class="flag">{{ chat_data.match.get_user_teaches.flag }}</span>
-                            <span>{{ chat_data.match.get_user_teaches.name }}</span>
-                            <span style="margin: 0 8px;">•</span>
-                            <span>You learn</span>
-                            <span class="flag">{{ chat_data.match.get_user_learns.flag }}</span>
-                            <span>{{ chat_data.match.get_user_learns.name }}</span>
+<div class="page-container">
+    <div class="chat-list-container">
+        <div class="page-header">
+            <h1>Your Conversations
+                {% if total_unread > 0 %}
+                    <span class="total-unread">{{ total_unread }} new</span>
+                {% endif %}
+            </h1>
+            <p>Continue your language exchange journey</p>
+        </div>
+        
+        {% if chat_rooms %}
+            {% for chat_data in chat_rooms %}
+                <div class="chat-item {% if chat_data.unread_count > 0 %}has-unread{% endif %}"
+                     onclick="location.href='{% url 'chats:text_chat' chat_data.room.room_id %}'">
+                    
+                    <div class="partner-info">
+                        <div class="partner-avatar">
+                            {{ chat_data.partner.username|first|upper }}
+                        </div>
+                        <div class="partner-details">
+                            <h3>{{ chat_data.partner.username }}</h3>
+                            <div class="language-exchange">
+                                <span>You teach</span>
+                                <span class="language-badge">
+                                    <span class="flag">{{ chat_data.match.get_user_teaches.flag }}</span>
+                                    {{ chat_data.match.get_user_teaches.name }}
+                                </span>
+                                <span>•</span>
+                                <span>You learn</span>
+                                <span class="language-badge">
+                                    <span class="flag">{{ chat_data.match.get_user_learns.flag }}</span>
+                                    {{ chat_data.match.get_user_learns.name }}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                {% if chat_data.last_message %}
-                    <div class="last-message">
-                        <strong>{{ chat_data.last_message.sender.username }}:</strong>
-                        {{ chat_data.last_message.content|truncatechars:100 }}
-                    </div>
-                {% else %}
-                    <div class="last-message no-messages">
-                        No messages yet - start the conversation!
-                    </div>
-                {% endif %}
-                
-                <div class="chat-meta">
-                    <span class="last-activity">
-                        {% if chat_data.last_message %}
-                            {{ chat_data.last_message.timestamp|timesince }} ago
-                        {% else %}
-                            Created {{ chat_data.room.created_at|timesince }} ago
-                        {% endif %}
-                    </span>
                     
-                    {% if chat_data.unread_count > 0 %}
-                        <span class="unread-badge">{{ chat_data.unread_count }}</span>
+                    {% if chat_data.last_message %}
+                        <div class="last-message">
+                            <strong>{{ chat_data.last_message.sender.username }}:</strong>
+                            {{ chat_data.last_message.content|truncatechars:120 }}
+                        </div>
+                    {% else %}
+                        <div class="last-message no-messages">
+                            No messages yet - start the conversation! 💬
+                        </div>
                     {% endif %}
+                    
+                    <div class="chat-meta">
+                        <span class="last-activity">
+                            {% if chat_data.last_message %}
+                                💬 {{ chat_data.last_message.timestamp|timesince }} ago
+                            {% else %}
+                                ✨ Created {{ chat_data.room.created_at|timesince }} ago
+                            {% endif %}
+                        </span>
+                        
+                        {% if chat_data.unread_count > 0 %}
+                            <span class="unread-badge">{{ chat_data.unread_count }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="chat-actions" onclick="event.stopPropagation();">
+                        <a href="{% url 'chats:text_chat' chat_data.room.room_id %}" class="action-btn btn-chat">
+                            💬 Open Chat
+                        </a>
+                        <button onclick="initiateVideoCall({{ chat_data.match.id }}, '{{ chat_data.partner.username }}')" class="action-btn btn-video">
+                            📹 Video Call
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="chat-actions" onclick="event.stopPropagation();">
-                    <a href="{% url 'chats:text_chat' chat_data.room.room_id %}" class="action-btn btn-chat">
-                        💬 Open Chat
-                    </a>
-                    <a href="{% url 'chats:create_video_room' chat_data.match.id %}" class="action-btn btn-video">
-                        📹 Video Call
-                    </a>
-                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="icon">💬</div>
+                <h3>No conversations yet</h3>
+                <p>Once you have active matches, you'll be able to start conversations here.<br>
+                   Connect with language partners and begin your exchange!</p>
+                <a href="{% url 'matches:my_matches' %}" class="action-btn btn-chat" style="display: inline-block; margin-top: 16px;">
+                    🤝 View Your Matches
+                </a>
             </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-state">
-            <div class="icon">💬</div>
-            <h3>No chats yet</h3>
-            <p>Once you have active matches, you'll be able to start conversations here.</p>
-            <a href="{% url 'matches:my_matches' %}" class="action-btn btn-chat" style="margin-top: 20px;">
-                View Your Matches
-            </a>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
+
+<!-- Call Invitation Modal -->
+<div id="callInvitationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">📞 Start Video Call</h3>
+            <button class="close-modal" onclick="closeCallModal()">×</button>
+        </div>
+        
+        <!-- Partner Status -->
+        <div id="partnerStatus" class="status-indicator">
+            <div id="statusIndicator" class="status-dot bg-gray-400"></div>
+            <span id="statusText">Checking availability...</span>
+        </div>
+        
+        <!-- Call invitation form -->
+        <div id="invitationForm" style="display: none;">
+            <label for="callMessage" class="block text-sm font-medium text-gray-700 mb-2">
+                Optional message (will be sent with invitation):
+            </label>
+            <textarea id="callMessage" 
+                      class="modal-textarea"
+                      placeholder="Hey! Want to practice some language exchange?"></textarea>
+            <div class="modal-actions">
+                <button onclick="closeCallModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+                <button onclick="sendCallInvitation()" class="btn btn-primary">
+                    📞 Send Invitation
+                </button>
+            </div>
+        </div>
+        
+        <!-- Waiting for response -->
+        <div id="waitingResponse" style="display: none;">
+            <div class="text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                <p class="text-gray-600 mb-4">Invitation sent! Waiting for response...</p>
+                <div class="text-sm text-gray-500 mb-4">
+                    Invitation expires in <span id="timeRemaining">2:00</span>
+                </div>
+                <button onclick="cancelInvitation()" class="btn btn-secondary">
+                    Cancel Invitation
+                </button>
+            </div>
+        </div>
+        
+        <!-- Offline message -->
+        <div id="offlineMessage" style="display: none;">
+            <p class="text-gray-600 mb-4">This partner is currently offline.</p>
+            <div class="text-sm text-gray-500 mb-4">
+                Last seen: <span id="lastSeenTime">Unknown</span>
+            </div>
+            <div class="modal-actions">
+                <button onclick="closeCallModal()" class="btn btn-secondary">
+                    Close
+                </button>
+                <button onclick="enterRoomAnyway()" class="btn btn-primary">
+                    Enter Room Anyway
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Call invitation functionality
+let currentMatchId = null;
+let currentPartnerName = null;
+let currentInvitationId = null;
+let invitationTimer = null;
+let statusCheckInterval = null;
+
+function initiateVideoCall(matchId, partnerName) {
+    currentMatchId = matchId;
+    currentPartnerName = partnerName;
+    document.getElementById('callInvitationModal').style.display = 'flex';
+    
+    // Reset modal state
+    document.getElementById('invitationForm').style.display = 'none';
+    document.getElementById('waitingResponse').style.display = 'none';
+    document.getElementById('offlineMessage').style.display = 'none';
+    
+    // Check partner availability
+    checkPartnerAvailability();
+}
+
+function checkPartnerAvailability() {
+    const statusText = document.getElementById('statusText');
+    statusText.textContent = `Checking ${currentPartnerName}'s availability...`;
+    
+    fetch(`/chats/api/partner-availability/${currentMatchId}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.is_online) {
+            showPartnerOnline();
+        } else {
+            showPartnerOffline(data.last_seen);
+        }
+    })
+    .catch(error => {
+        console.error('Error checking partner availability:', error);
+        showPartnerOffline();
+    });
+}
+
+function showPartnerOnline() {
+    const indicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    
+    indicator.className = 'status-dot bg-green-500';
+    statusText.textContent = `${currentPartnerName} is online`;
+    
+    setTimeout(() => {
+        document.getElementById('invitationForm').style.display = 'block';
+    }, 500);
+}
+
+function showPartnerOffline(lastSeen) {
+    const indicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    
+    indicator.className = 'status-dot bg-gray-400';
+    statusText.textContent = `${currentPartnerName} is offline`;
+    
+    if (lastSeen) {
+        document.getElementById('lastSeenTime').textContent = new Date(lastSeen).toLocaleString();
+    }
+    
+    setTimeout(() => {
+        document.getElementById('offlineMessage').style.display = 'block';
+    }, 500);
+}
+
+function sendCallInvitation() {
+    const message = document.getElementById('callMessage').value;
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch(`/chats/api/send-invitation/${currentMatchId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentInvitationId = data.invitation_id;
+            showWaitingForResponse();
+            startInvitationTimer();
+            startStatusPolling();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Failed to send invitation. Please try again.');
+    });
+}
+
+function showWaitingForResponse() {
+    document.getElementById('invitationForm').style.display = 'none';
+    document.getElementById('waitingResponse').style.display = 'block';
+}
+
+function startInvitationTimer() {
+    let timeLeft = 120; // 2 minutes in seconds
+    const timeDisplay = document.getElementById('timeRemaining');
+    
+    invitationTimer = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        timeLeft--;
+        
+        if (timeLeft < 0) {
+            clearInterval(invitationTimer);
+            invitationExpired();
+        }
+    }, 1000);
+}
+
+function startStatusPolling() {
+    statusCheckInterval = setInterval(() => {
+        if (currentInvitationId) {
+            fetch(`/chats/api/invitation-status/${currentInvitationId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'accepted') {
+                    clearInterval(statusCheckInterval);
+                    clearInterval(invitationTimer);
+                    invitationAccepted(data.room_url);
+                } else if (data.status === 'declined') {
+                    clearInterval(statusCheckInterval);
+                    clearInterval(invitationTimer);
+                    invitationDeclined();
+                } else if (data.is_expired) {
+                    clearInterval(statusCheckInterval);
+                    clearInterval(invitationTimer);
+                    invitationExpired();
+                }
+            })
+            .catch(error => console.error('Error checking status:', error));
+        }
+    }, 3000);
+}
+
+function invitationAccepted(roomUrl) {
+    closeCallModal();
+    if (typeof showNotificationToast === 'function') {
+        showNotificationToast('Call Accepted!', `${currentPartnerName} accepted your call! Redirecting...`, '✅');
+    } else {
+        alert(`${currentPartnerName} accepted your call! Redirecting to video room...`);
+    }
+    
+    // Redirect to video room
+    if (roomUrl) {
+        window.location.href = roomUrl;
+    }
+}
+
+function invitationDeclined() {
+    closeCallModal();
+    if (typeof showNotificationToast === 'function') {
+        showNotificationToast('Call Declined', `${currentPartnerName} declined your call invitation.`, '❌');
+    } else {
+        alert(`${currentPartnerName} declined your call invitation.`);
+    }
+}
+
+function invitationExpired() {
+    closeCallModal();
+    if (typeof showNotificationToast === 'function') {
+        showNotificationToast('Call Expired', `Call invitation expired. ${currentPartnerName} did not respond in time.`, '⏰');
+    } else {
+        alert(`Call invitation expired. ${currentPartnerName} did not respond in time.`);
+    }
+}
+
+function cancelInvitation() {
+    if (currentInvitationId) {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch(`/chats/api/cancel-invitation/${currentInvitationId}/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Invitation cancelled successfully');
+            } else {
+                console.error('Failed to cancel invitation:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error cancelling invitation:', error);
+        });
+        
+        clearInterval(invitationTimer);
+        clearInterval(statusCheckInterval);
+    }
+    closeCallModal();
+}
+
+function enterRoomAnyway() {
+    // Create video room and redirect
+    fetch(`/chats/api/create-video-room/${currentMatchId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.room_url;
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error creating video room:', error);
+        alert('Failed to create video room. Please try again.');
+    });
+    
+    closeCallModal();
+}
+
+function closeCallModal() {
+    document.getElementById('callInvitationModal').style.display = 'none';
+    if (invitationTimer) clearInterval(invitationTimer);
+    if (statusCheckInterval) clearInterval(statusCheckInterval);
+    currentInvitationId = null;
+    currentMatchId = null;
+    currentPartnerName = null;
+}
+
+// Close modal when clicking outside
+document.getElementById('callInvitationModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCallModal();
+    }
+});
+</script>
 {% endblock %} 
