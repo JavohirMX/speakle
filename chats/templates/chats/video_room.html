@@ -1,9 +1,30 @@
-{% extends 'base.html' %}
-
-{% block title %}Video Chat with {{ partner.username }} - Speakle{% endblock %}
-
-{% block extra_css %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Video Chat with {{ partner.username }} - Speakle</title>
+    
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- CSRF Token for AJAX requests -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
 <style>
+    :root {
+        --vh: 1vh; /* Dynamic viewport height for mobile */
+    }
+    
+    /* Mobile-specific body styling */
+    .mobile-device {
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+    }
     .video-container {
         position: relative;
         background: #1f2937;
@@ -224,37 +245,220 @@
         height: 100vh;
         padding: 20px;
         gap: 20px;
+        overflow: hidden;
     }
     
     .remote-video-container {
         position: relative;
+        min-height: 200px;
     }
     
     .local-video-container {
         position: relative;
+        min-height: 200px;
     }
     
+    /* Mobile Responsive Design */
     @media (max-width: 1024px) {
         .video-grid {
+            position: relative;
+            height: 100vh;
+            padding: 0;
+            gap: 0;
             grid-template-columns: 1fr;
-            gap: 15px;
-            padding: 15px;
+            grid-template-rows: 1fr;
+        }
+        
+        .remote-video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .local-video-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 120px;
+            height: 160px;
+            z-index: 10;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .local-video-container .video-overlay {
+            display: none; /* Hide overlay on mobile PiP */
+        }
+        
+        .local-video-container .video-info {
+            display: none; /* Hide info on mobile PiP */
+        }
+        
+        /* Mobile PiP drag handle */
+        .pip-drag-handle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            cursor: move;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 11;
+        }
+        
+        .pip-drag-handle::after {
+            content: '⋯';
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            transform: rotate(90deg);
+        }
+        
+        /* Make local video draggable only on mobile */
+        .local-video-container.draggable {
+            cursor: move;
+            transition: none;
+        }
+        
+        .local-video-container.dragging {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
         }
         
         .chat-sidebar {
             width: 100%;
             right: -100%;
+            height: 70vh;
+            top: auto;
+            bottom: 0;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .chat-sidebar.open {
+            right: 0;
         }
         
         .controls-bar {
-            gap: 12px;
-            padding: 12px 20px;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: 50px;
+            backdrop-filter: blur(20px);
+            flex-wrap: wrap;
+            max-width: calc(100vw - 40px);
+            z-index: 20;
+        }
+        
+        .control-btn {
+            width: 52px;
+            height: 52px;
+            font-size: 18px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .video-overlay {
+            padding: 12px;
+        }
+        
+        .video-overlay h3 {
+            font-size: 16px;
+        }
+        
+        .video-overlay p {
+            font-size: 12px;
+        }
+    }
+    
+    /* Portrait Mobile Optimization */
+    @media (max-width: 768px) and (orientation: portrait) {
+        .local-video-container {
+            top: 20px;
+            right: 20px;
+            width: 100px;
+            height: 140px;
+        }
+        
+        .controls-bar {
+            bottom: 20px;
+            gap: 6px;
+            padding: 10px 12px;
+            justify-content: space-around;
         }
         
         .control-btn {
             width: 48px;
             height: 48px;
-            font-size: 20px;
+            font-size: 16px;
+        }
+        
+        .chat-sidebar {
+            height: 80vh;
+        }
+        
+        .chat-messages {
+            padding: 15px;
+        }
+    }
+    
+    /* Landscape Mobile Optimization */
+    @media (max-width: 768px) and (orientation: landscape) {
+        .local-video-container {
+            top: 15px;
+            right: 15px;
+            width: 140px;
+            height: 100px;
+        }
+        
+        .controls-bar {
+            bottom: 15px;
+            gap: 8px;
+            padding: 8px 12px;
+        }
+        
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            font-size: 16px;
+        }
+        
+        .chat-sidebar {
+            width: 60%;
+            height: 100vh;
+            right: -60%;
+        }
+    }
+    
+    /* Touch and Interaction Improvements */
+    @media (hover: none) and (pointer: coarse) {
+        .control-btn:hover {
+            transform: none;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.9);
+            transition: transform 0.1s ease;
+        }
+        
+        .chat-sidebar {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .chat-messages {
+            -webkit-overflow-scrolling: touch;
         }
     }
     
@@ -308,6 +512,52 @@
         max-height: 80vh;
         overflow-y: auto;
         animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    /* Mobile Modal Improvements */
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 95%;
+            max-height: 90vh;
+            margin: 20px;
+            border-radius: 16px;
+        }
+        
+        .modal-header {
+            padding: 16px 20px 12px;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        
+        .modal-body {
+            padding: 16px 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .modal-footer {
+            padding: 12px 20px 16px;
+            position: sticky;
+            bottom: 0;
+            background: white;
+            z-index: 10;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .form-select, .form-textarea {
+            font-size: 16px; /* Prevents zoom on iOS */
+            padding: 12px;
+            border-radius: 8px;
+        }
+        
+        .btn-primary, .btn-secondary, .btn-danger {
+            min-height: 44px; /* Better touch target */
+            padding: 12px 20px;
+            font-size: 16px;
+        }
     }
 
     @keyframes modalSlideIn {
@@ -459,18 +709,9 @@
         font-weight: 600;
     }
 </style>
-{% endblock %}
-
-{% block content %}
+</head>
+<body>
 <div class="min-h-screen bg-gray-900 relative">
-    <!-- Back Button -->
-    <div class="absolute top-6 right-6 z-50">
-        <a href="{% url 'matches:match_detail' match.id %}" 
-           class="bg-black bg-opacity-60 text-white px-6 py-3 rounded-full hover:bg-opacity-80 transition backdrop-blur-sm">
-            ← Back to Match
-        </a>
-    </div>
-
     <!-- Video Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 video-grid">
         <!-- Remote Video (Partner) -->
@@ -498,7 +739,8 @@
         </div>
 
         <!-- Local Video (You) -->
-        <div class="video-container local-video-container">
+        <div class="video-container local-video-container" id="localVideoContainer">
+            <div class="pip-drag-handle" id="pipDragHandle" style="display: none;"></div>
             <video id="localVideo" class="video-element" autoplay playsinline muted></video>
             <div class="video-overlay">
                 <div>
@@ -705,6 +947,8 @@ class VideoChat {
         this.pendingPeerReadySignals = []; // Queue peer ready signals until we're ready
         this.autoStartRetryCount = 0; // Track retry attempts for auto-start
         this.maxAutoStartRetries = 5; // Maximum retry attempts
+        this.isMobile = this.detectMobile(); // Detect mobile device
+        this.orientationChanged = false; // Track orientation changes
         
         // WebRTC configuration with more STUN servers
         this.pcConfig = {
@@ -722,6 +966,7 @@ class VideoChat {
         this.connectWebSocket();
         this.initializeLocalVideo();
         this.loadRecentMessages();
+        this.setupMobileOptimizations();
     }
     
     initializeElements() {
@@ -743,6 +988,8 @@ class VideoChat {
         this.loadingStatus = document.getElementById('loadingStatus');
         this.localVideoStatus = document.getElementById('localVideoStatus');
         this.remoteVideoStatus = document.getElementById('remoteVideoStatus');
+        this.localVideoContainer = document.getElementById('localVideoContainer');
+        this.pipDragHandle = document.getElementById('pipDragHandle');
     }
     
     setupEventListeners() {
@@ -804,13 +1051,50 @@ class VideoChat {
         document.getElementById('toggleFullscreen').addEventListener('click', () => {
             this.toggleFullscreen();
         });
+        
+        // Mobile-specific event listeners
+        if (this.isMobile) {
+            // Handle touch events for better mobile UX
+            document.addEventListener('touchstart', (e) => {
+                // Prevent double-tap zoom on buttons
+                if (e.target.classList.contains('control-btn')) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Handle orientation changes
+            window.addEventListener('orientationchange', () => {
+                this.handleOrientationChange();
+            });
+            
+            // Handle viewport changes for mobile browsers
+            window.addEventListener('resize', () => {
+                if (this.isMobile) {
+                    this.handleMobileResize();
+                }
+            });
+        }
     }
     
     async initializeLocalVideo() {
         try {
             this.loadingStatus.textContent = 'Requesting camera and microphone access...';
             
-            const constraints = {
+            // Mobile-optimized constraints
+            const constraints = this.isMobile ? {
+                video: {
+                    width: { ideal: 640, max: 1280 },
+                    height: { ideal: 480, max: 720 },
+                    frameRate: { ideal: 24, max: 30 },
+                    facingMode: "user"
+                },
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: { ideal: 44100 }
+                }
+            } : {
                 video: {
                     width: { ideal: 1280 },
                     height: { ideal: 720 },
@@ -1175,36 +1459,7 @@ class VideoChat {
         console.log('=== END PEER READY HANDLING ===');
     }
     
-    debugAutoStart() {
-        console.log('=== DEBUG AUTO-START TRIGGERED ===');
-        
-        const debugInfo = {
-            userId: this.userId,
-            isMediaReady: this.isMediaReady,
-            isWebSocketReady: this.isWebSocketReady,
-            hasLocalStream: !!this.localStream,
-            isCallActive: this.isCallActive,
-            isAutoStarting: this.isAutoStarting,
-            autoStartRetryCount: this.autoStartRetryCount,
-            pendingSignalsCount: this.pendingPeerReadySignals.length,
-            localStreamTracks: this.localStream ? this.localStream.getTracks().map(t => t.kind) : [],
-            wsReadyState: this.ws ? this.ws.readyState : 'no websocket'
-        };
-        
-        console.log('Debug Info:', debugInfo);
-        
-        this.addChatMessage('🔧 Debug Info (check console):', 'system');
-        this.addChatMessage(`Media: ${debugInfo.isMediaReady ? '✅' : '❌'} | WS: ${debugInfo.isWebSocketReady ? '✅' : '❌'} | Stream: ${debugInfo.hasLocalStream ? '✅' : '❌'}`, 'system');
-        this.addChatMessage(`Call Active: ${debugInfo.isCallActive ? '✅' : '❌'} | Auto-Starting: ${debugInfo.isAutoStarting ? '✅' : '❌'}`, 'system');
-        
-        // Force re-signal if both are ready
-        if (debugInfo.isMediaReady && debugInfo.isWebSocketReady && !debugInfo.isCallActive) {
-            this.addChatMessage('🔧 Force re-signaling peer ready...', 'system');
-            this.isAutoStarting = false; // Reset state
-            this.autoStartRetryCount = 0;
-            this.checkAndSignalPeerReady();
-        }
-    }
+    
     
     showRemoteVideoPlaceholder() {
         this.remoteVideo.style.display = 'none';
@@ -1746,43 +2001,8 @@ class VideoChat {
         }
     }
     
-    toggleChat() {
-        this.chatSidebar.classList.toggle('open');
-        
-        // Clear notification when chat is opened
-        if (this.chatSidebar.classList.contains('open')) {
-            this.clearChatNotification();
-            // Scroll to bottom to show latest messages
-            setTimeout(() => {
-                this.scrollChatToBottom();
-            }, 100);
-        }
-    }
+
     
-    async shareScreen() {
-        try {
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({
-                video: true,
-                audio: true
-            });
-            
-            // Replace video track
-            const videoTrack = screenStream.getVideoTracks()[0];
-            const sender = this.pc.getSenders().find(s => s.track && s.track.kind === 'video');
-            
-            if (sender) {
-                await sender.replaceTrack(videoTrack);
-                this.addChatMessage('🖥️ Screen sharing started', 'system');
-                
-                videoTrack.addEventListener('ended', () => {
-                    this.stopScreenShare();
-                });
-            }
-        } catch (error) {
-            console.error('Error sharing screen:', error);
-            this.addChatMessage(`❌ Screen share error: ${error.message}`, 'system');
-        }
-    }
     
     async stopScreenShare() {
         try {
@@ -2053,6 +2273,346 @@ class VideoChat {
             typingIndicator.remove();
         }
     }
+    
+    // Mobile-specific methods
+    detectMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) || // iPad Pro
+               window.innerWidth <= 1024;
+    }
+    
+    setupMobileOptimizations() {
+        if (!this.isMobile) return;
+        
+        console.log('Setting up mobile optimizations...');
+        
+        // Optimize video elements for mobile
+        this.localVideo.setAttribute('playsinline', '');
+        this.localVideo.setAttribute('webkit-playsinline', '');
+        this.remoteVideo.setAttribute('playsinline', '');
+        this.remoteVideo.setAttribute('webkit-playsinline', '');
+        
+        // Prevent mobile browser UI from interfering
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        
+        // Add mobile-specific classes
+        document.body.classList.add('mobile-device');
+        
+        // Optimize chat for mobile
+        this.optimizeMobileChat();
+        
+        // Set initial orientation
+        this.currentOrientation = this.getOrientation();
+        
+        // Setup picture-in-picture dragging
+        this.setupPiPDragging();
+        
+        console.log('Mobile optimizations applied');
+    }
+    
+    handleOrientationChange() {
+        const newOrientation = this.getOrientation();
+        
+        if (newOrientation !== this.currentOrientation) {
+            this.currentOrientation = newOrientation;
+            this.orientationChanged = true;
+            
+            console.log('Orientation changed to:', newOrientation);
+            
+            // Delay to allow browser to adjust
+            setTimeout(() => {
+                this.adjustLayoutForOrientation();
+                this.orientationChanged = false;
+            }, 500);
+        }
+    }
+    
+    getOrientation() {
+        return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+    }
+    
+    adjustLayoutForOrientation() {
+        if (this.currentOrientation === 'landscape') {
+            // In landscape, make videos side by side
+            document.querySelector('.video-grid').style.gridTemplateColumns = '1fr 1fr';
+        } else {
+            // In portrait, stack videos vertically
+            document.querySelector('.video-grid').style.gridTemplateColumns = '1fr';
+        }
+        
+        // Adjust chat sidebar for orientation
+        if (this.chatSidebar.classList.contains('open')) {
+            this.chatSidebar.style.width = this.currentOrientation === 'landscape' ? '60%' : '100%';
+        }
+    }
+    
+    handleMobileResize() {
+        // Handle mobile browser address bar showing/hiding
+        const viewportHeight = window.innerHeight;
+        const rootElement = document.documentElement;
+        
+        rootElement.style.setProperty('--vh', `${viewportHeight * 0.01}px`);
+        
+        // Readjust video containers
+        setTimeout(() => {
+            this.adjustVideoSizes();
+        }, 100);
+    }
+    
+    adjustVideoSizes() {
+        if (!this.isMobile) return;
+        
+        const videoGrid = document.querySelector('.video-grid');
+        const availableHeight = window.innerHeight - 140; // Account for controls
+        
+        if (this.currentOrientation === 'portrait') {
+            const remoteContainer = document.querySelector('.remote-video-container');
+            const localContainer = document.querySelector('.local-video-container');
+            
+            remoteContainer.style.height = `${availableHeight * 0.7}px`;
+            localContainer.style.height = `${availableHeight * 0.25}px`;
+        } else {
+            const containers = document.querySelectorAll('.video-container');
+            containers.forEach(container => {
+                container.style.height = `${availableHeight}px`;
+            });
+        }
+    }
+    
+    optimizeMobileChat() {
+        // Make chat input larger for mobile
+        if (this.chatInput) {
+            this.chatInput.style.fontSize = '16px'; // Prevents zoom on iOS
+            this.chatInput.style.padding = '12px 16px';
+        }
+        
+        // Make send button larger
+        if (this.sendChatBtn) {
+            this.sendChatBtn.style.minHeight = '44px';
+            this.sendChatBtn.style.padding = '12px 20px';
+        }
+        
+        // Optimize chat messages container
+        if (this.chatMessages) {
+            this.chatMessages.style.webkitOverflowScrolling = 'touch';
+        }
+    }
+    
+    // Enhanced toggleChat for mobile
+    toggleChat() {
+        this.chatSidebar.classList.toggle('open');
+        
+        // Clear notification when chat is opened
+        if (this.chatSidebar.classList.contains('open')) {
+            this.clearChatNotification();
+            
+            // On mobile, adjust chat size based on orientation
+            if (this.isMobile) {
+                this.chatSidebar.style.width = this.currentOrientation === 'landscape' ? '60%' : '100%';
+                
+                // Focus chat input after a delay to ensure keyboard appears correctly
+                setTimeout(() => {
+                    if (this.chatInput) {
+                        this.chatInput.focus();
+                    }
+                }, 300);
+            }
+            
+            // Scroll to bottom to show latest messages
+            setTimeout(() => {
+                this.scrollChatToBottom();
+            }, 100);
+        }
+    }
+    
+    // Override share screen for mobile (not supported on most mobile browsers)
+    async shareScreen() {
+        if (this.isMobile) {
+            this.addChatMessage('📱 Screen sharing not available on mobile devices', 'system');
+            return;
+        }
+        
+        try {
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: true,
+                audio: true
+            });
+            
+            // Replace video track
+            const videoTrack = screenStream.getVideoTracks()[0];
+            const sender = this.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+            
+            if (sender) {
+                await sender.replaceTrack(videoTrack);
+                this.addChatMessage('🖥️ Screen sharing started', 'system');
+                
+                videoTrack.addEventListener('ended', () => {
+                    this.stopScreenShare();
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing screen:', error);
+            this.addChatMessage(`❌ Screen share error: ${error.message}`, 'system');
+        }
+    }
+    
+    setupPiPDragging() {
+        if (!this.isMobile) return;
+        
+        // Show drag handle on mobile
+        this.pipDragHandle.style.display = 'flex';
+        
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+        
+        // Touch events for dragging
+        const handleStart = (e) => {
+            isDragging = true;
+            this.localVideoContainer.classList.add('dragging');
+            
+            const touch = e.touches ? e.touches[0] : e;
+            startX = touch.clientX;
+            startY = touch.clientY;
+            
+            const rect = this.localVideoContainer.getBoundingClientRect();
+            startLeft = rect.left;
+            startTop = rect.top;
+            
+            e.preventDefault();
+        };
+        
+        const handleMove = (e) => {
+            if (!isDragging) return;
+            
+            const touch = e.touches ? e.touches[0] : e;
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+            
+            let newLeft = startLeft + deltaX;
+            let newTop = startTop + deltaY;
+            
+            // Constrain to viewport bounds
+            const containerRect = this.localVideoContainer.getBoundingClientRect();
+            const maxLeft = window.innerWidth - containerRect.width;
+            const maxTop = window.innerHeight - containerRect.height - 100; // Space for controls
+            
+            newLeft = Math.max(20, Math.min(newLeft, maxLeft - 20));
+            newTop = Math.max(20, Math.min(newTop, maxTop));
+            
+            this.localVideoContainer.style.left = newLeft + 'px';
+            this.localVideoContainer.style.top = newTop + 'px';
+            this.localVideoContainer.style.right = 'auto';
+            
+            e.preventDefault();
+        };
+        
+        const handleEnd = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            this.localVideoContainer.classList.remove('dragging');
+            
+            // Snap to nearest corner
+            this.snapToCorner();
+            
+            e.preventDefault();
+        };
+        
+        // Add event listeners
+        this.pipDragHandle.addEventListener('touchstart', handleStart, { passive: false });
+        this.pipDragHandle.addEventListener('mousedown', handleStart);
+        
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('mousemove', handleMove);
+        
+        document.addEventListener('touchend', handleEnd);
+        document.addEventListener('mouseup', handleEnd);
+        
+        // Double tap to toggle corners
+        let lastTap = 0;
+        this.pipDragHandle.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 500 && tapLength > 0) {
+                this.togglePiPCorner();
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        });
+    }
+    
+    snapToCorner() {
+        const rect = this.localVideoContainer.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Determine which corner is closest
+        let targetLeft, targetTop;
+        
+        if (centerX < viewportWidth / 2 && centerY < viewportHeight / 2) {
+            // Top left
+            targetLeft = 20;
+            targetTop = 20;
+        } else if (centerX >= viewportWidth / 2 && centerY < viewportHeight / 2) {
+            // Top right
+            targetLeft = viewportWidth - rect.width - 20;
+            targetTop = 20;
+        } else if (centerX < viewportWidth / 2 && centerY >= viewportHeight / 2) {
+            // Bottom left
+            targetLeft = 20;
+            targetTop = viewportHeight - rect.height - 120; // Space for controls
+        } else {
+            // Bottom right
+            targetLeft = viewportWidth - rect.width - 20;
+            targetTop = viewportHeight - rect.height - 120;
+        }
+        
+        // Animate to corner
+        this.localVideoContainer.style.transition = 'left 0.3s ease, top 0.3s ease';
+        this.localVideoContainer.style.left = targetLeft + 'px';
+        this.localVideoContainer.style.top = targetTop + 'px';
+        
+        // Remove transition after animation
+        setTimeout(() => {
+            this.localVideoContainer.style.transition = '';
+        }, 300);
+    }
+    
+    togglePiPCorner() {
+        const rect = this.localVideoContainer.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let targetLeft, targetTop;
+        
+        // Move to opposite corner
+        if (rect.left < viewportWidth / 2) {
+            // Currently on left, move to right
+            targetLeft = viewportWidth - rect.width - 20;
+        } else {
+            // Currently on right, move to left
+            targetLeft = 20;
+        }
+        
+        if (rect.top < viewportHeight / 2) {
+            // Currently on top, move to bottom
+            targetTop = viewportHeight - rect.height - 120;
+        } else {
+            // Currently on bottom, move to top
+            targetTop = 20;
+        }
+        
+        this.localVideoContainer.style.transition = 'left 0.3s ease, top 0.3s ease';
+        this.localVideoContainer.style.left = targetLeft + 'px';
+        this.localVideoContainer.style.top = targetTop + 'px';
+        
+        setTimeout(() => {
+            this.localVideoContainer.style.transition = '';
+        }, 300);
+    }
 }
 
 // Initialize video chat when page loads
@@ -2064,4 +2624,5 @@ document.addEventListener('DOMContentLoaded', () => {
     new VideoChat(roomId, userId);
 });
 </script>
-{% endblock %}
+</body>
+</html>
