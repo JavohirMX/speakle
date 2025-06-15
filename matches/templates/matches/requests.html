@@ -3,185 +3,382 @@
 {% block title %}Match Requests - Speakle{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <div class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-gray-900 mb-4">Match Requests</h1>
-        <p class="text-lg text-gray-600">Manage your incoming and outgoing match requests</p>
-        <div class="mt-4">
-            <a href="{% url 'matches:find_matches' %}" 
-               class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                🔍 Find Partners
-            </a>
-            <a href="{% url 'matches:my_matches' %}" 
-               class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition ml-2">
-                🤝 My Matches
-            </a>
-            <button onclick="refreshRequests()" 
-               class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition ml-2">
-                🔄 Refresh
-            </button>
-        </div>
-    </div>
-
-    <!-- Loading indicator -->
-    <div id="loadingIndicator" class="hidden text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-        <p class="text-gray-600">Loading requests...</p>
-    </div>
-
-    <!-- Incoming Requests -->
-    <div class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">📩 Incoming Requests</h2>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <!-- Enhanced Header Section -->
+    <div class="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 mb-12">
+        <div class="absolute inset-0 bg-black/10"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-purple-600/90"></div>
         
-        <div id="incomingRequestsContainer">
-            {% if incoming_requests %}
-                <div class="space-y-4">
-                    {% for request in incoming_requests %}
-                        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500" data-request-id="{{ request.id }}">
-                            <div class="flex items-center justify-between">
-                                <!-- Request Info -->
-                                <div class="flex items-center flex-1">
-                                    {% if request.sender.profile_picture %}
-                                        <img src="{{ request.sender.profile_picture.url }}" 
-                                             alt="{{ request.sender.username }}" 
-                                             class="w-14 h-14 rounded-full object-cover mr-4">
-                                    {% else %}
-                                        <div class="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg mr-4">
-                                            {{ request.sender.username|first|upper }}
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <div class="flex-1">
-                                        <h3 class="text-lg font-semibold text-gray-900">{{ request.sender.username }}</h3>
-                                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                                            <span>Wants to learn: <strong class="text-blue-600">{{ request.sender_learns.name }} {{ request.sender_learns.flag_emoji }}</strong></span>
-                                            <span>Can teach: <strong class="text-green-600">{{ request.sender_teaches.name }} {{ request.sender_teaches.flag_emoji }}</strong></span>
-                                        </div>
-                                        
-                                        {% if request.message %}
-                                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
-                                                <p class="text-sm text-gray-700">"{{ request.message }}"</p>
-                                            </div>
-                                        {% endif %}
-                                        
-                                        <p class="text-xs text-gray-500 mt-2">
-                                            Sent {{ request.created_at|timesince }} ago
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="flex space-x-2 ml-4">
-                                    <button onclick="respondToRequest({{ request.id }}, 'accept')" 
-                                            class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition text-sm">
-                                        ✅ Accept
-                                    </button>
-                                    <button onclick="respondToRequest({{ request.id }}, 'decline')" 
-                                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition text-sm">
-                                        ❌ Decline
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="text-center py-8 bg-gray-50 rounded-lg">
-                    <div class="text-4xl mb-2">📭</div>
-                    <p class="text-gray-600">No incoming requests</p>
-                </div>
-            {% endif %}
+        <!-- Animated background elements -->
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow"></div>
+            <div class="absolute top-40 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 1s;"></div>
+            <div class="absolute -bottom-20 left-1/2 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 2s;"></div>
         </div>
-    </div>
 
-    <!-- Outgoing Requests -->
-    <div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">📤 Outgoing Requests</h2>
-        
-        <div id="outgoingRequestsContainer">
-            {% if outgoing_requests %}
-                <div class="space-y-4">
-                    {% for request in outgoing_requests %}
-                        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 
-                                    {% if request.status == 'pending' %}border-yellow-500
-                                    {% elif request.status == 'accepted' %}border-green-500
-                                    {% elif request.status == 'cancelled' %}border-gray-500
-                                    {% else %}border-red-500{% endif %}" data-request-id="{{ request.id }}">
-                            
-                            <div class="flex items-center justify-between">
-                                <!-- Request Info -->
-                                <div class="flex items-center flex-1">
-                                    {% if request.receiver.profile_picture %}
-                                        <img src="{{ request.receiver.profile_picture.url }}" 
-                                             alt="{{ request.receiver.username }}" 
-                                             class="w-14 h-14 rounded-full object-cover mr-4">
-                                    {% else %}
-                                        <div class="w-14 h-14 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg mr-4">
-                                            {{ request.receiver.username|first|upper }}
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <div class="flex-1">
-                                        <h3 class="text-lg font-semibold text-gray-900">{{ request.receiver.username }}</h3>
-                                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                                            <span>You teach: <strong class="text-blue-600">{{ request.sender_teaches.name }} {{ request.sender_teaches.flag_emoji }}</strong></span>
-                                            <span>You learn: <strong class="text-green-600">{{ request.sender_learns.name }} {{ request.sender_learns.flag_emoji }}</strong></span>
-                                        </div>
-                                        
-                                        {% if request.message %}
-                                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
-                                                <p class="text-sm text-gray-700">"{{ request.message }}"</p>
-                                            </div>
-                                        {% endif %}
-                                        
-                                        <p class="text-xs text-gray-500 mt-2">
-                                            Sent {{ request.created_at|timesince }} ago
-                                            {% if request.responded_at %}
-                                                • Responded {{ request.responded_at|timesince }} ago
-                                            {% endif %}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Status Badge and Actions -->
-                                <div class="ml-4 flex items-center space-x-2">
-                                    {% if request.status == 'pending' %}
-                                        <button onclick="cancelRequest({{ request.id }})" 
-                                                class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition text-sm">
-                                            Cancel
-                                        </button>
-                                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
-                                            ⏳ Pending
-                                        </span>
-                                    {% elif request.status == 'accepted' %}
-                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                                            ✅ Accepted
-                                        </span>
-                                    {% elif request.status == 'cancelled' %}
-                                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
-                                            🚫 Cancelled
-                                        </span>
-                                    {% else %}
-                                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
-                                            ❌ Declined
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+        <div class="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <!-- Enhanced Header Content -->
+                <div class="mb-8">
+                    <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+                        <span class="inline-block animate-fade-in">Match</span>
+                        <span class="inline-block animate-fade-in bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent" style="animation-delay: 0.2s;">Requests</span>
+                    </h1>
+                    <p class="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in" style="animation-delay: 0.4s;">
+                        Manage your incoming and outgoing match requests
+                    </p>
                 </div>
-            {% else %}
-                <div class="text-center py-8 bg-gray-50 rounded-lg">
-                    <div class="text-4xl mb-2">📤</div>
-                    <p class="text-gray-600">No outgoing requests</p>
+
+                <!-- Enhanced Action Buttons -->
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-fade-in" style="animation-delay: 0.6s;">
                     <a href="{% url 'matches:find_matches' %}" 
-                       class="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                        Find Partners
+                       class="group relative bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white/30 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
+                        <span class="flex items-center justify-center space-x-3">
+                            <span class="text-2xl">🔍</span>
+                            <span>Find Partners</span>
+                        </span>
                     </a>
+                    
+                    <a href="{% url 'matches:my_matches' %}" 
+                       class="group relative bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
+                        <span class="flex items-center justify-center space-x-3">
+                            <span class="text-2xl">🤝</span>
+                            <span>My Matches</span>
+                        </span>
+                        <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </a>
+                    
+                    <button onclick="refreshRequests()" 
+                       class="group relative bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
+                        <span class="flex items-center justify-center space-x-3">
+                            <span class="text-2xl">🔄</span>
+                            <span>Refresh</span>
+                        </span>
+                        <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </button>
                 </div>
-            {% endif %}
+            </div>
+        </div>
+
+        <!-- Wave separator -->
+        <div class="absolute bottom-0 left-0 right-0">
+            <svg class="w-full h-12 fill-current text-gray-50" viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,32L48,37.3C96,43,192,53,288,58.7C384,64,480,64,576,58.7C672,53,768,43,864,48C960,53,1056,75,1152,80C1248,85,1344,75,1392,69.3L1440,64L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+        <!-- Enhanced Loading indicator -->
+        <div id="loadingIndicator" class="hidden">
+            <div class="text-center py-16">
+                <div class="relative w-24 h-24 mx-auto mb-8">
+                    <div class="absolute inset-0 border-4 border-blue-200 rounded-full animate-spin"></div>
+                    <div class="absolute inset-2 border-4 border-blue-500 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-2xl">📩</span>
+                    </div>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Loading Requests</h3>
+                <p class="text-gray-600">Please wait while we fetch your match requests...</p>
+            </div>
+        </div>
+
+        <!-- Incoming Requests -->
+        <div class="mb-16">
+            <div class="mb-8">
+                <div class="flex items-center space-x-4 mb-2">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <span class="text-white text-xl">📩</span>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900">Incoming Requests</h2>
+                        <p class="text-gray-600">People who want to connect with you</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="incomingRequestsContainer">
+                {% if incoming_requests %}
+                    <div class="grid gap-6">
+                        {% for request in incoming_requests %}
+                            <div class="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-blue-200 overflow-hidden transform hover:-translate-y-2 animate-fade-in" data-request-id="{{ request.id }}" style="animation-delay: {{ forloop.counter0|floatformat:1|add:'.1s' }};">
+                                <!-- Request Header with Gradient -->
+                                <div class="bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 p-6 border-b border-gray-100">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="relative">
+                                                {% if request.sender.profile_picture %}
+                                                    <img src="{{ request.sender.profile_picture.url }}" 
+                                                         alt="{{ request.sender.username }}" 
+                                                         class="w-16 h-16 rounded-2xl object-cover shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                                {% else %}
+                                                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                                        {{ request.sender.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                    {{ request.sender.username }}
+                                                </h3>
+                                                <p class="text-sm text-gray-600 flex items-center space-x-2">
+                                                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                    <span>Sent {{ request.created_at|timesince }} ago</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Priority Badge -->
+                                        <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                            <span class="text-sm font-semibold">⭐ New Request</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Request Content -->
+                                <div class="p-6">
+                                    <!-- Language Exchange Info -->
+                                    <div class="space-y-4 mb-6">
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                                                        <span class="text-white text-lg">{{ request.sender_learns.flag_emoji }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm text-blue-700 font-medium">Wants to learn</div>
+                                                        <div class="font-bold text-blue-900">{{ request.sender_learns.name }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-md">
+                                                        <span class="text-white text-lg">{{ request.sender_teaches.flag_emoji }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm text-green-700 font-medium">Can teach</div>
+                                                        <div class="font-bold text-green-900">{{ request.sender_teaches.name }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if request.message %}
+                                        <!-- Message -->
+                                        <div class="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-100">
+                                            <div class="flex items-start space-x-3">
+                                                <span class="text-blue-500 text-lg mt-1">💬</span>
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-700 mb-1">Personal Message:</p>
+                                                    <p class="text-gray-800 italic">"{{ request.message }}"</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex space-x-4">
+                                        <button onclick="respondToRequest({{ request.id }}, 'decline')" 
+                                                class="flex-1 bg-red-500 text-white px-6 py-4 rounded-2xl hover:bg-red-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl focus-ring flex items-center justify-center space-x-2">
+                                            <span>❌</span>
+                                            <span>Decline</span>
+                                        </button>
+                                        <button onclick="respondToRequest({{ request.id }}, 'accept')" 
+                                                class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl focus-ring flex items-center justify-center space-x-2">
+                                            <span>✅</span>
+                                            <span>Accept</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-20">
+                        <div class="relative w-32 h-32 mx-auto mb-8">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
+                            <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-6xl">📭</span>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-bold text-gray-900 mb-4">No incoming requests</h3>
+                        <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                            Your perfect language partner request might be just around the corner!
+                        </p>
+                        <a href="{% url 'matches:find_matches' %}" 
+                           class="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                            <span>🔍</span>
+                            <span>Find Language Partners</span>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Outgoing Requests -->
+        <div class="mb-16">
+            <div class="mb-8">
+                <div class="flex items-center space-x-4 mb-2">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <span class="text-white text-xl">📤</span>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900">Outgoing Requests</h2>
+                        <p class="text-gray-600">Requests you've sent to others</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="outgoingRequestsContainer">
+                {% if outgoing_requests %}
+                    <div class="grid gap-6">
+                        {% for request in outgoing_requests %}
+                            <div class="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-purple-200 overflow-hidden transform hover:-translate-y-2 animate-fade-in" data-request-id="{{ request.id }}" style="animation-delay: {{ forloop.counter0|floatformat:1|add:'.1s' }};">
+                                <!-- Request Header with Status -->
+                                <div class="bg-gradient-to-r 
+                                            {% if request.status == 'pending' %}from-yellow-50 via-orange-50 to-yellow-50
+                                            {% elif request.status == 'accepted' %}from-green-50 via-emerald-50 to-green-50
+                                            {% elif request.status == 'cancelled' %}from-gray-50 via-slate-50 to-gray-50
+                                            {% else %}from-red-50 via-pink-50 to-red-50{% endif %} p-6 border-b border-gray-100">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="relative">
+                                                {% if request.receiver.profile_picture %}
+                                                    <img src="{{ request.receiver.profile_picture.url }}" 
+                                                         alt="{{ request.receiver.username }}" 
+                                                         class="w-16 h-16 rounded-2xl object-cover shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                                {% else %}
+                                                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                                        {{ request.receiver.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="absolute -bottom-1 -right-1 w-6 h-6 
+                                                           {% if request.status == 'accepted' %}bg-green-500
+                                                           {% elif request.status == 'pending' %}bg-yellow-500
+                                                           {% elif request.status == 'cancelled' %}bg-gray-500
+                                                           {% else %}bg-red-500{% endif %} rounded-full border-2 border-white shadow-sm"></div>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-bold text-xl text-gray-900 group-hover:text-purple-600 transition-colors">
+                                                    {{ request.receiver.username }}
+                                                </h3>
+                                                <p class="text-sm text-gray-600 flex items-center space-x-2">
+                                                    <span class="w-2 h-2 
+                                                               {% if request.status == 'accepted' %}bg-green-500
+                                                               {% elif request.status == 'pending' %}bg-yellow-500
+                                                               {% elif request.status == 'cancelled' %}bg-gray-500
+                                                               {% else %}bg-red-500{% endif %} rounded-full"></span>
+                                                    <span>Sent {{ request.created_at|timesince }} ago
+                                                        {% if request.responded_at %}
+                                                            • Responded {{ request.responded_at|timesince }} ago
+                                                        {% endif %}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Status Badge -->
+                                        <div class="flex items-center space-x-3">
+                                            {% if request.status == 'pending' %}
+                                                <button onclick="cancelRequest({{ request.id }})" 
+                                                        class="bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition-colors text-sm font-medium">
+                                                    Cancel
+                                                </button>
+                                                <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                                    <span class="text-sm font-semibold">⏳ Pending</span>
+                                                </div>
+                                            {% elif request.status == 'accepted' %}
+                                                <div class="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                                    <span class="text-sm font-semibold">✅ Accepted</span>
+                                                </div>
+                                            {% elif request.status == 'cancelled' %}
+                                                <div class="bg-gradient-to-r from-gray-400 to-slate-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                                    <span class="text-sm font-semibold">🚫 Cancelled</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="bg-gradient-to-r from-red-400 to-pink-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                                    <span class="text-sm font-semibold">❌ Declined</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Request Content -->
+                                <div class="p-6">
+                                    <!-- Language Exchange Info -->
+                                    <div class="space-y-4 mb-6">
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                                                        <span class="text-white text-lg">{{ request.sender_teaches.flag_emoji }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm text-blue-700 font-medium">You teach</div>
+                                                        <div class="font-bold text-blue-900">{{ request.sender_teaches.name }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-md">
+                                                        <span class="text-white text-lg">{{ request.sender_learns.flag_emoji }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm text-green-700 font-medium">You learn</div>
+                                                        <div class="font-bold text-green-900">{{ request.sender_learns.name }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if request.message %}
+                                        <!-- Message -->
+                                        <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100">
+                                            <div class="flex items-start space-x-3">
+                                                <span class="text-purple-500 text-lg mt-1">💬</span>
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-700 mb-1">Your Message:</p>
+                                                    <p class="text-gray-800 italic">"{{ request.message }}"</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-20">
+                        <div class="relative w-32 h-32 mx-auto mb-8">
+                            <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-20 animate-pulse"></div>
+                            <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-6xl">📤</span>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-bold text-gray-900 mb-4">No outgoing requests</h3>
+                        <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                            Ready to connect with amazing language partners? Start by finding your perfect match!
+                        </p>
+                        <a href="{% url 'matches:find_matches' %}" 
+                           class="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                            <span>🔍</span>
+                            <span>Find Language Partners</span>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -299,52 +496,120 @@ function updateIncomingRequests(requests) {
     
     if (requests.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-8 bg-gray-50 rounded-lg">
-                <div class="text-4xl mb-2">📭</div>
-                <p class="text-gray-600">No incoming requests</p>
+            <div class="text-center py-20">
+                <div class="relative w-32 h-32 mx-auto mb-8">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
+                    <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-6xl">📭</span>
+                    </div>
+                </div>
+                <h3 class="text-3xl font-bold text-gray-900 mb-4">No incoming requests</h3>
+                <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                    Your perfect language partner request might be just around the corner!
+                </p>
+                <a href="/matches/find-matches/" 
+                   class="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                    <span>🔍</span>
+                    <span>Find Language Partners</span>
+                </a>
             </div>
         `;
         return;
     }
     
-    const requestsHtml = requests.map(request => `
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500" data-request-id="${request.id}">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center flex-1">
-                    <div class="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg mr-4">
-                        ${request.sender.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900">${request.sender}</h3>
-                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                            <span>Wants to learn: <strong class="text-blue-600">${request.sender_learns}</strong></span>
-                            <span>Can teach: <strong class="text-green-600">${request.sender_teaches}</strong></span>
-                        </div>
-                        ${request.message ? `
-                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
-                                <p class="text-sm text-gray-700">"${request.message}"</p>
+    const requestsHtml = requests.map((request, index) => `
+        <div class="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-blue-200 overflow-hidden transform hover:-translate-y-2 animate-fade-in" data-request-id="${request.id}" style="animation-delay: ${(index * 0.1)}s;">
+            <!-- Request Header with Gradient -->
+            <div class="bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                ${request.sender.charAt(0).toUpperCase()}
                             </div>
-                        ` : ''}
-                        <p class="text-xs text-gray-500 mt-2">
-                            Sent ${new Date(request.created_at).toLocaleDateString()}
-                        </p>
+                            <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">
+                                ${request.sender}
+                            </h3>
+                            <p class="text-sm text-gray-600 flex items-center space-x-2">
+                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                <span>Sent ${formatRelativeTime(request.created_at)}</span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Priority Badge -->
+                    <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                        <span class="text-sm font-semibold">⭐ New Request</span>
                     </div>
                 </div>
-                <div class="flex space-x-2 ml-4">
-                    <button onclick="respondToRequest(${request.id}, 'accept')" 
-                            class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition text-sm">
-                        ✅ Accept
-                    </button>
+            </div>
+
+            <!-- Request Content -->
+            <div class="p-6">
+                <!-- Language Exchange Info -->
+                <div class="space-y-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                                    <span class="text-white text-lg">🌍</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-blue-700 font-medium">Wants to learn</div>
+                                    <div class="font-bold text-blue-900">${request.sender_learns}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-md">
+                                    <span class="text-white text-lg">🎓</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-green-700 font-medium">Can teach</div>
+                                    <div class="font-bold text-green-900">${request.sender_teaches}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${request.message ? `
+                    <!-- Message -->
+                    <div class="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-100">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-blue-500 text-lg mt-1">💬</span>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 mb-1">Personal Message:</p>
+                                <p class="text-gray-800 italic">"${escapeHtml(request.message)}"</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-4">
                     <button onclick="respondToRequest(${request.id}, 'decline')" 
-                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition text-sm">
-                        ❌ Decline
+                            class="flex-1 bg-red-500 text-white px-6 py-4 rounded-2xl hover:bg-red-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl focus-ring flex items-center justify-center space-x-2">
+                        <span>❌</span>
+                        <span>Decline</span>
+                    </button>
+                    <button onclick="respondToRequest(${request.id}, 'accept')" 
+                            class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl focus-ring flex items-center justify-center space-x-2">
+                        <span>✅</span>
+                        <span>Accept</span>
                     </button>
                 </div>
             </div>
         </div>
     `).join('');
     
-    container.innerHTML = `<div class="space-y-4">${requestsHtml}</div>`;
+    container.innerHTML = `<div class="grid gap-6">${requestsHtml}</div>`;
 }
 
 // Update outgoing requests display
@@ -353,65 +618,278 @@ function updateOutgoingRequests(requests) {
     
     if (requests.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-8 bg-gray-50 rounded-lg">
-                <div class="text-4xl mb-2">📤</div>
-                <p class="text-gray-600">No outgoing requests</p>
-                <a href="{% url 'matches:find_matches' %}" 
-                   class="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                    Find Partners
+            <div class="text-center py-20">
+                <div class="relative w-32 h-32 mx-auto mb-8">
+                    <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-20 animate-pulse"></div>
+                    <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-6xl">📤</span>
+                    </div>
+                </div>
+                <h3 class="text-3xl font-bold text-gray-900 mb-4">No outgoing requests</h3>
+                <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                    Ready to connect with amazing language partners? Start by finding your perfect match!
+                </p>
+                <a href="/matches/find-matches/" 
+                   class="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                    <span>🔍</span>
+                    <span>Find Language Partners</span>
                 </a>
             </div>
         `;
         return;
     }
     
-    const requestsHtml = requests.map(request => `
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500" data-request-id="${request.id}">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center flex-1">
-                    <div class="w-14 h-14 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg mr-4">
-                        ${request.receiver.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900">${request.receiver}</h3>
-                        <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                            <span>You teach: <strong class="text-blue-600">${request.sender_teaches}</strong></span>
-                            <span>You learn: <strong class="text-green-600">${request.sender_learns}</strong></span>
-                        </div>
-                        ${request.message ? `
-                            <div class="bg-gray-50 rounded-lg p-3 mt-2">
-                                <p class="text-sm text-gray-700">"${request.message}"</p>
+    const requestsHtml = requests.map((request, index) => {
+        const statusColor = getStatusColor(request.status);
+        const statusGradient = getStatusGradient(request.status);
+        
+        return `
+        <div class="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-purple-200 overflow-hidden transform hover:-translate-y-2 animate-fade-in" data-request-id="${request.id}" style="animation-delay: ${(index * 0.1)}s;">
+            <!-- Request Header with Status -->
+            <div class="bg-gradient-to-r ${statusGradient} p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                ${request.receiver.charAt(0).toUpperCase()}
                             </div>
-                        ` : ''}
-                        <p class="text-xs text-gray-500 mt-2">
-                            Sent ${new Date(request.created_at).toLocaleDateString()}
-                        </p>
+                            <div class="absolute -bottom-1 -right-1 w-6 h-6 ${statusColor} rounded-full border-2 border-white shadow-sm"></div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-900 group-hover:text-purple-600 transition-colors">
+                                ${request.receiver}
+                            </h3>
+                            <p class="text-sm text-gray-600 flex items-center space-x-2">
+                                <span class="w-2 h-2 ${statusColor} rounded-full"></span>
+                                <span>Sent ${formatRelativeTime(request.created_at)}</span>
+                            </p>
+                        </div>
                     </div>
-                </div>
-                <div class="ml-4 flex items-center space-x-2">
-                    <button onclick="cancelRequest(${request.id})" 
-                            class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition text-sm">
-                        Cancel
-                    </button>
-                    <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
-                        ⏳ Pending
-                    </span>
+                    
+                    <!-- Status Badge -->
+                    <div class="flex items-center space-x-3">
+                        ${request.status === 'pending' ? `
+                            <button onclick="cancelRequest(${request.id})" 
+                                    class="bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition-colors text-sm font-medium">
+                                Cancel
+                            </button>
+                            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                <span class="text-sm font-semibold">⏳ Pending</span>
+                            </div>
+                        ` : request.status === 'accepted' ? `
+                            <div class="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                <span class="text-sm font-semibold">✅ Accepted</span>
+                            </div>
+                        ` : request.status === 'cancelled' ? `
+                            <div class="bg-gradient-to-r from-gray-400 to-slate-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                <span class="text-sm font-semibold">🚫 Cancelled</span>
+                            </div>
+                        ` : `
+                            <div class="bg-gradient-to-r from-red-400 to-pink-500 text-white px-4 py-2 rounded-2xl shadow-lg">
+                                <span class="text-sm font-semibold">❌ Declined</span>
+                            </div>
+                        `}
+                    </div>
                 </div>
             </div>
+
+            <!-- Request Content -->
+            <div class="p-6">
+                <!-- Language Exchange Info -->
+                <div class="space-y-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                                    <span class="text-white text-lg">🎓</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-blue-700 font-medium">You teach</div>
+                                    <div class="font-bold text-blue-900">${request.sender_teaches}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-md">
+                                    <span class="text-white text-lg">🌍</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-green-700 font-medium">You learn</div>
+                                    <div class="font-bold text-green-900">${request.sender_learns}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${request.message ? `
+                    <!-- Message -->
+                    <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-purple-500 text-lg mt-1">💬</span>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 mb-1">Your Message:</p>
+                                <p class="text-gray-800 italic">"${escapeHtml(request.message)}"</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
-    container.innerHTML = `<div class="space-y-4">${requestsHtml}</div>`;
+    container.innerHTML = `<div class="grid gap-6">${requestsHtml}</div>`;
 }
 
-// Notification system
+// Enhanced notification system
 function showNotification(type, message) {
     if (typeof showNotificationToast === 'function') {
-        const icon = type === 'success' ? '✅' : '❌';
-        showNotificationToast(type === 'success' ? 'Success' : 'Error', message, icon);
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️',
+            warning: '⚠️'
+        };
+        const titles = {
+            success: 'Success',
+            error: 'Error', 
+            info: 'Info',
+            warning: 'Warning'
+        };
+        showNotificationToast(titles[type] || 'Notification', message, icons[type] || '📢');
     } else {
         alert(message);
     }
 }
+
+// Enhanced button loading states
+function setButtonLoading(button, loading = true) {
+    if (loading) {
+        button.setAttribute('data-original-text', button.innerHTML);
+        button.innerHTML = `
+            <span class="flex items-center justify-center space-x-2">
+                <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Loading...</span>
+            </span>
+        `;
+        button.disabled = true;
+    } else {
+        button.innerHTML = button.getAttribute('data-original-text') || button.innerHTML;
+        button.disabled = false;
+        button.removeAttribute('data-original-text');
+    }
+}
+
+// Helper functions for formatting and styling
+function formatRelativeTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    
+    return date.toLocaleDateString();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getStatusColor(status) {
+    switch(status) {
+        case 'accepted': return 'bg-green-500';
+        case 'pending': return 'bg-yellow-500';
+        case 'cancelled': return 'bg-gray-500';
+        default: return 'bg-red-500';
+    }
+}
+
+function getStatusGradient(status) {
+    switch(status) {
+        case 'accepted': return 'from-green-50 via-emerald-50 to-green-50';
+        case 'pending': return 'from-yellow-50 via-orange-50 to-yellow-50';
+        case 'cancelled': return 'from-gray-50 via-slate-50 to-gray-50';
+        default: return 'from-red-50 via-pink-50 to-red-50';
+    }
+}
+
+// Auto-refresh requests periodically
+setInterval(() => {
+    // Only refresh if page is visible
+    if (!document.hidden) {
+        refreshRequests();
+    }
+}, 60000); // Every minute
 </script>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+        opacity: 0;
+    }
+    
+    /* Enhanced hover effects */
+    .group:hover .group-hover\:scale-105 {
+        transform: scale(1.05);
+    }
+    
+    /* Smooth transitions for all interactive elements */
+    button, a {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Enhanced focus states */
+    .focus-ring:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+    
+    /* Loading animation for buttons */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Gradient animation */
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    .animate-gradient {
+        background-size: 200% 200%;
+        animation: gradientShift 3s ease infinite;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        .grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .flex-col {
+            flex-direction: column;
+        }
+        
+        .space-x-4 > * + * {
+            margin-left: 0 !important;
+            margin-top: 1rem;
+        }
+    }
+</style>
 {% endblock %} 

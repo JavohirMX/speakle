@@ -1,92 +1,192 @@
 {% if potential_matches %}
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-8 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
         {% for match in potential_matches %}
-            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                <!-- User Info -->
-                <div class="flex items-center mb-4">
-                    {% if match.potential_partner.profile_picture %}
-                        <img src="{{ match.potential_partner.profile_picture.url }}" 
-                             alt="{{ match.potential_partner.username }}" 
-                             class="w-12 h-12 rounded-full object-cover mr-3">
-                    {% else %}
-                        <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
-                            {{ match.potential_partner.username|first|upper }}
+            <div class="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-blue-200 overflow-hidden transform hover:-translate-y-2 animate-fade-in" style="animation-delay: 0.{{ forloop.counter0 }}s;">
+                <!-- Card Header with Gradient -->
+                <div class="bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 p-6 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                {% if match.potential_partner.profile_picture %}
+                                    <img src="{{ match.potential_partner.profile_picture.url }}" 
+                                         alt="{{ match.potential_partner.username }}" 
+                                         class="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white">
+                                {% else %}
+                                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                                        {{ match.potential_partner.username|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">
+                                    {{ match.potential_partner.username }}
+                                </h3>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-sm text-gray-600">Compatibility:</span>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div class="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-1000" style="width: {{ match.compatibility_score|floatformat:0 }}%;"></div>
+                                        </div>
+                                        <span class="text-sm font-bold text-green-600">{{ match.compatibility_score|floatformat:0 }}%</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    {% endif %}
-                    <div>
-                        <h3 class="font-semibold text-lg">{{ match.potential_partner.username }}</h3>
-                        <div class="flex items-center">
-                            <span class="text-sm text-gray-600">Compatibility: </span>
-                            <span class="text-sm font-medium text-green-600 ml-1">{{ match.compatibility_score|floatformat:0 }}%</span>
+                        
+                        <!-- Compatibility Badge -->
+                        <div class="text-center">
+                            {% if match.compatibility_score >= 90 %}
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                                    <span class="text-white font-bold text-lg">{{ match.compatibility_score|floatformat:0 }}</span>
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 font-medium">Perfect</div>
+                            {% elif match.compatibility_score >= 80 %}
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg">
+                                    <span class="text-white font-bold text-lg">{{ match.compatibility_score|floatformat:0 }}</span>
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 font-medium">Great</div>
+                            {% elif match.compatibility_score >= 70 %}
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center shadow-lg">
+                                    <span class="text-white font-bold text-lg">{{ match.compatibility_score|floatformat:0 }}</span>
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 font-medium">Good</div>
+                            {% else %}
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-lg">
+                                    <span class="text-white font-bold text-lg">{{ match.compatibility_score|floatformat:0 }}</span>
+                                </div>
+                                <div class="text-xs text-gray-600 mt-1 font-medium">Fair</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Language Exchange Info -->
-                <div class="mb-4">
-                    <div class="flex items-center justify-between text-sm mb-2">
-                        <span class="text-gray-600">You teach:</span>
-                        <span class="font-medium text-blue-600">{{ match.user_teaches.name }} {{ match.user_teaches.flag_emoji }}</span>
+                <!-- Card Content -->
+                <div class="p-6">
+                    <!-- Language Exchange Info -->
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                                        <span class="text-white text-lg">📚</span>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-blue-700 font-medium">You teach</div>
+                                        <div class="font-bold text-blue-900 text-lg flex items-center space-x-2">
+                                            <span>{{ match.user_teaches.name }}</span>
+                                            <span class="text-2xl">{{ match.user_teaches.flag_emoji }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-2xl">→</div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-md">
+                                        <span class="text-white text-lg">🎯</span>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-green-700 font-medium">You learn</div>
+                                        <div class="font-bold text-green-900 text-lg flex items-center space-x-2">
+                                            <span>{{ match.user_learns.name }}</span>
+                                            <span class="text-2xl">{{ match.user_learns.flag_emoji }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-2xl">←</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-600">You learn:</span>
-                        <span class="font-medium text-green-600">{{ match.user_learns.name }} {{ match.user_learns.flag_emoji }}</span>
-                    </div>
-                </div>
 
-                <!-- Bio Preview -->
-                {% if match.potential_partner.bio %}
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-600 line-clamp-3">
-                            {{ match.potential_partner.bio|truncatewords:20 }}
-                        </p>
-                    </div>
-                {% endif %}
-
-                <!-- Interests -->
-                {% if match.potential_partner.interests %}
-                    <div class="mb-4">
-                        <p class="text-xs text-gray-500 mb-1">Interests:</p>
-                        <p class="text-sm text-gray-600">{{ match.potential_partner.interests|truncatewords:10 }}</p>
-                    </div>
-                {% endif %}
-
-                <!-- Action Button -->
-                <div class="flex justify-end">
-                    {% if match.potential_partner.id in sent_requests %}
-                        <span class="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
-                            ⏳ Request Sent
-                        </span>
-                    {% elif match.potential_partner.id in confirmed_partner_ids %}
-                        <span class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">
-                            ✅ Already Matched
-                        </span>
-                    {% else %}
-                        <button onclick="openSendRequestModal({{ match.id }}, '{{ match.potential_partner.username }}', '{{ match.user_teaches.name }}', '{{ match.user_learns.name }}')" 
-                           class="bg-blue-500 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                            💌 Send Request
-                        </button>
+                    <!-- Bio Preview -->
+                    {% if match.potential_partner.bio %}
+                        <div class="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-purple-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 mt-0.5">
+                                    <span class="text-white text-sm">💭</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-purple-700 font-medium mb-1">About</div>
+                                    <p class="text-sm text-gray-700 line-clamp-3 leading-relaxed">
+                                        {{ match.potential_partner.bio|truncatewords:25 }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     {% endif %}
+
+                    <!-- Interests -->
+                    {% if match.potential_partner.interests %}
+                        <div class="mb-6 p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 mt-0.5">
+                                    <span class="text-white text-sm">🎨</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-orange-700 font-medium mb-1">Interests</div>
+                                    <p class="text-sm text-gray-700">{{ match.potential_partner.interests|truncatewords:15 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Action Button -->
+                    <div class="flex justify-center">
+                        {% if match.potential_partner.id in sent_requests %}
+                            <div class="flex items-center space-x-3 bg-yellow-50 text-yellow-800 px-6 py-3 rounded-2xl border border-yellow-200 w-full justify-center">
+                                <span class="text-xl">⏳</span>
+                                <span class="font-semibold">Request Sent</span>
+                            </div>
+                        {% elif match.potential_partner.id in confirmed_partner_ids %}
+                            <div class="flex items-center space-x-3 bg-green-50 text-green-800 px-6 py-3 rounded-2xl border border-green-200 w-full justify-center">
+                                <span class="text-xl">✅</span>
+                                <span class="font-semibold">Already Matched</span>
+                            </div>
+                        {% else %}
+                            <button onclick="openSendRequestModal({{ match.id }}, '{{ match.potential_partner.username }}', '{{ match.user_teaches.name }}', '{{ match.user_learns.name }}')" 
+                               class="group w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 focus-ring">
+                                <span class="flex items-center justify-center space-x-2">
+                                    <span class="text-xl group-hover:animate-bounce">💌</span>
+                                    <span>Send Request</span>
+                                </span>
+                            </button>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         {% endfor %}
     </div>
 {% else %}
-    <div class="text-center py-12">
-        <div class="mb-4 text-6xl">🔍</div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No matches found</h3>
-        <p class="text-gray-600 mb-6">
-            We couldn't find any language partners for you right now. 
-            <br>Make sure you have set up your languages in your profile.
+    <div class="text-center py-20">
+        <div class="relative w-32 h-32 mx-auto mb-8">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
+            <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-6xl">🔍</span>
+            </div>
+        </div>
+        <h3 class="text-3xl font-bold text-gray-900 mb-4">No matches found yet</h3>
+        <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+            We're still learning about you! Complete your profile to help us find your perfect language partners.
         </p>
-        <div class="space-x-4">
+        <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
             <a href="{% url 'users:profile' %}" 
-               class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
-                Edit Profile
+               class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                <span class="flex items-center space-x-2">
+                    <span>✨</span>
+                    <span>Complete Profile</span>
+                </span>
             </a>
             <button onclick="refreshMatches()" 
-               class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition">
-                Try Again
+               class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                <span class="flex items-center space-x-2">
+                    <span>🔄</span>
+                    <span>Try Again</span>
+                </span>
             </button>
         </div>
     </div>

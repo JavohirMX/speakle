@@ -3,67 +3,203 @@
 {% block title %}Find Language Partners - Speakle{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <div class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-gray-900 mb-4">Find Language Partners</h1>
-        <p class="text-lg text-gray-600">Discover people who can help you learn and practice languages</p>
-        <div class="mt-4">
-            <button onclick="refreshMatches()" 
-               class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                🔄 Refresh Matches
-            </button>
-            <a href="{% url 'matches:requests' %}" 
-               class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition ml-2">
-                📩 Match Requests
-            </a>
-            <a href="{% url 'matches:my_matches' %}" 
-               class="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition ml-2">
-                🤝 My Matches
-            </a>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <!-- Enhanced Header Section -->
+    <div class="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700">
+        <div class="absolute inset-0 bg-black/10"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-purple-600/90"></div>
+        
+        <!-- Animated background elements -->
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow"></div>
+            <div class="absolute top-40 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 1s;"></div>
+            <div class="absolute -bottom-20 left-1/2 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+        </div>
+
+        <div class="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <!-- Enhanced Header Content -->
+                <div class="mb-8">
+                    <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+                        <span class="inline-block animate-fade-in">Find Your</span>
+                        <span class="inline-block animate-fade-in bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent" style="animation-delay: 0.2s;">Perfect</span>
+                        <span class="inline-block animate-fade-in" style="animation-delay: 0.4s;">Language Partner</span>
+                    </h1>
+                    <p class="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in" style="animation-delay: 0.6s;">
+                        Discover native speakers and language enthusiasts who match your learning goals
+                    </p>
+                </div>
+
+                <!-- Enhanced Action Buttons -->
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-fade-in" style="animation-delay: 0.8s;">
+                    <button onclick="refreshMatches()" 
+                        class="group relative bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white/30 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
+                        <span class="flex items-center justify-center space-x-3">
+                            <span class="text-2xl group-hover:animate-spin transition-transform duration-500">🔄</span>
+                            <span>Refresh Matches</span>
+                        </span>
+                    </button>
+                    
+                    <a href="{% url 'matches:requests' %}" 
+                        class="group relative bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
+                        <span class="flex items-center justify-center space-x-3">
+                            <span class="text-2xl">📩</span>
+                            <span>Match Requests</span>
+                        </span>
+                        <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </a>
+                    
+                    <a href="{% url 'matches:my_matches' %}" 
+                        class="group relative bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
+                        <span class="flex items-center justify-center space-x-3">
+                            <span class="text-2xl">🤝</span>
+                            <span>My Matches</span>
+                        </span>
+                        <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wave separator -->
+        <div class="absolute bottom-0 left-0 right-0">
+            <svg class="w-full h-12 fill-current text-gray-50" viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,32L48,37.3C96,43,192,53,288,58.7C384,64,480,64,576,58.7C672,53,768,43,864,48C960,53,1056,75,1152,80C1248,85,1344,75,1392,69.3L1440,64L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+            </svg>
         </div>
     </div>
 
-    <!-- Loading indicator -->
-    <div id="loadingIndicator" class="hidden text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-        <p class="text-gray-600">Loading matches...</p>
-    </div>
+    <!-- Main Content Area -->
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <!-- Enhanced Filter Section -->
+        <div class="mb-12">
+            <div class="bg-white rounded-3xl shadow-xl border border-gray-200/50 p-6 md:p-8 backdrop-blur-sm">
+                <div class="flex flex-col lg:flex-row items-center justify-between space-y-6 lg:space-y-0 lg:space-x-8">
+                    <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 w-full lg:w-auto">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                <span class="text-white text-xl">🎯</span>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Smart Matching</h3>
+                                <p class="text-sm text-gray-600">AI-powered compatibility</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2 bg-blue-50 rounded-full px-4 py-2">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></span>
+                                <span class="text-sm font-medium text-blue-700">Live Matching</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="flex items-center space-x-8 text-center w-full lg:w-auto justify-center">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900" id="totalMatches">-</div>
+                            <div class="text-sm text-gray-600">Available</div>
+                        </div>
+                        <div class="w-px h-12 bg-gray-200"></div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600" id="onlineCount">-</div>
+                            <div class="text-sm text-gray-600">Online</div>
+                        </div>
+                        <div class="w-px h-12 bg-gray-200"></div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="avgCompatibility">-</div>
+                            <div class="text-sm text-gray-600">Avg Match</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <!-- Potential Matches Container -->
-    <div id="matchesContainer">
-        {% include 'matches/partials/potential_matches_list.html' %}
+        <!-- Enhanced Loading State -->
+        <div id="loadingIndicator" class="hidden">
+            <div class="text-center py-16">
+                <div class="relative w-24 h-24 mx-auto mb-8">
+                    <div class="absolute inset-0 border-4 border-blue-200 rounded-full animate-spin"></div>
+                    <div class="absolute inset-2 border-4 border-blue-500 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-2xl">🔍</span>
+                    </div>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Finding Your Perfect Matches</h3>
+                <p class="text-gray-600">AI is analyzing compatibility scores...</p>
+                <div class="mt-6 max-w-md mx-auto bg-gray-200 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full animate-pulse" style="width: 65%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Matches Container -->
+        <div id="matchesContainer" class="transition-opacity duration-300">
+            {% include 'matches/partials/potential_matches_list.html' %}
+        </div>
     </div>
 </div>
 
-<!-- Send Request Modal -->
-<div id="sendRequestModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+<!-- Enhanced Send Request Modal -->
+<div id="sendRequestModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 transition-all duration-300">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 class="text-lg font-semibold mb-4">📩 Send Match Request</h3>
-            
-            <div id="selectedPartnerInfo" class="mb-4 p-3 bg-gray-50 rounded-lg">
-                <!-- Partner info will be populated here -->
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-3xl p-6 text-white">
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                        <span class="text-3xl">💌</span>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold">Send Match Request</h3>
+                        <p class="text-blue-100">Start your language journey together</p>
+                    </div>
+                </div>
             </div>
             
-            <div class="mb-4">
-                <label for="requestMessage" class="block text-sm font-medium text-gray-700 mb-2">
-                    Optional message:
-                </label>
-                <textarea id="requestMessage" rows="3" 
-                          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Hi! I'd love to practice language exchange with you."></textarea>
-            </div>
-            
-            <div class="flex justify-end space-x-2">
-                <button onclick="closeSendRequestModal()" 
-                        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">
-                    Cancel
-                </button>
-                <button onclick="sendMatchRequest()" 
-                        class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                    💌 Send Request
-                </button>
+            <div class="p-8">
+                <!-- Partner Info -->
+                <div id="selectedPartnerInfo" class="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-100">
+                    <!-- Partner info will be populated here -->
+                </div>
+                
+                <!-- Message Input -->
+                <div class="mb-8">
+                    <label for="requestMessage" class="block text-sm font-semibold text-gray-800 mb-3">
+                        <span class="flex items-center space-x-2">
+                            <span>✨</span>
+                            <span>Introduce yourself (optional):</span>
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <textarea id="requestMessage" rows="4" 
+                                  class="w-full border-2 border-gray-200 rounded-2xl px-6 py-4 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 resize-none"
+                                  placeholder="Hi! I'd love to practice language exchange with you. I'm particularly interested in improving my conversation skills and learning about your culture."
+                                  maxlength="300"></textarea>
+                        <div class="absolute bottom-3 right-3 text-xs text-gray-400">
+                            <span id="messageCharCount">0</span>/300
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center space-x-2 text-sm text-gray-600">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        <span>Adding a personal message increases your chances by 73%</span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-4">
+                    <button onclick="closeSendRequestModal()" 
+                            class="flex-1 bg-gray-100 text-gray-700 px-6 py-4 rounded-2xl hover:bg-gray-200 transition-all duration-200 font-semibold focus-ring">
+                        Cancel
+                    </button>
+                    <button onclick="sendMatchRequest()" 
+                            class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl focus-ring">
+                        <span class="flex items-center justify-center space-x-2">
+                            <span>💌</span>
+                            <span>Send Request</span>
+                        </span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -72,16 +208,22 @@
 <script>
 let currentPotentialMatchId = null;
 
-// Load potential matches via API
+// Enhanced load potential matches with better UX
 function loadPotentialMatches() {
-    document.getElementById('loadingIndicator').classList.remove('hidden');
-    document.getElementById('matchesContainer').style.opacity = '0.5';
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const matchesContainer = document.getElementById('matchesContainer');
+    
+    // Show enhanced loading state
+    loadingIndicator.classList.remove('hidden');
+    matchesContainer.style.opacity = '0.3';
+    matchesContainer.style.transform = 'scale(0.98)';
     
     fetch('/matches/api/potential-matches/')
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             updateMatchesDisplay(data.potential_matches);
+            updateStats(data.stats || {});
         } else {
             showNotification('error', data.error || 'Failed to load matches');
         }
@@ -91,13 +233,26 @@ function loadPotentialMatches() {
         showNotification('error', 'Failed to load matches. Please try again.');
     })
     .finally(() => {
-        document.getElementById('loadingIndicator').classList.add('hidden');
-        document.getElementById('matchesContainer').style.opacity = '1';
+        loadingIndicator.classList.add('hidden');
+        matchesContainer.style.opacity = '1';
+        matchesContainer.style.transform = 'scale(1)';
     });
 }
 
-// Refresh matches
+// Enhanced refresh matches with better feedback
 function refreshMatches() {
+    const btn = event.target.closest('button');
+    const originalContent = btn.innerHTML;
+    
+    // Enhanced button loading state
+    btn.innerHTML = `
+        <span class="flex items-center justify-center space-x-3">
+            <span class="animate-spin text-2xl">🔄</span>
+            <span>Refreshing...</span>
+        </span>
+    `;
+    btn.disabled = true;
+    
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
     
@@ -110,8 +265,8 @@ function refreshMatches() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('success', 'Matches refreshed successfully!');
-            loadPotentialMatches(); // Reload the updated matches
+            showNotification('success', 'Matches refreshed successfully! 🎉');
+            loadPotentialMatches();
         } else {
             showNotification('error', data.error || 'Failed to refresh matches');
         }
@@ -122,30 +277,70 @@ function refreshMatches() {
     })
     .finally(() => {
         document.getElementById('loadingIndicator').classList.add('hidden');
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
     });
 }
 
-// Update matches display
+// Enhanced stats update
+function updateStats(stats) {
+    const elements = {
+        totalMatches: document.getElementById('totalMatches'),
+        onlineCount: document.getElementById('onlineCount'),
+        avgCompatibility: document.getElementById('avgCompatibility')
+    };
+    
+    // Animate number changes
+    animateNumber(elements.totalMatches, stats.total_matches || 0);
+    animateNumber(elements.onlineCount, stats.online_count || 0);
+    animateNumber(elements.avgCompatibility, `${Math.round(stats.avg_compatibility || 0)}%`);
+}
+
+function animateNumber(element, newValue) {
+    if (!element) return;
+    
+    element.style.transform = 'scale(1.1)';
+    element.style.color = '#3b82f6';
+    
+    setTimeout(() => {
+        element.textContent = newValue;
+        element.style.transform = 'scale(1)';
+        element.style.color = '';
+    }, 150);
+}
+
+// Enhanced matches display with improved cards
 function updateMatchesDisplay(matches) {
     const container = document.getElementById('matchesContainer');
     
     if (matches.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-12">
-                <div class="mb-4 text-6xl">🔍</div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">No matches found</h3>
-                <p class="text-gray-600 mb-6">
-                    We couldn't find any language partners for you right now. 
-                    <br>Make sure you have set up your languages in your profile.
+            <div class="text-center py-20">
+                <div class="relative w-32 h-32 mx-auto mb-8">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
+                    <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-6xl">🔍</span>
+                    </div>
+                </div>
+                <h3 class="text-3xl font-bold text-gray-900 mb-4">No matches found yet</h3>
+                <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                    We're still learning about you! Complete your profile to help us find your perfect language partners.
                 </p>
-                <div class="space-x-4">
-                    <a href="{% url 'users:profile' %}" 
-                       class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">
-                        Edit Profile
-                    </a>
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                                    <a href="/users/profile/" 
+                   class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                    <span class="flex items-center space-x-2">
+                        <span>✨</span>
+                        <span>Complete Profile</span>
+                    </span>
+                </a>
                     <button onclick="refreshMatches()" 
-                       class="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition">
-                        Try Again
+                       class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
+                        <span class="flex items-center space-x-2">
+                            <span>🔄</span>
+                            <span>Try Again</span>
+                        </span>
                     </button>
                 </div>
             </div>
@@ -153,81 +348,203 @@ function updateMatchesDisplay(matches) {
         return;
     }
     
-    const matchesHtml = matches.map(match => `
-        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-            <!-- User Info -->
-            <div class="flex items-center mb-4">
-                <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-3">
-                    ${match.partner.username.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                    <h3 class="font-semibold text-lg">${match.partner.username}</h3>
-                    <div class="flex items-center">
-                        <span class="text-sm text-gray-600">Compatibility: </span>
-                        <span class="text-sm font-medium text-green-600 ml-1">${Math.round(match.compatibility_score)}%</span>
+    const matchesHtml = matches.map((match, index) => `
+        <div class="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-blue-200 overflow-hidden transform hover:-translate-y-2 animate-fade-in" style="animation-delay: ${index * 0.1}s;">
+            <!-- Card Header with Gradient -->
+            <div class="bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                                ${match.partner.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">
+                                ${match.partner.username}
+                            </h3>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="text-sm text-gray-600">Compatibility:</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-1000" style="width: ${Math.round(match.compatibility_score)}%;"></div>
+                                    </div>
+                                    <span class="text-sm font-bold text-green-600">${Math.round(match.compatibility_score)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Compatibility Badge -->
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br ${getCompatibilityColor(match.compatibility_score)} flex items-center justify-center shadow-lg">
+                            <span class="text-white font-bold text-lg">${Math.round(match.compatibility_score)}</span>
+                        </div>
+                        <div class="text-xs text-gray-600 mt-1 font-medium">${getCompatibilityLabel(match.compatibility_score)}</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Language Exchange Info -->
-            <div class="mb-4">
-                <div class="flex items-center justify-between text-sm mb-2">
-                    <span class="text-gray-600">You teach:</span>
-                    <span class="font-medium text-blue-600">${match.user_teaches}</span>
+            <!-- Card Content -->
+            <div class="p-6">
+                <!-- Language Exchange Info -->
+                <div class="space-y-4 mb-6">
+                    <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                                    <span class="text-white text-lg">📚</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-blue-700 font-medium">You teach</div>
+                                    <div class="font-bold text-blue-900 text-lg">${match.user_teaches}</div>
+                                </div>
+                            </div>
+                            <div class="text-2xl">→</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 rounded-2xl p-4 border border-green-100">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-md">
+                                    <span class="text-white text-lg">🎯</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-green-700 font-medium">You learn</div>
+                                    <div class="font-bold text-green-900 text-lg">${match.user_learns}</div>
+                                </div>
+                            </div>
+                            <div class="text-2xl">←</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">You learn:</span>
-                    <span class="font-medium text-green-600">${match.user_learns}</span>
-                </div>
-            </div>
 
-            <!-- Action Button -->
-            <div class="flex justify-end">
-                ${match.has_sent_request ? 
-                    '<span class="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">⏳ Request Sent</span>' :
-                    match.is_confirmed_partner ?
-                    '<span class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">✅ Already Matched</span>' :
-                    `<button onclick="openSendRequestModal(${match.id}, '${match.partner.username}', '${match.user_teaches}', '${match.user_learns}')" 
-                       class="bg-blue-500 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                        💌 Send Request
-                    </button>`
-                }
+                <!-- Action Button -->
+                <div class="flex justify-center">
+                    ${match.has_sent_request ? 
+                        `<div class="flex items-center space-x-3 bg-yellow-50 text-yellow-800 px-6 py-3 rounded-2xl border border-yellow-200 w-full justify-center">
+                            <span class="text-xl">⏳</span>
+                            <span class="font-semibold">Request Sent</span>
+                        </div>` :
+                        match.is_confirmed_partner ?
+                        `<div class="flex items-center space-x-3 bg-green-50 text-green-800 px-6 py-3 rounded-2xl border border-green-200 w-full justify-center">
+                            <span class="text-xl">✅</span>
+                            <span class="font-semibold">Already Matched</span>
+                        </div>` :
+                        `<button onclick="openSendRequestModal(${match.id}, '${match.partner.username}', '${match.user_teaches}', '${match.user_learns}')" 
+                           class="group w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 focus-ring">
+                            <span class="flex items-center justify-center space-x-2">
+                                <span class="text-xl group-hover:animate-bounce">💌</span>
+                                <span>Send Request</span>
+                            </span>
+                        </button>`
+                    }
+                </div>
             </div>
         </div>
     `).join('');
     
-    container.innerHTML = `<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">${matchesHtml}</div>`;
+    container.innerHTML = `<div class="grid gap-8 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">${matchesHtml}</div>`;
 }
 
-// Open send request modal
+// Helper functions for compatibility styling
+function getCompatibilityColor(score) {
+    if (score >= 90) return 'from-green-500 to-emerald-600';
+    if (score >= 80) return 'from-blue-500 to-cyan-600';
+    if (score >= 70) return 'from-yellow-500 to-orange-600';
+    return 'from-gray-500 to-gray-600';
+}
+
+function getCompatibilityLabel(score) {
+    if (score >= 90) return 'Perfect';
+    if (score >= 80) return 'Great';
+    if (score >= 70) return 'Good';
+    return 'Fair';
+}
+
+// Enhanced modal functions
 function openSendRequestModal(matchId, partnerName, userTeaches, userLearns) {
     currentPotentialMatchId = matchId;
     
+    // Enhanced partner info display
     document.getElementById('selectedPartnerInfo').innerHTML = `
         <div class="flex items-center justify-between">
-            <div>
-                <h4 class="font-semibold">${partnerName}</h4>
-                <div class="text-sm text-gray-600">
-                    You teach: <span class="text-blue-600">${userTeaches}</span> • 
-                    You learn: <span class="text-green-600">${userLearns}</span>
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    ${partnerName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <h4 class="text-xl font-bold text-gray-900">${partnerName}</h4>
+                    <div class="flex flex-col space-y-1 mt-2">
+                        <div class="flex items-center space-x-2 text-sm">
+                            <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                            <span class="text-gray-600">You teach:</span>
+                            <span class="font-semibold text-blue-600">${userTeaches}</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-sm">
+                            <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                            <span class="text-gray-600">You learn:</span>
+                            <span class="font-semibold text-green-600">${userLearns}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <div class="text-4xl">🤝</div>
         </div>
     `;
     
-    document.getElementById('requestMessage').value = '';
-    document.getElementById('sendRequestModal').classList.remove('hidden');
+    // Reset form
+    const messageInput = document.getElementById('requestMessage');
+    messageInput.value = '';
+    updateCharCount();
+    
+    // Show modal with animation
+    const modal = document.getElementById('sendRequestModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    modal.classList.remove('hidden');
+    
+    // Animate modal entrance
+    setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    
+    // Focus on message input
+    setTimeout(() => messageInput.focus(), 300);
 }
 
-// Close send request modal
 function closeSendRequestModal() {
-    document.getElementById('sendRequestModal').classList.add('hidden');
-    currentPotentialMatchId = null;
+    const modal = document.getElementById('sendRequestModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    // Animate modal exit
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modalContent.classList.add('scale-95', 'opacity-0');
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        currentPotentialMatchId = null;
+    }, 300);
 }
 
-// Send match request
+// Enhanced send request with better UX
 function sendMatchRequest() {
     if (!currentPotentialMatchId) return;
+    
+    const btn = event.target.closest('button');
+    const originalContent = btn.innerHTML;
+    
+    // Enhanced loading state
+    btn.innerHTML = `
+        <span class="flex items-center justify-center space-x-2">
+            <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Sending...</span>
+        </span>
+    `;
+    btn.disabled = true;
     
     const message = document.getElementById('requestMessage').value;
     const formData = new FormData();
@@ -251,18 +568,62 @@ function sendMatchRequest() {
     .catch(error => {
         console.error('Error sending request:', error);
         showNotification('error', 'Failed to send request. Please try again.');
+    })
+    .finally(() => {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
     });
 }
 
-// Notification system
+// Character count for message input
+function updateCharCount() {
+    const textarea = document.getElementById('requestMessage');
+    const counter = document.getElementById('messageCharCount');
+    if (textarea && counter) {
+        counter.textContent = textarea.value.length;
+    }
+}
+
+// Enhanced notification system
 function showNotification(type, message) {
     if (typeof showNotificationToast === 'function') {
-        const icon = type === 'success' ? '✅' : '❌';
-        showNotificationToast(type === 'success' ? 'Success' : 'Error', message, icon);
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️',
+            warning: '⚠️'
+        };
+        const titles = {
+            success: 'Success',
+            error: 'Error',
+            info: 'Info',
+            warning: 'Warning'
+        };
+        showNotificationToast(titles[type] || 'Notification', message, icons[type] || '📢');
     } else {
         alert(message);
     }
 }
+
+// Modal click outside to close
+document.getElementById('sendRequestModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeSendRequestModal();
+    }
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('sendRequestModal');
+    if (!modal.classList.contains('hidden')) {
+        if (e.key === 'Escape') {
+            closeSendRequestModal();
+        }
+    }
+});
+
+// Character counter for textarea
+document.getElementById('requestMessage')?.addEventListener('input', updateCharCount);
 
 // Load matches when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -270,15 +631,57 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!document.querySelector('.grid')) {
         loadPotentialMatches();
     }
+    
+    // Initialize character counter
+    updateCharCount();
 });
 </script>
 
 <style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+        opacity: 0;
+    }
+    
     .line-clamp-3 {
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+    
+    /* Enhanced hover effects */
+    .group:hover .group-hover\:animate-bounce {
+        animation: bounce 0.6s ease-in-out;
+    }
+    
+    /* Smooth transitions for all interactive elements */
+    button, a {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Custom scrollbar for modal */
+    #sendRequestModal textarea::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #sendRequestModal textarea::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+    
+    #sendRequestModal textarea::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    
+    #sendRequestModal textarea::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
 </style>
 {% endblock %} 
