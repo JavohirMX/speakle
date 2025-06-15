@@ -700,6 +700,11 @@ class VideoChat {
         this.iceCandidateQueue = [];
         this.messageIds = new Set(); // Track message IDs to prevent duplicates
         this.networkIssuesCount = 0; // Track network issues during call
+        this.isMediaReady = false; // Track if local media is fully initialized
+        this.isWebSocketReady = false; // Track if WebSocket is ready
+        this.pendingPeerReadySignals = []; // Queue peer ready signals until we're ready
+        this.autoStartRetryCount = 0; // Track retry attempts for auto-start
+        this.maxAutoStartRetries = 5; // Maximum retry attempts
         
         // WebRTC configuration with more STUN servers
         this.pcConfig = {
@@ -821,25 +826,39 @@ class VideoChat {
             this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
             this.localVideo.srcObject = this.localStream;
             
-            console.log('Local video initialized successfully');
+            // Wait for video to be fully loaded
+            await new Promise((resolve) => {
+                this.localVideo.onloadeddata = () => {
+                    console.log('Local video data loaded');
+                    resolve();
+                };
+                // Fallback timeout in case onloadeddata doesn't fire
+                setTimeout(resolve, 1000);
+            });
+            
+            this.isMediaReady = true;
+            console.log('Local video initialized successfully, media ready:', this.isMediaReady);
             this.loadingStatus.textContent = 'Video chat ready!';
-            setTimeout(() => {
-                this.loadingOverlay.style.display = 'none';
-            }, 1000);
             
             this.updateLocalVideoInfo();
             
-            this.signalPeerReady();
+            // Check if we can signal peer ready now
+            this.checkAndSignalPeerReady();
+            
+            setTimeout(() => {
+                this.loadingOverlay.style.display = 'none';
+            }, 1000);
             
         } catch (error) {
             console.error('Error accessing media devices:', error);
             this.loadingStatus.textContent = 'Error accessing camera/microphone';
             this.updateStatus('Error accessing camera/microphone', 'disconnected');
             
-            // Show error details
+            // Show error details and retry option
             setTimeout(() => {
                 this.loadingOverlay.style.display = 'none';
                 this.addChatMessage(`❌ Camera/Microphone Error: ${error.message}`, 'system');
+                this.addChatMessage('💡 Please check your camera/microphone permissions and refresh the page', 'system');
             }, 2000);
         }
     }
@@ -867,6 +886,7 @@ class VideoChat {
         this.ws.onopen = () => {
             console.log('WebSocket connection opened');
             this.updateStatus('Connected to room', 'connected');
+            this.isWebSocketReady = true;
             
             // Send a test message to verify connection
             this.ws.send(JSON.stringify({
@@ -874,13 +894,11 @@ class VideoChat {
                 message: 'Connection test from client'
             }));
             
-            // If we already have local media ready, signal peer ready
-            if (this.localStream && !this.isCallActive) {
-                console.log('WebSocket connected and media ready, signaling peer ready');
-                setTimeout(() => {
-                    this.signalPeerReady();
-                }, 1000); // Small delay to ensure other users have time to connect
-            }
+            // Check if we can signal peer ready now
+            this.checkAndSignalPeerReady();
+            
+            // Process any pending peer ready signals
+            this.processPendingPeerReadySignals();
         };
         
         this.ws.onmessage = (event) => {
@@ -892,6 +910,7 @@ class VideoChat {
         this.ws.onclose = (event) => {
             console.log('WebSocket connection closed:', event.code, event.reason);
             this.updateStatus('Disconnected', 'disconnected');
+            this.isWebSocketReady = false;
             
             // Attempt to reconnect after 3 seconds
             setTimeout(() => {
@@ -926,9 +945,9 @@ class VideoChat {
                 if (data.user_id !== this.userId) {
                     this.addChatMessage(`${data.username} joined the room`, 'system');
                     // Automatically signal readiness when someone joins and we have media ready
-                    if (this.localStream && !this.isCallActive) {
+                    if (this.isMediaReady && this.localStream && !this.isCallActive) {
                         console.log('New user joined and we have media ready, signaling peer ready');
-                        this.signalPeerReady();
+                        this.checkAndSignalPeerReady();
                     }
                 }
                 break;
@@ -940,9 +959,31 @@ class VideoChat {
                 }
                 break;
             case 'peer_ready':
-                this.handlePeerReady(data);
+                console.log('Raw peer_ready signal received:', data);
+                
+                // Validate we have required data
+                if (!data.sender_id) {
+                    console.error('Peer ready signal missing sender_id:', data);
+                    break;
+                }
+                
+                // If we're not ready yet, queue this signal
+                if (!this.isMediaReady || !this.isWebSocketReady) {
+                    console.log('Received peer ready signal but not ready yet, queuing:', data);
+                    this.pendingPeerReadySignals.push(data);
+                } else {
+                    this.handlePeerReady(data);
+                }
                 break;
             case 'offer':
+                // If we receive an offer while we're also trying to start a call,
+                // the lower ID user should accept the higher ID user's offer
+                if (this.isCallActive && !this.pc && data.sender_id > this.userId) {
+                    console.log('💫 SIMULTANEOUS START - accepting partner\'s offer (they have higher ID)');
+                    this.isCallActive = false; // Reset to allow handling the offer
+                    this.isAutoStarting = false;
+                    this.stopTimer();
+                }
                 this.handleOffer(data);
                 break;
             case 'answer':
@@ -1037,6 +1078,21 @@ class VideoChat {
         }
     }
     
+    checkAndSignalPeerReady() {
+        // Only signal if both WebSocket and media are ready
+        if (this.isWebSocketReady && this.isMediaReady && !this.isCallActive) {
+            console.log('Both WebSocket and media ready, signaling peer ready');
+            this.addChatMessage('✅ Ready for video call', 'system');
+            this.signalPeerReady();
+        } else {
+            console.log('Not ready to signal peer ready yet:', {
+                websocketReady: this.isWebSocketReady,
+                mediaReady: this.isMediaReady,
+                callActive: this.isCallActive
+            });
+        }
+    }
+    
     signalPeerReady() {
         // Only signal if WebSocket is connected
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -1045,38 +1101,108 @@ class VideoChat {
                 type: 'peer_ready'
             }));
         } else {
-            console.log('WebSocket not ready, delaying peer ready signal');
-            // Retry after a short delay if WebSocket is not ready
-            setTimeout(() => {
-                this.signalPeerReady();
-            }, 500);
+            console.log('WebSocket not ready, cannot signal peer ready');
+        }
+    }
+    
+    processPendingPeerReadySignals() {
+        // Process any queued peer ready signals now that we're ready
+        while (this.pendingPeerReadySignals.length > 0 && this.isMediaReady) {
+            const signal = this.pendingPeerReadySignals.shift();
+            console.log('Processing queued peer ready signal:', signal);
+            this.handlePeerReady(signal);
         }
     }
     
     async handlePeerReady(data) {
-        console.log('Peer ready signal received from:', data.sender_username);
+        console.log('=== PEER READY SIGNAL RECEIVED ===');
+        console.log('From:', data.sender_username, 'sender_id:', data.sender_id, 'my_id:', this.userId);
+        console.log('Current state:', {
+            mediaReady: this.isMediaReady,
+            hasLocalStream: !!this.localStream,
+            callActive: this.isCallActive,
+            autoStarting: this.isAutoStarting,
+            webSocketReady: this.isWebSocketReady
+        });
         
-        // If we have media ready and no active call, decide who should initiate
-        if (this.localStream && !this.isCallActive && !this.isAutoStarting) {
-            // Use user IDs to deterministically decide who should initiate (higher ID initiates)
-            const shouldInitiate = this.userId > data.sender_id;
-            
-            if (shouldInitiate) {
-                console.log('Auto-starting call as initiator (higher user ID)');
+        // If we have media ready and no active call, attempt auto-start
+        if (this.isMediaReady && this.localStream && !this.isCallActive) {
+            if (!this.isAutoStarting) {
+                console.log('🚀 BOTH USERS READY - initiating auto-start');
                 this.addChatMessage('🚀 Both users ready, starting call automatically...', 'system');
                 this.isAutoStarting = true;
                 this.updateCallButtons();
                 
-                // Small delay to ensure both sides are fully ready
+                // Use user ID to add slight delay variation to reduce race conditions
+                // Higher ID gets slightly shorter delay, but both can start
+                const delay = this.userId > data.sender_id ? 800 : 1200;
+                
                 setTimeout(() => {
-                    this.startCall();
-                }, 500);
+                    if (!this.isCallActive) {
+                        console.log('🚀 EXECUTING AUTO-START after delay');
+                        this.startCall();
+                    } else {
+                        console.log('🚀 SKIPPING AUTO-START - call already started by partner');
+                        this.isAutoStarting = false;
+                    }
+                }, delay);
             } else {
-                console.log('Waiting for partner to initiate call (lower user ID)');
-                this.addChatMessage('🚀 Both users ready, connecting...', 'system');
-                this.isAutoStarting = true;
+                console.log('🚀 ALREADY AUTO-STARTING - ignoring duplicate signal');
+            }
+        } else if (!this.isMediaReady || !this.localStream) {
+            // If media is not ready yet, retry after a short delay
+            console.log('📱 MEDIA NOT READY - scheduling retry');
+            this.autoStartRetryCount++;
+            
+            if (this.autoStartRetryCount <= this.maxAutoStartRetries) {
+                this.addChatMessage(`🔄 Waiting for media... (${this.autoStartRetryCount}/${this.maxAutoStartRetries})`, 'system');
+                
+                setTimeout(() => {
+                    console.log('🔄 RETRYING peer ready handling');
+                    this.handlePeerReady(data);
+                }, 1500);
+            } else {
+                console.log('❌ MAX RETRIES REACHED - giving up auto-start');
+                this.addChatMessage('⚠️ Auto-start failed. You can start the call manually.', 'system');
+                this.autoStartRetryCount = 0;
+                this.isAutoStarting = false;
                 this.updateCallButtons();
             }
+        } else {
+            console.log('❌ CANNOT AUTO-START - call already active:', this.isCallActive);
+        }
+        
+        console.log('=== END PEER READY HANDLING ===');
+    }
+    
+    debugAutoStart() {
+        console.log('=== DEBUG AUTO-START TRIGGERED ===');
+        
+        const debugInfo = {
+            userId: this.userId,
+            isMediaReady: this.isMediaReady,
+            isWebSocketReady: this.isWebSocketReady,
+            hasLocalStream: !!this.localStream,
+            isCallActive: this.isCallActive,
+            isAutoStarting: this.isAutoStarting,
+            autoStartRetryCount: this.autoStartRetryCount,
+            pendingSignalsCount: this.pendingPeerReadySignals.length,
+            localStreamTracks: this.localStream ? this.localStream.getTracks().map(t => t.kind) : [],
+            wsReadyState: this.ws ? this.ws.readyState : 'no websocket'
+        };
+        
+        console.log('Debug Info:', debugInfo);
+        
+        this.addChatMessage('🔧 Debug Info (check console):', 'system');
+        this.addChatMessage(`Media: ${debugInfo.isMediaReady ? '✅' : '❌'} | WS: ${debugInfo.isWebSocketReady ? '✅' : '❌'} | Stream: ${debugInfo.hasLocalStream ? '✅' : '❌'}`, 'system');
+        this.addChatMessage(`Call Active: ${debugInfo.isCallActive ? '✅' : '❌'} | Auto-Starting: ${debugInfo.isAutoStarting ? '✅' : '❌'}`, 'system');
+        
+        // Force re-signal if both are ready
+        if (debugInfo.isMediaReady && debugInfo.isWebSocketReady && !debugInfo.isCallActive) {
+            this.addChatMessage('🔧 Force re-signaling peer ready...', 'system');
+            this.isAutoStarting = false; // Reset state
+            this.autoStartRetryCount = 0;
+            this.checkAndSignalPeerReady();
         }
     }
     
@@ -1107,15 +1233,32 @@ class VideoChat {
         this.showRemoteVideoPlaceholder();
         this.stopTimer();
         this.isAutoStarting = false;
+        this.autoStartRetryCount = 0; // Reset retry count
         this.updateCallButtons();
     }
     
     async startCall() {
-        if (this.isCallActive) return;
+        if (this.isCallActive) {
+            console.log('Call already active, ignoring start request');
+            return;
+        }
+        
+        // Check if media is ready before starting call
+        if (!this.isMediaReady || !this.localStream) {
+            console.log('Media not ready, cannot start call');
+            this.addChatMessage('⚠️ Media not ready. Please wait...', 'system');
+            return;
+        }
         
         try {
-            console.log('Starting call as initiator...');
+            console.log('🚀 STARTING CALL - User initiated');
             this.isAutoStarting = false;
+            this.autoStartRetryCount = 0;
+            
+            // Set call active immediately to prevent race conditions
+            this.isCallActive = true;
+            this.updateCallButtons();
+            
             this.createPeerConnection();
             
             // Add local stream tracks to peer connection
@@ -1134,7 +1277,7 @@ class VideoChat {
             console.log('Setting local description with offer...');
             await this.pc.setLocalDescription(offer);
             
-            console.log('Sending offer:', offer);
+            console.log('Sending offer via WebSocket');
             this.ws.send(JSON.stringify({
                 type: 'offer',
                 offer: offer
@@ -1146,15 +1289,15 @@ class VideoChat {
                 audio_enabled: this.isAudioEnabled
             }));
             
-            this.isCallActive = true;
             this.isInitiator = true;
             this.callStartTime = Date.now();
             this.startTimer();
-            this.updateCallButtons();
             this.addChatMessage('📞 Call started', 'system');
             
         } catch (error) {
             console.error('Error starting call:', error);
+            // Revert call state on error
+            this.isCallActive = false;
             this.isAutoStarting = false;
             this.updateCallButtons();
             this.addChatMessage(`❌ Error starting call: ${error.message}`, 'system');
@@ -1802,12 +1945,17 @@ class VideoChat {
     }
     
     updateCallButtons() {
-        if (this.isAutoStarting) {
-            this.startCallBtn.style.display = 'none';
-            this.endCallBtn.style.display = 'none';
-        } else {
-            this.startCallBtn.style.display = this.isCallActive ? 'none' : 'flex';
-            this.endCallBtn.style.display = this.isCallActive ? 'flex' : 'none';
+        // Always show start button when no call is active (allow both users to start)
+        this.startCallBtn.style.display = this.isCallActive ? 'none' : 'flex';
+        this.endCallBtn.style.display = this.isCallActive ? 'flex' : 'none';
+        
+        // Update button text to indicate auto-starting state
+        if (this.isAutoStarting && !this.isCallActive) {
+            this.startCallBtn.textContent = '⏳';
+            this.startCallBtn.title = 'Auto-starting... (or click to start manually)';
+        } else if (!this.isCallActive) {
+            this.startCallBtn.textContent = '📞';
+            this.startCallBtn.title = 'Start Call';
         }
     }
     
@@ -1833,9 +1981,16 @@ class VideoChat {
         this.chatMessages.innerHTML = '';
         
         // Load recent messages via AJAX
-        fetch(`/chats/room/${this.roomId}/messages/`)
-            .then(response => response.json())
+        fetch(`/chats/api/recent-messages/${this.roomId}/`)
+            .then(response => {
+                console.log('Messages API response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Messages API response data:', data);
                 if (data.success && data.messages && data.messages.length > 0) {
                     // Add each message to the chat
                     data.messages.forEach(message => {
@@ -1846,13 +2001,16 @@ class VideoChat {
                             message.timestamp
                         );
                     });
+                    console.log(`Loaded ${data.messages.length} recent messages`);
                 } else {
+                    console.log('No recent messages found or API returned unsuccessful response');
                     // Show empty state
                     this.showEmptyState();
                 }
             })
             .catch(error => {
                 console.error('Error loading recent messages:', error);
+                this.addChatMessage('⚠️ Could not load recent messages', 'system');
                 this.showEmptyState();
             });
     }
