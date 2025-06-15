@@ -658,6 +658,47 @@
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
         
+        /* Mobile call entry helper button */
+        .mobile-call-helper {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .mobile-call-helper.show {
+            display: block;
+            animation: bounceIn 0.5s ease-out;
+        }
+        
+        .mobile-call-helper button {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
         /* Enhanced mobile responsiveness */
         @media (max-width: 640px) {
             .modal-content {
@@ -1251,6 +1292,13 @@
     </div>
 
     {% if user.is_authenticated %}
+    <!-- Mobile Call Helper Button -->
+    <div id="mobileCallHelper" class="mobile-call-helper">
+        <button onclick="joinLastCall()" title="Join Your Accepted Call" aria-label="Join Your Accepted Call">
+            📞
+        </button>
+    </div>
+    
     <!-- Enhanced Global Incoming Call Modal -->
     <div id="globalIncomingCallModal" class="fixed inset-0 modal-overlay hidden z-[9999] flex items-center justify-center p-4" role="dialog" aria-labelledby="call-modal-title" aria-modal="true">
         <!-- Floating particles background -->
@@ -1951,20 +1999,89 @@
                     handleGlobalIncomingCallInvitation(data);
                     break;
                 case 'call_invitation_accepted':
-                    showNotificationToast(
-                        'Call Accepted! 🎉',
-                        `${data.accepter_username} accepted your call`,
-                        '✅',
-                        3000
-                    );
+                    // Handle call acceptance with mobile-friendly approach
+                    const accepterUsername = data.accepter_username;
+                    const roomUrl = data.room_url;
+                    
+                    if (window.isMobileDevice()) {
+                        // For mobile: Show notification with manual entry option
+                        showNotificationToast(
+                            'Call Accepted! 🎉',
+                            `${accepterUsername} accepted your call`,
+                            '✅',
+                            0, // Don't auto-hide
+                            {
+                                primary: {
+                                    text: 'Join Call',
+                                    action: () => {
+                                        hideNotificationToast();
+                                        console.log('Mobile caller joining accepted call');
+                                        window.navigateToUrl(roomUrl, true);
+                                    }
+                                },
+                                secondary: {
+                                    text: 'Later',
+                                    action: () => {
+                                        hideNotificationToast();
+                                    }
+                                }
+                            }
+                        );
+                        
+                        // Also redirect immediately for mobile
+                        console.log('Mobile caller - immediate redirect to accepted call');
+                        window.navigateToUrl(roomUrl, true);
+                        
+                        // Show mobile helper button immediately
+                        showMobileCallHelper();
+                        
+                        // Backup notification in case redirect fails on mobile
+                        setTimeout(() => {
+                            // Check if user is still on the same page (redirect might have failed)
+                            if (window.location.pathname === window.location.pathname) {
+                                showNotificationToast(
+                                    'Join Your Call 📞',
+                                    `Tap the button or notification to join your call`,
+                                    '🔄',
+                                    0, // Don't auto-hide
+                                    {
+                                        primary: {
+                                            text: 'Join Now',
+                                            action: () => {
+                                                hideNotificationToast();
+                                                hideMobileCallHelper();
+                                                window.navigateToUrl(roomUrl, true);
+                                            }
+                                        },
+                                        secondary: {
+                                            text: 'Dismiss',
+                                            action: () => {
+                                                hideNotificationToast();
+                                                hideMobileCallHelper();
+                                            }
+                                        }
+                                    }
+                                );
+                            }
+                        }, 3000);
+                    } else {
+                        // For desktop: Keep the existing behavior with notification
+                        showNotificationToast(
+                            'Call Accepted! 🎉',
+                            `${accepterUsername} accepted your call`,
+                            '✅',
+                            2000
+                        );
+                        setTimeout(() => {
+                            window.navigateToUrl(roomUrl, true);
+                        }, 1500);
+                    }
+                    
                     showBrowserNotification(
                         'Call Accepted!',
-                        `${data.accepter_username} accepted your call`,
+                        `${accepterUsername} accepted your call`,
                         '✅'
                     );
-                    setTimeout(() => {
-                        window.location.href = data.room_url;
-                    }, 1500);
                     break;
                 case 'call_invitation_declined':
                     showNotificationToast(
@@ -1984,38 +2101,14 @@
             // Play notification sound
             playNotificationSound();
             
-            // Show enhanced toast notification
-            showNotificationToast(
-                'Incoming Call 📞',
-                `${data.caller_username} wants to video chat`,
-                '📞',
-                0, // Don't auto-hide
-                {
-                    primary: {
-                        text: 'Answer',
-                        action: () => {
-                            hideNotificationToast();
-                            globalAcceptCall();
-                        }
-                    },
-                    secondary: {
-                        text: 'Decline',
-                        action: () => {
-                            hideNotificationToast();
-                            globalDeclineCall();
-                        }
-                    }
-                }
-            );
-
-            // Show browser notification
+            // Show browser notification (for system notifications when tab is in background)
             const browserNotif = showBrowserNotification(
                 'Incoming Video Call',
                 `${data.caller_username} wants to start a video call${data.message ? ': ' + data.message : ''}`,
                 '📞'
             );
 
-            // Show incoming call modal
+            // Show main incoming call modal (primary UI)
             const invitation = {
                 id: data.invitation_id,
                 caller: data.caller_username,
@@ -2734,6 +2827,9 @@
                         if (data.status === 'accepted') {
                             clearInterval(window.currentCallData.statusCheckInterval);
                             clearInterval(window.currentCallData.invitationTimer);
+                            
+                            // Store room URL for potential fallback
+                            window.currentCallData.acceptedRoomUrl = data.room_url;
                             invitationAccepted(data.room_url);
                         } else if (data.status === 'declined') {
                             clearInterval(window.currentCallData.statusCheckInterval);
@@ -2770,6 +2866,7 @@
                 if (window.isMobileDevice()) {
                     // For mobile devices, redirect immediately to prevent timeout issues
                     console.log('Mobile device detected - immediate redirect to accepted call');
+                    showMobileCallHelper(); // Show backup button
                     window.navigateToUrl(roomUrl, true);
                 } else {
                     // For desktop, keep a short delay for better UX
@@ -2961,6 +3058,70 @@
                     alert(`Navigation failed. Please manually navigate to: ${url}`);
                 }
             }
+        };
+        
+        // Mobile call helper button management
+        window.showMobileCallHelper = function() {
+            if (window.isMobileDevice()) {
+                const helper = document.getElementById('mobileCallHelper');
+                if (helper) {
+                    helper.classList.add('show');
+                    // Auto-hide after 30 seconds
+                    setTimeout(() => {
+                        helper.classList.remove('show');
+                    }, 30000);
+                }
+            }
+        };
+        
+        window.hideMobileCallHelper = function() {
+            const helper = document.getElementById('mobileCallHelper');
+            if (helper) {
+                helper.classList.remove('show');
+            }
+        };
+        
+        // Global helper for manual video room entry (for mobile troubleshooting)
+        window.joinLastCall = function() {
+            if (window.currentCallData?.acceptedRoomUrl) {
+                console.log('Manually joining last accepted call:', window.currentCallData.acceptedRoomUrl);
+                hideMobileCallHelper();
+                window.navigateToUrl(window.currentCallData.acceptedRoomUrl, true);
+                return true;
+            } else {
+                console.log('No accepted call room URL available');
+                showNotificationToast(
+                    'No Active Call',
+                    'No active call to join. Please wait for a call invitation.',
+                    '📞',
+                    3000
+                );
+                return false;
+            }
+        };
+        
+        // Debug helper for mobile users
+        window.showCallStatus = function() {
+            const currentData = window.currentCallData;
+            const incomingData = currentGlobalIncomingInvitation;
+            
+            let message = 'Call Status:\n';
+            if (currentData) {
+                message += `• Outgoing call to: ${currentData.partnerUsername}\n`;
+                message += `• Invitation ID: ${currentData.invitationId || 'None'}\n`;
+                message += `• Accepted Room URL: ${currentData.acceptedRoomUrl || 'None'}\n`;
+            }
+            if (incomingData) {
+                message += `• Incoming call from: ${incomingData.caller}\n`;
+                message += `• Call ID: ${incomingData.id}\n`;
+            }
+            if (!currentData && !incomingData) {
+                message += '• No active calls\n';
+            }
+            message += `• Mobile Device: ${window.isMobileDevice()}\n`;
+            message += `• Current URL: ${window.location.href}`;
+            
+            alert(message);
         };
         
         // Global CSRF token helper function
