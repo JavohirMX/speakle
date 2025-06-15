@@ -281,8 +281,8 @@
             right: 20px;
             z-index: 9999;
             transform: translateX(400px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            max-width: 400px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 420px;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -295,33 +295,206 @@
             pointer-events: auto;
         }
         
+        .notification-toast-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+        
         /* Enhanced modals */
         .modal-overlay {
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.6);
             animation: fadeIn 0.3s ease-out;
         }
         
         .modal-content {
-            animation: slideInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-height: min(90vh, 800px);
+            max-width: min(90vw, 600px);
         }
         
-        @keyframes fadeIn {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
+        .modal-content-enhanced {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            overflow: visible;
+        }
+        
+        .call-icon-container {
+            position: relative;
+            animation: callPulse 2s infinite;
+        }
+        
+        .call-icon-container::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: rotate 3s linear infinite;
+        }
+        
+        .call-icon-container::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            background: linear-gradient(-45deg, #10b981, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            opacity: 0.2;
+            animation: rotate 2s linear infinite reverse;
+        }
+        
+        .call-avatar {
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+        
+        .call-avatar:hover {
+            transform: scale(1.05);
+        }
+        
+        .status-indicator {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .status-indicator::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        .btn-enhanced {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-enhanced::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-enhanced:hover::before {
+            left: 100%;
+        }
+        
+        .btn-enhanced:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-accept {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+        }
+        
+        .btn-accept:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.5);
+        }
+        
+        .btn-decline {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+        }
+        
+        .btn-decline:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            box-shadow: 0 8px 25px 0 rgba(239, 68, 68, 0.5);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+            animation: progressRing 30s linear forwards;
+        }
+        
+        .floating-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(59, 130, 246, 0.6);
+            border-radius: 50%;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 0.5s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 1s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 1.5s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 2s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 2.5s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 3s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 3.5s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 4s; }
+        
+        @keyframes callPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        @keyframes progressRing {
+            0% { stroke-dashoffset: 188; }
+            100% { stroke-dashoffset: 0; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
         }
         
         @keyframes slideInScale {
             0% {
                 opacity: 0;
-                transform: translate(-50%, -48%) scale(0.95);
+                transform: scale(0.8) rotate(5deg);
             }
             100% {
                 opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
+                transform: scale(1) rotate(0deg);
             }
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
         
         @keyframes bounceGentle {
@@ -485,6 +658,330 @@
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        /* Enhanced mobile responsiveness */
+        @media (max-width: 640px) {
+            .modal-content {
+                margin: 0.75rem;
+                max-width: calc(100vw - 1.5rem);
+                max-height: calc(100vh - 1.5rem);
+                overflow-y: auto;
+            }
+            
+            .modal-content-enhanced {
+                padding: 1rem !important;
+                max-height: calc(100vh - 1.5rem);
+                overflow-y: auto;
+            }
+            
+            .call-icon-container {
+                width: 4rem !important;
+                height: 4rem !important;
+            }
+            
+            .call-avatar {
+                width: 4rem !important;
+                height: 4rem !important;
+            }
+            
+            .call-avatar .w-20,
+            .call-avatar .w-24 {
+                width: 3.5rem !important;
+                height: 3.5rem !important;
+            }
+            
+            .btn-enhanced {
+                padding: 0.75rem 1rem !important;
+                font-size: 0.875rem !important;
+                border-radius: 1rem !important;
+            }
+            
+            .particle {
+                display: none;
+            }
+            
+            /* Mobile-specific text sizing */
+            .modal-content-enhanced h3 {
+                font-size: 1.25rem !important;
+                line-height: 1.75rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            .modal-content-enhanced .text-2xl {
+                font-size: 1.125rem !important;
+                line-height: 1.75rem !important;
+            }
+            
+            .modal-content-enhanced .text-xl {
+                font-size: 1rem !important;
+                line-height: 1.5rem !important;
+            }
+            
+            /* Mobile spacing adjustments */
+            .modal-content-enhanced > div > .mb-6 {
+                margin-bottom: 1rem !important;
+            }
+            
+            .modal-content-enhanced > div > .mb-8 {
+                margin-bottom: 1.5rem !important;
+            }
+            
+            /* Mobile button improvements */
+            #globalIncomingCallModal .flex.space-x-3 {
+                flex-direction: column !important;
+                space-x-0 !important;
+                gap: 0.75rem !important;
+            }
+            
+            #globalIncomingCallModal .flex-1 {
+                width: 100% !important;
+            }
+            
+            /* Mobile connection quality indicator */
+            .flex.items-center.justify-center.space-x-2.mb-4 {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+                margin-bottom: 1rem !important;
+            }
+            
+            /* Mobile timer and actions */
+            .flex.items-center.justify-center.space-x-4.mt-4 {
+                flex-wrap: wrap !important;
+                gap: 0.75rem !important;
+                justify-content: center !important;
+            }
+            
+            .flex.items-center.justify-center.space-x-4.mt-4 button {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.75rem !important;
+                border-radius: 0.75rem !important;
+            }
+        }
+        
+        /* Extra small screens (landscape phones) */
+        @media (max-width: 480px) {
+            .modal-content {
+                margin: 0.5rem;
+                max-width: calc(100vw - 1rem);
+                max-height: calc(100vh - 1rem);
+            }
+            
+            .modal-content-enhanced {
+                padding: 0.75rem !important;
+                border-radius: 1rem !important;
+            }
+            
+            .call-icon-container {
+                width: 3rem !important;
+                height: 3rem !important;
+                margin-bottom: 1rem !important;
+            }
+            
+            .call-avatar {
+                width: 3rem !important;
+                height: 3rem !important;
+            }
+            
+            .call-avatar .w-20,
+            .call-avatar .w-24 {
+                width: 2.5rem !important;
+                height: 2.5rem !important;
+            }
+            
+            /* Compact mobile typography */
+            .modal-content-enhanced h3 {
+                font-size: 1.125rem !important;
+                line-height: 1.5rem !important;
+            }
+            
+            .modal-content-enhanced .text-base {
+                font-size: 0.875rem !important;
+            }
+            
+            .modal-content-enhanced .text-lg {
+                font-size: 1rem !important;
+            }
+            
+            /* Compact mobile spacing */
+            .modal-content-enhanced > div > .mb-6 {
+                margin-bottom: 0.75rem !important;
+            }
+            
+            .modal-content-enhanced > div > .mb-4 {
+                margin-bottom: 0.5rem !important;
+            }
+            
+            /* Mobile message display */
+            #globalCallerMessage {
+                padding: 0.75rem !important;
+                border-radius: 1rem !important;
+            }
+            
+            /* Mobile progress ring sizing */
+            .progress-ring {
+                width: 3rem !important;
+                height: 3rem !important;
+            }
+        }
+        
+        /* Landscape phone orientation */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .modal-content {
+                max-height: calc(100vh - 1rem);
+                overflow-y: auto;
+            }
+            
+            .modal-content-enhanced {
+                padding: 0.75rem !important;
+            }
+            
+            .call-icon-container {
+                width: 2.5rem !important;
+                height: 2.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            .call-avatar {
+                width: 2.5rem !important;
+                height: 2.5rem !important;
+            }
+            
+            .call-avatar .w-20,
+            .call-avatar .w-24 {
+                width: 2rem !important;
+                height: 2rem !important;
+            }
+            
+            /* Ultra compact for landscape */
+            .modal-content-enhanced h3 {
+                font-size: 1rem !important;
+                line-height: 1.25rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+            
+            .modal-content-enhanced .text-xl {
+                font-size: 0.875rem !important;
+                line-height: 1.25rem !important;
+            }
+            
+            .modal-content-enhanced > div > .mb-6 {
+                margin-bottom: 0.5rem !important;
+            }
+            
+            .modal-content-enhanced > div > .mb-4 {
+                margin-bottom: 0.25rem !important;
+            }
+            
+            /* Hide less essential elements in landscape */
+            .floating-particles {
+                display: none !important;
+            }
+            
+            .flex.items-center.justify-center.space-x-4.mt-4 {
+                margin-top: 0.5rem !important;
+            }
+        }
+        
+        /* Accessibility improvements */
+        .focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        .motion-safe {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .btn-enhanced:hover {
+                transform: none;
+                box-shadow: inherit;
+            }
+            
+            .btn-enhanced:active {
+                transform: scale(0.95);
+            }
+            
+            /* Larger touch targets on mobile */
+            button, .btn-enhanced {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Remove hover effects for touch devices */
+            .hover\:scale-105:hover {
+                transform: none;
+            }
+            
+            .hover\:scale-105:active {
+                transform: scale(0.95);
+            }
+        }
+        
+        /* Mobile notification toast improvements */
+        @media (max-width: 640px) {
+            .notification-toast {
+                top: 60px;
+                right: 0.5rem;
+                left: 0.5rem;
+                max-width: none;
+                transform: translateY(-100%);
+            }
+            
+            .notification-toast.show {
+                transform: translateY(0);
+            }
+            
+            .notification-toast-content {
+                padding: 1rem;
+                border-radius: 1rem;
+            }
+        }
+        
+        /* Performance optimizations for mobile */
+        @media (max-width: 768px) {
+            .modal-overlay {
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            
+            .modal-content-enhanced {
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+            }
+            
+            /* Reduce animations for better performance */
+            .animate-pulse {
+                animation-duration: 2s;
+            }
+            
+            .animate-spin {
+                animation-duration: 1.5s;
+            }
+        }
+        
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            .modal-content {
+                /* Fix for iOS viewport units */
+                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.5rem);
+            }
+            
+            .modal-content-enhanced {
+                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.5rem);
+            }
         }
         
         {% block extra_css %}{% endblock %}
@@ -720,28 +1217,33 @@
         </div>
     </div>
 
-    <!-- Global Enhanced Notification Toast -->
+    <!-- Enhanced Global Notification Toast -->
     <div id="notificationToast" class="notification-toast">
-        <div class="bg-white shadow-xl rounded-xl p-5 border border-gray-100">
-            <div class="flex items-start">
+        <div class="notification-toast-content rounded-2xl p-6 border border-gray-100/50 relative overflow-hidden">
+            <!-- Background gradient overlay -->
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-cyan-50/30 pointer-events-none"></div>
+            
+            <div class="relative z-10 flex items-start">
                 <div class="flex-shrink-0 pt-1">
-                    <span id="toastIcon" class="text-2xl block">📞</span>
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                        <span id="toastIcon" class="text-2xl text-white block">📞</span>
+                    </div>
                 </div>
                 <div class="ml-4 flex-1 min-w-0">
-                    <p id="toastTitle" class="text-sm font-semibold text-gray-900 truncate">Notification</p>
-                    <p id="toastMessage" class="text-sm text-gray-600 mt-1 line-clamp-2">Message content</p>
-                    <div id="toastActions" class="mt-3 flex space-x-2" style="display: none;">
-                        <button id="toastActionPrimary" class="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors focus-ring">
+                    <p id="toastTitle" class="text-base font-bold text-gray-900 truncate mb-1">Notification</p>
+                    <p id="toastMessage" class="text-sm text-gray-700 line-clamp-2 leading-relaxed">Message content</p>
+                    <div id="toastActions" class="mt-4 flex space-x-3" style="display: none;">
+                        <button id="toastActionPrimary" class="btn-enhanced btn-accept text-xs px-4 py-2 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105 focus-visible">
                             Action
                         </button>
-                        <button id="toastActionSecondary" class="text-xs bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors focus-ring">
+                        <button id="toastActionSecondary" class="btn-enhanced text-xs bg-gradient-to-r from-gray-400 to-gray-500 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 hover:scale-105 focus-visible">
                             Dismiss
                         </button>
                     </div>
                 </div>
                 <div class="ml-3 flex-shrink-0">
-                    <button onclick="hideNotificationToast()" class="text-gray-400 hover:text-gray-600 focus-ring rounded p-1" aria-label="Close notification">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="hideNotificationToast()" class="w-8 h-8 bg-gray-100/80 hover:bg-gray-200/80 rounded-full flex items-center justify-center transition-all duration-200 focus-ring" aria-label="Close notification">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
@@ -752,45 +1254,118 @@
 
     {% if user.is_authenticated %}
     <!-- Enhanced Global Incoming Call Modal -->
-    <div id="globalIncomingCallModal" class="fixed inset-0 modal-overlay hidden z-[9999]" role="dialog" aria-labelledby="call-modal-title" aria-modal="true">
-        <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 modal-content">
-            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-200">
-                <div class="text-center">
-                    <!-- Animated call icon -->
-                    <div class="relative w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse-slow">
-                        <span class="text-4xl">📞</span>
-                        <div class="absolute inset-0 rounded-full bg-blue-400 opacity-20 animate-ping"></div>
+    <div id="globalIncomingCallModal" class="fixed inset-0 modal-overlay hidden z-[9999] flex items-center justify-center p-4" role="dialog" aria-labelledby="call-modal-title" aria-modal="true">
+        <!-- Floating particles background -->
+        <div class="floating-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+        
+        <div class="modal-content relative">
+            <div class="modal-content-enhanced rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 w-full max-w-xs sm:max-w-md md:max-w-lg relative overflow-hidden">
+                <!-- Background gradient overlay -->
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-purple-50/30 to-cyan-50/50 pointer-events-none"></div>
+                
+                <div class="relative z-10 text-center">
+                    <!-- Enhanced animated call icon with caller avatar -->
+                    <div class="call-icon-container w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-6 relative">
+                        <div class="call-avatar w-full h-full bg-gradient-to-br from-blue-500 via-purple-600 to-cyan-500 rounded-full flex items-center justify-center shadow-2xl">
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center">
+                                <span class="text-3xl sm:text-4xl" id="callerAvatar">📞</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress ring for timer -->
+                        <svg class="absolute inset-0 w-full h-full progress-ring opacity-60" viewBox="0 0 64 64">
+                            <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(59, 130, 246, 0.3)" stroke-width="2"/>
+                            <circle cx="32" cy="32" r="30" fill="none" stroke="url(#gradient)" stroke-width="3" 
+                                    stroke-dasharray="188" stroke-dashoffset="188" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#3b82f6"/>
+                                    <stop offset="50%" style="stop-color:#8b5cf6"/>
+                                    <stop offset="100%" style="stop-color:#06b6d4"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
                     </div>
                     
-                    <h3 id="call-modal-title" class="text-2xl font-bold text-gray-900 mb-3">Incoming Video Call</h3>
-                    <p class="text-lg font-semibold text-gray-800 mb-2" id="globalCallerName"></p>
-                    <p class="text-sm text-gray-600 mb-6">wants to start a video call</p>
-                    
-                    <!-- Optional message -->
-                    <div id="globalCallerMessage" class="mb-6 p-4 bg-blue-50 rounded-xl text-sm text-gray-700 border border-blue-100" style="display: none;">
-                        <div class="flex items-start">
-                            <span class="text-blue-500 mr-3 mt-0.5 text-lg">💬</span>
-                            <div id="globalMessageContent" class="text-left"></div>
+                    <!-- Call info with enhanced typography -->
+                    <div class="mb-4 sm:mb-6">
+                        <h3 id="call-modal-title" class="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                            Incoming Video Call
+                        </h3>
+                        <p class="text-base sm:text-xl md:text-2xl font-bold text-blue-600 mb-2" id="globalCallerName"></p>
+                        <p class="text-gray-600 text-sm sm:text-base md:text-lg mb-2 sm:mb-3">wants to start a video call with you</p>
+                        
+                        <!-- Enhanced connection quality indicator -->
+                        <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 mb-3 sm:mb-4">
+                            <div class="flex space-x-1">
+                                <div class="w-1.5 h-2 sm:w-2 sm:h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-500 rounded-full animate-pulse" style="animation-delay: 0.1s;"></div>
+                                <div class="w-1.5 h-4 sm:w-2 sm:h-5 bg-green-500 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-400 rounded-full animate-pulse" style="animation-delay: 0.3s;"></div>
+                            </div>
+                            <span class="text-xs sm:text-sm text-green-600 font-medium">Excellent Connection</span>
                         </div>
                     </div>
                     
-                    <!-- Action buttons -->
-                    <div class="flex space-x-4">
+                    <!-- Optional message with enhanced design -->
+                    <div id="globalCallerMessage" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-xl sm:rounded-2xl border border-white/50 backdrop-blur-sm shadow-inner" style="display: none;">
+                        <div class="flex items-start space-x-2 sm:space-x-3">
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xs sm:text-sm">💬</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs font-medium text-gray-600 mb-1">Message from caller:</p>
+                                <div id="globalMessageContent" class="text-gray-800 text-xs sm:text-sm font-medium leading-relaxed"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced action buttons -->
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mb-3 sm:mb-4">
                         <button onclick="globalDeclineCall()" 
-                                class="flex-1 bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-all duration-200 font-semibold focus-ring flex items-center justify-center space-x-2">
-                            <span>❌</span>
+                                class="btn-enhanced btn-decline flex-1 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center space-x-2 focus-visible transition-all duration-300 hover:scale-105">
+                            <span class="text-lg sm:text-xl">📞</span>
                             <span>Decline</span>
                         </button>
                         <button onclick="globalAcceptCall()" 
-                                class="flex-1 btn-success text-white px-6 py-4 rounded-xl font-semibold border-0 focus-ring flex items-center justify-center space-x-2">
-                            <span>✅</span>
+                                class="btn-enhanced btn-accept flex-1 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center space-x-2 focus-visible transition-all duration-300 hover:scale-105">
+                            <span class="text-lg sm:text-xl">📹</span>
                             <span>Accept</span>
                         </button>
                     </div>
                     
-                    <!-- Auto-decline timer -->
-                    <div class="mt-4 text-xs text-gray-500">
-                        <span id="callTimer">Auto-decline in <span id="timerCountdown">30</span>s</span>
+                    <!-- Enhanced auto-decline timer -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 p-2 sm:p-3 bg-white/50 rounded-lg sm:rounded-xl backdrop-blur-sm border border-white/30">
+                        <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                        <span id="callTimer" class="text-xs sm:text-sm text-gray-600 font-medium text-center">
+                            Auto-decline in <span id="timerCountdown" class="font-bold text-orange-600">30</span>s
+                        </span>
+                    </div>
+                    
+                    <!-- Quick actions -->
+                    <div class="flex items-center justify-center flex-wrap gap-2 sm:gap-4 mt-3 sm:mt-4 text-xs text-gray-500">
+                        <button onclick="globalAcceptCall()" class="flex items-center space-x-1 hover:text-green-600 transition-colors focus-visible px-2 py-1 rounded-lg">
+                            <span>📹</span>
+                            <span class="hidden sm:inline">Video</span>
+                        </button>
+                        <button onclick="acceptAudioOnly()" class="flex items-center space-x-1 hover:text-blue-600 transition-colors focus-visible px-2 py-1 rounded-lg">
+                            <span>🎤</span>
+                            <span class="hidden sm:inline">Audio Only</span>
+                        </button>
+                        <button onclick="sendQuickMessage()" class="flex items-center space-x-1 hover:text-purple-600 transition-colors focus-visible px-2 py-1 rounded-lg">
+                            <span>💬</span>
+                            <span class="hidden sm:inline">Message</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1518,6 +2093,12 @@
                 currentGlobalIncomingInvitation = invitation;
                 document.getElementById('globalCallerName').textContent = invitation.caller;
                 
+                // Enhanced caller avatar display
+                const callerAvatar = document.getElementById('callerAvatar');
+                if (callerAvatar) {
+                    callerAvatar.textContent = invitation.caller.charAt(0).toUpperCase();
+                }
+                
                 if (invitation.message && invitation.message.trim()) {
                     document.getElementById('globalMessageContent').textContent = invitation.message;
                     document.getElementById('globalCallerMessage').style.display = 'block';
@@ -1528,10 +2109,24 @@
                 document.getElementById('globalIncomingCallModal').classList.remove('hidden');
                 startCallTimer();
                 
-                // Focus management for accessibility
+                // Enhanced entrance animation
                 const modal = document.getElementById('globalIncomingCallModal');
+                const modalContent = modal.querySelector('.modal-content-enhanced');
+                if (modalContent) {
+                    modalContent.style.transform = 'scale(0.8) rotate(5deg)';
+                    modalContent.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        modalContent.style.transform = 'scale(1) rotate(0deg)';
+                        modalContent.style.opacity = '1';
+                    }, 50);
+                }
+                
+                // Focus management for accessibility
                 const firstButton = modal.querySelector('button');
-                if (firstButton) firstButton.focus();
+                if (firstButton) {
+                    setTimeout(() => firstButton.focus(), 300);
+                }
             }
         }
 
@@ -1607,6 +2202,47 @@
                 .finally(() => {
                     btn.classList.remove('loading');
                 });
+            }
+        }
+
+        // Enhanced helper functions for quick actions
+        function acceptAudioOnly() {
+            if (currentGlobalIncomingInvitation) {
+                // For now, redirect to accept but store preference for audio-only
+                localStorage.setItem('callPreference', 'audio-only');
+                globalAcceptCall();
+            }
+        }
+
+        function sendQuickMessage() {
+            if (currentGlobalIncomingInvitation) {
+                // Close the call modal
+                document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                stopCallTimer();
+                
+                // Decline the call
+                const formData = new FormData();
+                formData.append('response', 'decline');
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Redirect to chat with the caller
+                    const chatUrl = `/chats/match/${currentGlobalIncomingInvitation.match_id}/`;
+                    window.location.href = chatUrl;
+                })
+                .catch(error => {
+                    console.error('Error declining call:', error);
+                    showNotificationToast('Error', 'Failed to send message', '❌');
+                });
+                
+                currentGlobalIncomingInvitation = null;
+                pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                updatePendingCallsBadge();
             }
         }
 
@@ -1746,78 +2382,156 @@
             if (!modal) {
                 modal = document.createElement('div');
                 modal.id = 'quickCallModal';
-                modal.className = 'fixed inset-0 modal-overlay hidden z-[9998]';
+                modal.className = 'fixed inset-0 modal-overlay hidden z-[9998] flex items-center justify-center p-4';
                 modal.innerHTML = `
-                    <div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 modal-content">
-                        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border border-gray-200">
-                            <div class="text-center">
-                                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <span class="text-3xl">📞</span>
-                                </div>
-                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Start Video Call</h3>
-                                <p class="text-lg font-medium text-gray-800 mb-1" id="quickCallPartner"></p>
-                                <p class="text-sm text-gray-600 mb-4">Send a call invitation</p>
-                                
-                                <!-- Partner Status -->
-                                <div id="partnerStatus" class="mb-4 p-3 rounded-lg border">
-                                    <div class="flex items-center justify-center">
-                                        <div id="statusIndicator" class="w-3 h-3 rounded-full mr-2 bg-gray-400"></div>
-                                        <span id="statusText">Checking availability...</span>
+                    <!-- Floating particles background -->
+                    <div class="floating-particles">
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                    </div>
+                    
+                    <div class="modal-content relative">
+                        <div class="modal-content-enhanced rounded-3xl p-4 sm:p-6 md:p-8 max-w-xs sm:max-w-md md:max-w-lg w-full mx-2 sm:mx-4 relative overflow-hidden">
+                            <!-- Background gradient overlay -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-green-50/50 via-blue-50/30 to-purple-50/50 pointer-events-none"></div>
+                            
+                            <div class="relative z-10 text-center">
+                                <!-- Enhanced call icon with partner avatar -->
+                                <div class="call-icon-container w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 mx-auto mb-4 sm:mb-6 relative">
+                                    <div class="call-avatar w-full h-full bg-gradient-to-br from-green-500 via-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
+                                        <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center">
+                                            <span class="text-2xl sm:text-3xl md:text-4xl">📞</span>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <!-- Call invitation form -->
+                                <!-- Enhanced header -->
+                                <div class="mb-4 sm:mb-6">
+                                    <h3 class="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                                        Start Video Call
+                                    </h3>
+                                    <p class="text-base sm:text-lg md:text-xl font-bold text-blue-600 mb-1" id="quickCallPartner"></p>
+                                    <p class="text-sm sm:text-base text-gray-600 mb-2 sm:mb-4">Send a call invitation to connect</p>
+                                </div>
+                                
+                                <!-- Enhanced Partner Status -->
+                                <div id="partnerStatus" class="status-indicator mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/50 backdrop-blur-sm shadow-inner bg-white/30">
+                                    <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                        <div id="statusIndicator" class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-400 animate-pulse"></div>
+                                        <span id="statusText" class="font-medium text-gray-700 text-sm sm:text-base text-center">Checking availability...</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Enhanced Call invitation form -->
                                 <div id="invitationForm" style="display: none;">
-                                    <div class="mb-6">
-                                        <textarea id="quickCallMessage" placeholder="Optional message..." 
-                                                class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus-ring resize-none"
-                                                rows="3" maxlength="200"></textarea>
-                                        <div class="text-xs text-gray-500 mt-1 text-right">
-                                            <span id="messageCharCount">0</span>/200
+                                    <div class="mb-6 sm:mb-8">
+                                        <label class="block text-left font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center space-x-2">
+                                            <span class="text-base sm:text-lg">💬</span>
+                                            <span class="text-sm sm:text-base">Add a personal message (optional)</span>
+                                        </label>
+                                        <div class="relative">
+                                            <textarea id="quickCallMessage" 
+                                                    placeholder="Hi! I'd love to practice language exchange with you. When would be a good time for a video call?" 
+                                                    class="w-full border-2 border-gray-200 rounded-xl sm:rounded-2xl px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 resize-none bg-white/80 backdrop-blur-sm"
+                                                    rows="3" maxlength="200"></textarea>
+                                            <div class="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded-full">
+                                                <span id="messageCharCount">0</span>/200
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 sm:mt-3 flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 text-xs sm:text-sm text-gray-600">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                                <span>Personal messages increase response rates by 85%</span>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="flex space-x-4">
+                                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                                         <button onclick="closeQuickCallModal()" 
-                                                class="flex-1 bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition font-medium focus-ring">
-                                            Cancel
+                                                class="btn-enhanced flex-1 bg-gradient-to-r from-gray-400 to-gray-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 hover:scale-105 focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span>✕</span>
+                                                <span>Cancel</span>
+                                            </span>
                                         </button>
                                         <button onclick="sendQuickCallInvitation()" 
-                                                class="flex-1 btn-success text-white px-6 py-3 rounded-lg font-medium border-0 focus-ring">
-                                            📞 Send Invitation
+                                                class="btn-enhanced btn-accept flex-1 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 hover:scale-105 focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span class="text-base sm:text-lg">📞</span>
+                                                <span>Send Invitation</span>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
                                 
-                                <!-- Waiting for response -->
+                                <!-- Enhanced Waiting for response -->
                                 <div id="waitingResponse" style="display: none;">
                                     <div class="text-center">
-                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                                        <p class="text-gray-600 mb-4">Invitation sent! Waiting for response...</p>
-                                        <div class="text-sm text-gray-500 mb-4">
-                                            Invitation expires in <span id="timeRemaining">2:00</span>
+                                        <!-- Enhanced loading animation -->
+                                        <div class="relative w-16 h-16 mx-auto mb-6">
+                                            <div class="absolute inset-0 rounded-full border-4 border-blue-200 animate-spin"></div>
+                                            <div class="absolute inset-2 rounded-full border-4 border-blue-500 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <span class="text-lg">📞</span>
+                                            </div>
                                         </div>
+                                        
+                                        <h4 class="text-xl font-bold text-gray-900 mb-2">Invitation Sent!</h4>
+                                        <p class="text-gray-600 mb-4">Waiting for your partner to respond...</p>
+                                        
+                                        <!-- Enhanced timer display -->
+                                        <div class="mb-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl border border-orange-200">
+                                            <div class="flex items-center justify-center space-x-3">
+                                                <div class="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                                                <span class="text-orange-800 font-medium">
+                                                    Expires in <span id="timeRemaining" class="font-bold text-orange-600">2:00</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
                                         <button onclick="cancelInvitation()" 
-                                                class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition focus-ring">
-                                            Cancel Invitation
+                                                class="btn-enhanced btn-decline px-6 py-3 rounded-2xl font-semibold text-white transition-all duration-300 hover:scale-105 focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span>✕</span>
+                                                <span>Cancel Invitation</span>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
                                 
-                                <!-- Offline message -->
+                                <!-- Enhanced Offline message -->
                                 <div id="offlineMessage" style="display: none;">
-                                    <p class="text-gray-600 mb-4">This partner is currently offline.</p>
-                                    <div class="text-sm text-gray-500 mb-4">
-                                        Last seen: <span id="lastSeenTime">Unknown</span>
+                                    <div class="mb-6 p-6 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl border border-gray-200">
+                                        <div class="flex items-center justify-center space-x-3 mb-4">
+                                            <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
+                                            <span class="text-gray-600 font-medium">Partner is currently offline</span>
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            Last seen: <span id="lastSeenTime" class="font-medium">Unknown</span>
+                                        </div>
                                     </div>
-                                    <div class="flex space-x-4">
-                                        <button onclick="closeQuickCallModal()" 
-                                                class="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition focus-ring">
-                                            Close
-                                        </button>
+                                    
+                                    <div class="space-y-3">
                                         <button onclick="enterRoomAnyway()" 
-                                                class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition focus-ring">
-                                            Enter Room Anyway
+                                                class="btn-enhanced btn-accept w-full text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span class="text-lg">🚪</span>
+                                                <span>Enter Room Anyway</span>
+                                            </span>
+                                        </button>
+                                        <button onclick="closeQuickCallModal()" 
+                                                class="btn-enhanced w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span>✕</span>
+                                                <span>Close</span>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
