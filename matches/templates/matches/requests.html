@@ -400,7 +400,7 @@ function refreshRequests() {
         }
     })
     .catch(error => {
-        console.error('Error refreshing requests:', error);
+
         showNotification('error', 'Failed to refresh requests. Please try again.');
     })
     .finally(() => {
@@ -445,7 +445,7 @@ function respondToRequest(requestId, action) {
         }
     })
     .catch(error => {
-        console.error('Error responding to request:', error);
+
         showNotification('error', 'Failed to respond to request. Please try again.');
     });
 }
@@ -485,7 +485,7 @@ function cancelRequest(requestId) {
         }
     })
     .catch(error => {
-        console.error('Error cancelling request:', error);
+
         showNotification('error', 'Failed to cancel request. Please try again.');
     });
 }

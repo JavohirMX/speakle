@@ -1044,13 +1044,13 @@ class TextChat {
         this.ws = new WebSocket(wsUrl);
         
         this.ws.onopen = () => {
-            console.log('WebSocket connected');
+
             this.isConnected = true;
             this.updateStatus('Connected', 'connected');
         };
         
         this.ws.onclose = (event) => {
-            console.log('WebSocket disconnected:', event.code);
+
             this.isConnected = false;
             this.updateStatus('Disconnected', 'disconnected');
             
@@ -1063,7 +1063,7 @@ class TextChat {
         };
         
         this.ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
+
             this.showError('Connection error. Please refresh the page.');
         };
         
@@ -1073,7 +1073,7 @@ class TextChat {
     }
     
     handleWebSocketMessage(data) {
-        console.log('Received message:', data);
+
         
         switch (data.type) {
             case 'connected':
@@ -1097,11 +1097,11 @@ class TextChat {
                 break;
                 
             case 'user_joined':
-                console.log(`${data.username} joined the chat`);
+
                 break;
                 
             case 'user_left':
-                console.log(`${data.username} left the chat`);
+
                 break;
                 
             case 'error':
@@ -1109,7 +1109,7 @@ class TextChat {
                 break;
                 
             default:
-                console.log('Unknown message type:', data.type);
+
         }
     }
     

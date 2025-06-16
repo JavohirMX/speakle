@@ -356,7 +356,7 @@ function refreshMatches() {
         }
     })
     .catch(error => {
-        console.error('Error refreshing matches:', error);
+
         if (typeof showNotificationToast === 'function') {
             showNotificationToast('Error', 'Failed to refresh matches. Please try again.', '❌');
         } else {

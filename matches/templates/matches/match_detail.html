@@ -805,7 +805,7 @@ function loadRecentSessions() {
         }
     })
     .catch(error => {
-        console.error('Error loading recent sessions:', error);
+
         document.getElementById('recentSessions').innerHTML = '<p class="text-red-600">Failed to load recent sessions.</p>';
     });
     {% endif %}
@@ -841,7 +841,7 @@ function loadRecentMessages() {
         }
     })
     .catch(error => {
-        console.error('Error loading recent messages:', error);
+
         document.getElementById('recentMessages').innerHTML = '<p class="text-red-600">Failed to load recent messages.</p>';
     });
 }
@@ -857,7 +857,7 @@ function loadChatHistory(matchId) {
         }
     })
     .catch(error => {
-        console.error('Error loading chat history:', error);
+
         alert('Failed to load chat history');
     });
 }
@@ -874,7 +874,7 @@ function loadStatistics() {
         }
     })
     .catch(error => {
-        console.error('Error loading statistics:', error);
+
         document.getElementById('statisticsData').innerHTML = '<p class="text-red-600">Failed to load statistics.</p>';
     });
 }
@@ -1020,7 +1020,7 @@ function confirmEndMatch() {
         }
     })
     .catch(error => {
-        console.error('Error ending match:', error);
+
         alert('Failed to end match. Please try again.');
     });
 }
@@ -1048,7 +1048,7 @@ function toggleOnlineStatus() {
         }
     })
     .catch(error => {
-        console.error('Error updating status:', error);
+
         alert('Failed to update status');
     });
 }

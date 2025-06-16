@@ -1113,7 +1113,7 @@ class VideoChat {
             // Wait for video to be fully loaded
             await new Promise((resolve) => {
                 this.localVideo.onloadeddata = () => {
-                    console.log('Local video data loaded');
+
                     resolve();
                 };
                 // Fallback timeout in case onloadeddata doesn't fire
@@ -1121,7 +1121,7 @@ class VideoChat {
             });
             
             this.isMediaReady = true;
-            console.log('Local video initialized successfully, media ready:', this.isMediaReady);
+
             this.loadingStatus.textContent = 'Video chat ready!';
             
             this.updateLocalVideoInfo();
@@ -1134,7 +1134,7 @@ class VideoChat {
             }, 1000);
             
         } catch (error) {
-            console.error('Error accessing media devices:', error);
+
             this.loadingStatus.textContent = 'Error accessing camera/microphone';
             this.updateStatus('Error accessing camera/microphone', 'disconnected');
             
@@ -1162,13 +1162,13 @@ class VideoChat {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws/video/${this.roomId}/`;
         
-        console.log('Attempting WebSocket connection to:', wsUrl);
+
         this.updateStatus('Connecting to room...', 'connecting');
         
         this.ws = new WebSocket(wsUrl);
         
         this.ws.onopen = () => {
-            console.log('WebSocket connection opened');
+
             this.updateStatus('Connected to room', 'connected');
             this.isWebSocketReady = true;
             
@@ -1186,43 +1186,43 @@ class VideoChat {
         };
         
         this.ws.onmessage = (event) => {
-            console.log('WebSocket message received:', event.data);
+
             const data = JSON.parse(event.data);
             this.handleWebSocketMessage(data);
         };
         
         this.ws.onclose = (event) => {
-            console.log('WebSocket connection closed:', event.code, event.reason);
+
             this.updateStatus('Disconnected', 'disconnected');
             this.isWebSocketReady = false;
             
             // Attempt to reconnect after 3 seconds
             setTimeout(() => {
-                console.log('Attempting to reconnect...');
+
                 this.connectWebSocket();
             }, 3000);
         };
         
         this.ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
+
             this.updateStatus('Connection error', 'disconnected');
         };
     }
     
     handleWebSocketMessage(data) {
-        console.log('Handling WebSocket message:', data.type, data);
+
         
         switch (data.type) {
             case 'connection_test':
-                console.log('Connection test successful:', data.message);
+
                 this.addChatMessage('✅ WebSocket connection established', 'system');
                 break;
             case 'test_response':
-                console.log('Test response received:', data.message);
+
                 this.addChatMessage('✅ Two-way communication working', 'system');
                 break;
             case 'error':
-                console.error('WebSocket error message:', data.message);
+
                 this.showError(data.message);
                 break;
             case 'user_joined':
@@ -1230,7 +1230,7 @@ class VideoChat {
                     this.addChatMessage(`${data.username} joined the room`, 'system');
                     // Automatically signal readiness when someone joins and we have media ready
                     if (this.isMediaReady && this.localStream && !this.isCallActive) {
-                        console.log('New user joined and we have media ready, signaling peer ready');
+
                         this.checkAndSignalPeerReady();
                     }
                 }
@@ -1243,17 +1243,17 @@ class VideoChat {
                 }
                 break;
             case 'peer_ready':
-                console.log('Raw peer_ready signal received:', data);
+
                 
                 // Validate we have required data
                 if (!data.sender_id) {
-                    console.error('Peer ready signal missing sender_id:', data);
+
                     break;
                 }
                 
                 // If we're not ready yet, queue this signal
                 if (!this.isMediaReady || !this.isWebSocketReady) {
-                    console.log('Received peer ready signal but not ready yet, queuing:', data);
+
                     this.pendingPeerReadySignals.push(data);
                 } else {
                     this.handlePeerReady(data);
@@ -1263,7 +1263,7 @@ class VideoChat {
                 // If we receive an offer while we're also trying to start a call,
                 // the lower ID user should accept the higher ID user's offer
                 if (this.isCallActive && !this.pc && data.sender_id > this.userId) {
-                    console.log('💫 SIMULTANEOUS START - accepting partner\'s offer (they have higher ID)');
+
                     this.isCallActive = false; // Reset to allow handling the offer
                     this.isAutoStarting = false;
                     this.stopTimer();
@@ -1281,7 +1281,7 @@ class VideoChat {
                 if (data.sender_id !== this.userId) {
                     // Check for duplicate messages
                     if (data.message_id && this.messageIds.has(data.message_id)) {
-                        console.log('Duplicate message received, ignoring:', data.message_id);
+
                         return;
                     }
                     
@@ -1329,7 +1329,7 @@ class VideoChat {
                 // Redirect both users to call summary page after a delay
                 if (data.redirect_url) {
                     setTimeout(() => {
-                        console.log('Redirecting to call summary:', data.redirect_url);
+
                         window.location.href = data.redirect_url;
                     }, 100); // 3 second delay to allow users to see the summary modal
                 }
@@ -1358,34 +1358,30 @@ class VideoChat {
                 }
                 break;
             default:
-                console.log('Unknown message type:', data.type);
+
         }
     }
     
     checkAndSignalPeerReady() {
         // Only signal if both WebSocket and media are ready
         if (this.isWebSocketReady && this.isMediaReady && !this.isCallActive) {
-            console.log('Both WebSocket and media ready, signaling peer ready');
+
             this.addChatMessage('✅ Ready for video call', 'system');
             this.signalPeerReady();
         } else {
-            console.log('Not ready to signal peer ready yet:', {
-                websocketReady: this.isWebSocketReady,
-                mediaReady: this.isMediaReady,
-                callActive: this.isCallActive
-            });
+
         }
     }
     
     signalPeerReady() {
         // Only signal if WebSocket is connected
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            console.log('Signaling peer ready');
+
             this.ws.send(JSON.stringify({
                 type: 'peer_ready'
             }));
         } else {
-            console.log('WebSocket not ready, cannot signal peer ready');
+
         }
     }
     
@@ -1393,26 +1389,17 @@ class VideoChat {
         // Process any queued peer ready signals now that we're ready
         while (this.pendingPeerReadySignals.length > 0 && this.isMediaReady) {
             const signal = this.pendingPeerReadySignals.shift();
-            console.log('Processing queued peer ready signal:', signal);
+
             this.handlePeerReady(signal);
         }
     }
     
     async handlePeerReady(data) {
-        console.log('=== PEER READY SIGNAL RECEIVED ===');
-        console.log('From:', data.sender_username, 'sender_id:', data.sender_id, 'my_id:', this.userId);
-        console.log('Current state:', {
-            mediaReady: this.isMediaReady,
-            hasLocalStream: !!this.localStream,
-            callActive: this.isCallActive,
-            autoStarting: this.isAutoStarting,
-            webSocketReady: this.isWebSocketReady
-        });
-        
+
         // If we have media ready and no active call, attempt auto-start
         if (this.isMediaReady && this.localStream && !this.isCallActive) {
             if (!this.isAutoStarting) {
-                console.log('🚀 BOTH USERS READY - initiating auto-start');
+
                 this.addChatMessage('🚀 Both users ready, starting call automatically...', 'system');
                 this.isAutoStarting = true;
                 this.updateCallButtons();
@@ -1423,40 +1410,40 @@ class VideoChat {
                 
                 setTimeout(() => {
                     if (!this.isCallActive) {
-                        console.log('🚀 EXECUTING AUTO-START after delay');
+
                         this.startCall();
                     } else {
-                        console.log('🚀 SKIPPING AUTO-START - call already started by partner');
+
                         this.isAutoStarting = false;
                     }
                 }, delay);
             } else {
-                console.log('🚀 ALREADY AUTO-STARTING - ignoring duplicate signal');
+
             }
         } else if (!this.isMediaReady || !this.localStream) {
             // If media is not ready yet, retry after a short delay
-            console.log('📱 MEDIA NOT READY - scheduling retry');
+
             this.autoStartRetryCount++;
             
             if (this.autoStartRetryCount <= this.maxAutoStartRetries) {
                 this.addChatMessage(`🔄 Waiting for media... (${this.autoStartRetryCount}/${this.maxAutoStartRetries})`, 'system');
                 
                 setTimeout(() => {
-                    console.log('🔄 RETRYING peer ready handling');
+
                     this.handlePeerReady(data);
                 }, 1500);
             } else {
-                console.log('❌ MAX RETRIES REACHED - giving up auto-start');
+
                 this.addChatMessage('⚠️ Auto-start failed. You can start the call manually.', 'system');
                 this.autoStartRetryCount = 0;
                 this.isAutoStarting = false;
                 this.updateCallButtons();
             }
         } else {
-            console.log('❌ CANNOT AUTO-START - call already active:', this.isCallActive);
+
         }
         
-        console.log('=== END PEER READY HANDLING ===');
+
     }
     
     
@@ -1494,19 +1481,19 @@ class VideoChat {
     
     async startCall() {
         if (this.isCallActive) {
-            console.log('Call already active, ignoring start request');
+
             return;
         }
         
         // Check if media is ready before starting call
         if (!this.isMediaReady || !this.localStream) {
-            console.log('Media not ready, cannot start call');
+
             this.addChatMessage('⚠️ Media not ready. Please wait...', 'system');
             return;
         }
         
         try {
-            console.log('🚀 STARTING CALL - User initiated');
+
             this.isAutoStarting = false;
             this.autoStartRetryCount = 0;
             
@@ -1518,21 +1505,21 @@ class VideoChat {
             
             // Add local stream tracks to peer connection
             this.localStream.getTracks().forEach(track => {
-                console.log('Adding track:', track.kind, track.label);
+
                 this.pc.addTrack(track, this.localStream);
             });
             
             // Create and send offer
-            console.log('Creating offer...');
+
             const offer = await this.pc.createOffer({
                 offerToReceiveVideo: true,
                 offerToReceiveAudio: true
             });
             
-            console.log('Setting local description with offer...');
+
             await this.pc.setLocalDescription(offer);
             
-            console.log('Sending offer via WebSocket');
+
             this.ws.send(JSON.stringify({
                 type: 'offer',
                 offer: offer
@@ -1550,7 +1537,7 @@ class VideoChat {
             this.addChatMessage('📞 Call started', 'system');
             
         } catch (error) {
-            console.error('Error starting call:', error);
+
             // Revert call state on error
             this.isCallActive = false;
             this.isAutoStarting = false;
@@ -1575,7 +1562,7 @@ class VideoChat {
     async confirmEndCall() {
         if (!this.isCallActive) return;
         
-        console.log('Ending call with enhanced tracking...');
+
         
         // Get form data
         const endReason = document.getElementById('endReason').value;
@@ -1613,7 +1600,7 @@ class VideoChat {
             
             if (response.ok) {
                 const data = await response.json();
-                console.log('Call ended successfully:', data);
+
                 
                 // Reset call state
                 this.resetCall();
@@ -1624,22 +1611,22 @@ class VideoChat {
                     const sessionId = data.session_summaries[0].id || data.session_summaries[0].session_id;
                     const summaryUrl = `/chats/summary/${this.roomId}/${sessionId}/`;
                     
-                    console.log('Redirecting call initiator to summary page:', summaryUrl);
+
                     setTimeout(() => {
                         window.location.href = summaryUrl;
                     }, 100); // Shorter delay for the person who ended the call
                 } else {
-                    console.warn('No session summary available for redirect');
+
                 }
             } else {
-                console.error('Failed to end call via API');
+
                 // Still reset the call locally
                 this.resetCall();
                 this.addChatMessage('📞 Call ended', 'system');
             }
             
         } catch (error) {
-            console.error('Error ending call:', error);
+
             // Fallback to simple end
             this.resetCall();
             this.addChatMessage('📞 Call ended', 'system');
@@ -1771,23 +1758,23 @@ class VideoChat {
     }
     
     createPeerConnection() {
-        console.log('Creating peer connection...');
+
         this.pc = new RTCPeerConnection(this.pcConfig);
         
         this.pc.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log('Local ICE candidate:', event.candidate);
+
                 this.ws.send(JSON.stringify({
                     type: 'ice_candidate',
                     candidate: event.candidate
                 }));
             } else {
-                console.log('ICE candidate gathering complete');
+
             }
         };
         
         this.pc.ontrack = (event) => {
-            console.log('Received remote track:', event.track.kind, 'from streams:', event.streams.length);
+
             
             if (event.streams && event.streams[0]) {
                 this.remoteStream = event.streams[0];
@@ -1795,20 +1782,20 @@ class VideoChat {
                 this.hideRemoteVideoPlaceholder();
                 this.addChatMessage('📹 Remote video connected', 'system');
                 
-                console.log('Remote stream tracks:', this.remoteStream.getTracks().map(t => t.kind));
+
                 
                 // Ensure video plays
                 this.remoteVideo.onloadedmetadata = () => {
-                    console.log('Remote video metadata loaded, attempting to play');
+
                     this.remoteVideo.play().catch(e => {
-                        console.error('Error playing remote video:', e);
+
                     });
                 };
             }
         };
         
         this.pc.onconnectionstatechange = () => {
-            console.log('Connection state changed to:', this.pc.connectionState);
+
             this.connectionState = this.pc.connectionState;
             
             switch (this.pc.connectionState) {
@@ -1825,13 +1812,13 @@ class VideoChat {
                     this.resetCall();
                     break;
                 case 'closed':
-                    console.log('Peer connection closed');
+
                     break;
             }
         };
         
         this.pc.oniceconnectionstatechange = () => {
-            console.log('ICE connection state changed to:', this.pc.iceConnectionState);
+
             
             switch (this.pc.iceConnectionState) {
                 case 'connected':
@@ -1850,50 +1837,50 @@ class VideoChat {
         };
         
         this.pc.onicegatheringstatechange = () => {
-            console.log('ICE gathering state changed to:', this.pc.iceGatheringState);
+
         };
         
         this.pc.onsignalingstatechange = () => {
-            console.log('Signaling state changed to:', this.pc.signalingState);
+
         };
     }
     
     async handleOffer(data) {
-        console.log('Handling incoming offer from:', data.sender_username);
+
         
         this.isAutoStarting = false; // Reset auto-starting flag since call is starting
         
         if (!this.pc) {
-            console.log('Creating peer connection to handle offer...');
+
             this.createPeerConnection();
             
             // Add local stream tracks
             if (this.localStream) {
                 this.localStream.getTracks().forEach(track => {
-                    console.log('Adding local track to answer peer connection:', track.kind);
+
                     this.pc.addTrack(track, this.localStream);
                 });
             }
         }
         
         try {
-            console.log('Setting remote description with offer...');
+
             await this.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
             
             // Process any queued ICE candidates
             while (this.iceCandidateQueue.length > 0) {
                 const candidate = this.iceCandidateQueue.shift();
-                console.log('Adding queued ICE candidate:', candidate);
+
                 await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
             }
             
-            console.log('Creating answer...');
+
             const answer = await this.pc.createAnswer();
             
-            console.log('Setting local description with answer...');
+
             await this.pc.setLocalDescription(answer);
             
-            console.log('Sending answer:', answer);
+
             this.ws.send(JSON.stringify({
                 type: 'answer',
                 answer: answer
@@ -1906,55 +1893,55 @@ class VideoChat {
             this.addChatMessage('📞 Incoming call accepted', 'system');
             
         } catch (error) {
-            console.error('Error handling offer:', error);
+
             this.addChatMessage(`❌ Error handling call: ${error.message}`, 'system');
         }
     }
     
     async handleAnswer(data) {
-        console.log('Handling answer from:', data.sender_username);
+
         
         if (this.pc && this.pc.signalingState === 'have-local-offer') {
             try {
-                console.log('Setting remote description with answer...');
+
                 await this.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
                 
                 // Process any queued ICE candidates
                 while (this.iceCandidateQueue.length > 0) {
                     const candidate = this.iceCandidateQueue.shift();
-                    console.log('Adding queued ICE candidate:', candidate);
+
                     await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
                 }
                 
-                console.log('Answer processed successfully');
+
                 this.addChatMessage('✅ Call connection established', 'system');
             } catch (error) {
-                console.error('Error handling answer:', error);
+
                 this.addChatMessage(`❌ Error processing answer: ${error.message}`, 'system');
             }
         } else {
-            console.warn('Received answer but peer connection not in correct state:', this.pc ? this.pc.signalingState : 'no pc');
+
         }
     }
     
     async handleIceCandidate(data) {
-        console.log('Handling ICE candidate from:', data.sender_username, data.candidate);
+
         
         if (this.pc) {
             if (this.pc.remoteDescription) {
                 try {
-                    console.log('Adding ICE candidate immediately');
+
                     await this.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                    console.log('ICE candidate added successfully');
+
                 } catch (error) {
-                    console.error('Error adding ICE candidate:', error);
+
                 }
             } else {
-                console.log('Queueing ICE candidate (no remote description yet)');
+
                 this.iceCandidateQueue.push(data.candidate);
             }
         } else {
-            console.warn('Received ICE candidate but no peer connection');
+
         }
     }
     
@@ -2014,7 +2001,7 @@ class VideoChat {
                 this.addChatMessage('🖥️ Screen sharing stopped', 'system');
             }
         } catch (error) {
-            console.error('Error stopping screen share:', error);
+
         }
     }
     
@@ -2060,7 +2047,7 @@ class VideoChat {
                 }));
                 this.chatInput.value = '';
             } catch (error) {
-                console.error('Error sending message:', error);
+
                 this.showError('Failed to send message');
             }
         }
@@ -2161,7 +2148,7 @@ class VideoChat {
     }
     
     updateStatus(text, status) {
-        console.log('Status update:', text, status);
+
     }
     
     updateCallButtons() {
@@ -2203,14 +2190,14 @@ class VideoChat {
         // Load recent messages via AJAX
         fetch(`/chats/api/recent-messages/${this.roomId}/`)
             .then(response => {
-                console.log('Messages API response status:', response.status);
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Messages API response data:', data);
+
                 if (data.success && data.messages && data.messages.length > 0) {
                     // Add each message to the chat
                     data.messages.forEach(message => {
@@ -2221,15 +2208,15 @@ class VideoChat {
                             message.timestamp
                         );
                     });
-                    console.log(`Loaded ${data.messages.length} recent messages`);
+
                 } else {
-                    console.log('No recent messages found or API returned unsuccessful response');
+
                     // Show empty state
                     this.showEmptyState();
                 }
             })
             .catch(error => {
-                console.error('Error loading recent messages:', error);
+
                 this.addChatMessage('⚠️ Could not load recent messages', 'system');
                 this.showEmptyState();
             });
@@ -2284,7 +2271,7 @@ class VideoChat {
     setupMobileOptimizations() {
         if (!this.isMobile) return;
         
-        console.log('Setting up mobile optimizations...');
+
         
         // Optimize video elements for mobile
         this.localVideo.setAttribute('playsinline', '');
@@ -2308,7 +2295,7 @@ class VideoChat {
         // Setup picture-in-picture dragging
         this.setupPiPDragging();
         
-        console.log('Mobile optimizations applied');
+
     }
     
     handleOrientationChange() {
@@ -2318,7 +2305,7 @@ class VideoChat {
             this.currentOrientation = newOrientation;
             this.orientationChanged = true;
             
-            console.log('Orientation changed to:', newOrientation);
+
             
             // Delay to allow browser to adjust
             setTimeout(() => {
@@ -2452,7 +2439,7 @@ class VideoChat {
                 });
             }
         } catch (error) {
-            console.error('Error sharing screen:', error);
+
             this.addChatMessage(`❌ Screen share error: ${error.message}`, 'system');
         }
     }
@@ -2620,7 +2607,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const roomId = '{{ room_id_str }}';
     const userId = {{ user.id }};
     
-    console.log('Initializing VideoChat with:', { roomId, userId });
+
     new VideoChat(roomId, userId);
 });
 </script>
