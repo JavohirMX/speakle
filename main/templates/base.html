@@ -701,17 +701,61 @@
         
         /* Enhanced mobile responsiveness */
         @media (max-width: 640px) {
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 100vh;
+                height: 100dvh; /* Dynamic viewport height for mobile */
+                width: 100vw;
+                width: 100dvw; /* Dynamic viewport width for mobile */
+                padding: 0.5rem;
+                box-sizing: border-box;
+            }
+            
             .modal-content {
                 margin: 0.75rem;
                 max-width: calc(100vw - 1.5rem);
                 max-height: calc(100vh - 1.5rem);
+                max-height: calc(100dvh - 1.5rem); /* Dynamic viewport height */
                 overflow-y: auto;
+                position: relative;
+                top: auto;
+                left: auto;
+                transform: none;
             }
             
             .modal-content-enhanced {
                 padding: 1rem !important;
                 max-height: calc(100vh - 1.5rem);
+                max-height: calc(100dvh - 1.5rem); /* Dynamic viewport height */
                 overflow-y: auto;
+                border-radius: 1.5rem !important;
+                width: 100%;
+                min-height: auto;
+            }
+            
+            /* Fix for mobile browsers hiding address bar */
+            #globalIncomingCallModal {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                z-index: 9999 !important;
+                overflow: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Ensure modal is always visible on mobile */
+            #globalIncomingCallModal:not(.hidden) {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
             
             .call-icon-container {
@@ -972,20 +1016,27 @@
         /* Mobile notification toast improvements */
         @media (max-width: 640px) {
             .notification-toast {
-                top: 60px;
-                right: 0.5rem;
-                left: 0.5rem;
-                max-width: none;
-                transform: translateY(-100%);
+                position: fixed !important;
+                top: env(safe-area-inset-top, 60px) !important;
+                right: 0.5rem !important;
+                left: 0.5rem !important;
+                max-width: none !important;
+                z-index: 10000 !important;
+                transform: translateY(-150%) !important;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             }
             
             .notification-toast.show {
-                transform: translateY(0);
+                transform: translateY(0) !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .notification-toast-content {
-                padding: 1rem;
-                border-radius: 1rem;
+                padding: 1rem !important;
+                border-radius: 1rem !important;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
             }
         }
         
@@ -1020,6 +1071,52 @@
             
             .modal-content-enhanced {
                 max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.5rem);
+            }
+        }
+        
+        /* Mobile-specific incoming call modal styles */
+        #globalIncomingCallModal.mobile-active {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important; /* Dynamic viewport height */
+            z-index: 99999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0, 0, 0, 0.9) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+        }
+        
+        /* Ensure modal content is properly sized on mobile */
+        #globalIncomingCallModal.mobile-active .modal-content {
+            margin: 1rem !important;
+            max-width: calc(100vw - 2rem) !important;
+            max-height: calc(100vh - 2rem) !important;
+            max-height: calc(100dvh - 2rem) !important;
+            width: 100% !important;
+            position: relative !important;
+        }
+        
+        /* Mobile touch improvements */
+        @media (hover: none) and (pointer: coarse) {
+            #globalIncomingCallModal .btn-enhanced {
+                min-height: 48px !important;
+                min-width: 48px !important;
+                padding: 1rem 1.5rem !important;
+                font-size: 1rem !important;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            #globalIncomingCallModal .btn-enhanced:active {
+                transform: scale(0.95) !important;
+                transition: transform 0.1s ease !important;
             }
         }
         
@@ -1824,15 +1921,43 @@
         function requestNotificationPermission() {
             if ('Notification' in window) {
                 if (Notification.permission === 'default') {
-                    Notification.requestPermission().then(permission => {
-                        browserNotificationsEnabled = permission === 'granted';
-                        if (browserNotificationsEnabled) {
-                            showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '🔔');
-                        }
-                    });
+                    // For mobile devices, be more explicit about the permission request
+                    if (window.isMobileDevice()) {
+                        // Show a brief toast first to explain why we need permission
+                        showNotificationToast(
+                            'Enable Notifications?', 
+                            'Get notified when someone calls you', 
+                            '🔔', 
+                            3000
+                        );
+                        
+                        // Delay the permission request slightly for better UX
+                        setTimeout(() => {
+                            Notification.requestPermission().then(permission => {
+                                browserNotificationsEnabled = permission === 'granted';
+                                if (browserNotificationsEnabled) {
+                                    showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '✅');
+                                } else {
+                                    showNotificationToast('Notifications Disabled', 'You may miss incoming calls', '⚠️');
+                                }
+                            }).catch(error => {
+                                browserNotificationsEnabled = false;
+                            });
+                        }, 1500);
+                    } else {
+                        // Desktop permission request
+                        Notification.requestPermission().then(permission => {
+                            browserNotificationsEnabled = permission === 'granted';
+                            if (browserNotificationsEnabled) {
+                                showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '🔔');
+                            }
+                        });
+                    }
                 } else {
                     browserNotificationsEnabled = Notification.permission === 'granted';
                 }
+            } else {
+                browserNotificationsEnabled = false;
             }
         }
 
@@ -1922,6 +2047,7 @@
                 
                 if (callCountdown <= 0) {
                     clearInterval(callTimerInterval);
+                    stopNotificationSound(); // Stop sound on auto-decline
                     globalDeclineCall(); // Auto-decline
                 }
             }, 1000);
@@ -1946,8 +2072,16 @@
             try {
                 globalNotificationSocket = new WebSocket(wsUrl);
                 
+                // Set a connection timeout for mobile devices
+                const connectionTimeout = setTimeout(() => {
+                    if (globalNotificationSocket.readyState === WebSocket.CONNECTING) {
+                        globalNotificationSocket.close();
+                        adjustPollingFrequency(false);
+                    }
+                }, 10000); // 10 seconds timeout for mobile
+                
                 globalNotificationSocket.onopen = function() {
-
+                    clearTimeout(connectionTimeout);
                     reconnectAttempts = 0;
                     adjustPollingFrequency(true);
                     checkPendingInvitations();
@@ -1959,31 +2093,37 @@
                         handleGlobalNotificationMessage(data);
                         adjustPollingFrequency(true);
                     } catch (error) {
-
+                        // Error parsing WebSocket message
                     }
                 };
                 
                 globalNotificationSocket.onclose = function(event) {
-
+                    clearTimeout(connectionTimeout);
                     adjustPollingFrequency(false);
                     
-                    // Attempt reconnection with exponential backoff
+                    // More aggressive reconnection for mobile
                     if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                        const delay = WEBSOCKET_RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
+                        const delay = window.isMobileDevice() ? 
+                            Math.min(WEBSOCKET_RECONNECT_DELAY * Math.pow(1.5, reconnectAttempts), 15000) :
+                            WEBSOCKET_RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
+                        
                         setTimeout(() => {
                             reconnectAttempts++;
                             connectGlobalNotificationWebSocket();
                         }, delay);
+                    } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                        // Fall back to more frequent polling
+                        pollInterval = minPollInterval;
+                        startAdaptivePolling();
                     }
                 };
                 
                 globalNotificationSocket.onerror = function(error) {
-
+                    clearTimeout(connectionTimeout);
                     adjustPollingFrequency(false);
                 };
                 
             } catch (error) {
-
                 adjustPollingFrequency(false);
             }
         }
@@ -2098,7 +2238,7 @@
         }
 
         function handleGlobalIncomingCallInvitation(data) {
-            // Play notification sound
+            // Play notification sound continuously
             playNotificationSound();
             
             // Show browser notification (for system notifications when tab is in background)
@@ -2117,6 +2257,29 @@
                 match_id: data.match_id,
                 expires_at: data.expires_at
             };
+            
+            // For mobile devices, ensure the modal is properly shown
+            if (window.isMobileDevice()) {
+                // Force focus on the page if possible
+                try {
+                    if (document.hidden) {
+                        // Page is hidden, attempting to bring to foreground
+                    }
+                    window.focus();
+                } catch (e) {
+                    // Could not focus window
+                }
+                
+                // Vibrate if available (mobile browsers)
+                if ('vibrate' in navigator) {
+                    try {
+                        navigator.vibrate([200, 100, 200, 100, 200]);
+                    } catch (e) {
+                        // Could not vibrate device
+                    }
+                }
+            }
+            
             showGlobalIncomingCall(invitation);
             
             // Update badge with enhanced animation
@@ -2126,45 +2289,91 @@
             // Handle browser notification click
             if (browserNotif) {
                 browserNotif.onclick = function() {
-                    window.focus();
-                    browserNotif.close();
-                    const modal = document.getElementById('globalIncomingCallModal');
-                    if (!modal.classList.contains('hidden')) {
-                        modal.scrollIntoView();
+                    try {
+                        window.focus();
+                        browserNotif.close();
+                        const modal = document.getElementById('globalIncomingCallModal');
+                        if (modal && !modal.classList.contains('hidden')) {
+                            // For mobile, scroll to modal and ensure it's visible
+                            if (window.isMobileDevice()) {
+                                modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // Force redraw to ensure modal is visible
+                                modal.style.display = 'flex';
+                                modal.offsetHeight; // Force reflow
+                            } else {
+                                modal.scrollIntoView();
+                            }
+                        }
+                    } catch (e) {
+                        // Error handling browser notification click
                     }
                 };
             }
         }
 
-        // Play notification sound
-        function playNotificationSound() {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // Create a pleasant notification tone
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
-                
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.5);
-            } catch (e) {
+        // Continuous notification sound variables
+        let notificationSoundInterval = null;
+        let notificationAudioContext = null;
 
+        // Play notification sound continuously
+        function playNotificationSound() {
+            // Stop any existing sound first
+            stopNotificationSound();
+            
+            try {
+                notificationAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                function playTone() {
+                    if (!notificationAudioContext) return;
+                    
+                    const oscillator = notificationAudioContext.createOscillator();
+                    const gainNode = notificationAudioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(notificationAudioContext.destination);
+                    
+                    // Create a pleasant notification tone
+                    oscillator.frequency.setValueAtTime(800, notificationAudioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(600, notificationAudioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(800, notificationAudioContext.currentTime + 0.2);
+                    
+                    gainNode.gain.setValueAtTime(0.1, notificationAudioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, notificationAudioContext.currentTime + 0.5);
+                    
+                    oscillator.start();
+                    oscillator.stop(notificationAudioContext.currentTime + 0.5);
+                }
+                
+                // Play immediately
+                playTone();
+                
+                // Then repeat every 2 seconds
+                notificationSoundInterval = setInterval(playTone, 2000);
+            } catch (e) {
+                // Silently fail if audio context not supported
+            }
+        }
+
+        // Stop notification sound
+        function stopNotificationSound() {
+            if (notificationSoundInterval) {
+                clearInterval(notificationSoundInterval);
+                notificationSoundInterval = null;
+            }
+            if (notificationAudioContext) {
+                try {
+                    notificationAudioContext.close();
+                } catch (e) {
+                    // Silently fail
+                }
+                notificationAudioContext = null;
             }
         }
 
         function handleGlobalCallCancelled(data) {
             // Close modal if it's for this invitation
             if (currentGlobalIncomingInvitation && currentGlobalIncomingInvitation.id == data.invitation_id) {
-                document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                hideIncomingCallModal();
                 currentGlobalIncomingInvitation = null;
                 stopCallTimer();
                 
@@ -2182,7 +2391,12 @@
         function showGlobalIncomingCall(invitation) {
             if (!currentGlobalIncomingInvitation) {
                 currentGlobalIncomingInvitation = invitation;
-                document.getElementById('globalCallerName').textContent = invitation.caller;
+                
+                // Update modal content
+                const callerNameElement = document.getElementById('globalCallerName');
+                if (callerNameElement) {
+                    callerNameElement.textContent = invitation.caller;
+                }
                 
                 // Enhanced caller avatar display
                 const callerAvatar = document.getElementById('callerAvatar');
@@ -2190,41 +2404,93 @@
                     callerAvatar.textContent = invitation.caller.charAt(0).toUpperCase();
                 }
                 
-                if (invitation.message && invitation.message.trim()) {
-                    document.getElementById('globalMessageContent').textContent = invitation.message;
-                    document.getElementById('globalCallerMessage').style.display = 'block';
-                } else {
-                    document.getElementById('globalCallerMessage').style.display = 'none';
+                // Handle optional message
+                const messageContent = document.getElementById('globalMessageContent');
+                const messageContainer = document.getElementById('globalCallerMessage');
+                if (invitation.message && invitation.message.trim() && messageContent && messageContainer) {
+                    messageContent.textContent = invitation.message;
+                    messageContainer.style.display = 'block';
+                } else if (messageContainer) {
+                    messageContainer.style.display = 'none';
                 }
                 
-                document.getElementById('globalIncomingCallModal').classList.remove('hidden');
-                startCallTimer();
-                
-                // Enhanced entrance animation
+                // Show the modal
                 const modal = document.getElementById('globalIncomingCallModal');
-                const modalContent = modal.querySelector('.modal-content-enhanced');
-                if (modalContent) {
-                    modalContent.style.transform = 'scale(0.8) rotate(5deg)';
-                    modalContent.style.opacity = '0';
+                if (modal) {
+                    modal.classList.remove('hidden');
                     
-                    setTimeout(() => {
-                        modalContent.style.transform = 'scale(1) rotate(0deg)';
-                        modalContent.style.opacity = '1';
-                    }, 50);
-                }
-                
-                // Focus management for accessibility
-                const firstButton = modal.querySelector('button');
-                if (firstButton) {
-                    setTimeout(() => firstButton.focus(), 300);
+                    // For mobile devices, ensure proper display and prevent scrolling
+                    if (window.isMobileDevice()) {
+                        // Prevent body scroll when modal is open
+                        document.body.style.overflow = 'hidden';
+                        document.body.style.position = 'fixed';
+                        document.body.style.width = '100%';
+                        document.body.style.height = '100%';
+                        
+                        // Force modal to be visible and properly positioned
+                        modal.style.display = 'flex';
+                        modal.style.position = 'fixed';
+                        modal.style.top = '0';
+                        modal.style.left = '0';
+                        modal.style.right = '0';
+                        modal.style.bottom = '0';
+                        modal.style.zIndex = '9999';
+                        
+                        // Ensure modal content is properly centered
+                        modal.style.alignItems = 'center';
+                        modal.style.justifyContent = 'center';
+                        
+                        // Force a repaint to ensure the modal is visible
+                        modal.offsetHeight;
+                        
+                        // Add mobile-specific class
+                        modal.classList.add('mobile-active');
+                    }
+                    
+                    startCallTimer();
+                    
+                    // Enhanced entrance animation (simplified for mobile)
+                    const modalContent = modal.querySelector('.modal-content-enhanced');
+                    if (modalContent) {
+                        if (window.isMobileDevice()) {
+                            // Simpler animation for mobile to avoid performance issues
+                            modalContent.style.transform = 'scale(0.9)';
+                            modalContent.style.opacity = '0';
+                            
+                            setTimeout(() => {
+                                modalContent.style.transform = 'scale(1)';
+                                modalContent.style.opacity = '1';
+                            }, 100);
+                        } else {
+                            // Full animation for desktop
+                            modalContent.style.transform = 'scale(0.8) rotate(5deg)';
+                            modalContent.style.opacity = '0';
+                            
+                            setTimeout(() => {
+                                modalContent.style.transform = 'scale(1) rotate(0deg)';
+                                modalContent.style.opacity = '1';
+                            }, 50);
+                        }
+                    }
+                    
+                    // Focus management for accessibility (desktop only)
+                    if (!window.isMobileDevice()) {
+                        const firstButton = modal.querySelector('button');
+                        if (firstButton) {
+                            setTimeout(() => firstButton.focus(), 300);
+                        }
+                    }
                 }
             }
         }
 
         function globalAcceptCall() {
             if (currentGlobalIncomingInvitation) {
-                const btn = event.target;
-                btn.classList.add('loading');
+                // Stop notification sound
+                stopNotificationSound();
+                
+                const btn = event?.target || document.querySelector('#globalIncomingCallModal .btn-accept');
+                if (btn) btn.classList.add('loading');
                 
                 const formData = new FormData();
                 formData.append('response', 'accept');
@@ -2237,7 +2503,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                        hideIncomingCallModal();
                         currentGlobalIncomingInvitation = null;
                         stopCallTimer();
                         
@@ -2249,7 +2515,6 @@
                         // Mobile-friendly redirection - immediate redirect without timeout
                         if (window.isMobileDevice()) {
                             // For mobile devices, redirect immediately to prevent timeout issues
-
                             window.navigateToUrl(data.room_url, true);
                         } else {
                             // For desktop, keep a short delay for better UX
@@ -2262,19 +2527,21 @@
                     }
                 })
                 .catch(error => {
-
                     showNotificationToast('Error', 'Failed to accept call', '❌');
                 })
                 .finally(() => {
-                    btn.classList.remove('loading');
+                    if (btn) btn.classList.remove('loading');
                 });
             }
         }
 
         function globalDeclineCall() {
             if (currentGlobalIncomingInvitation) {
-                const btn = event.target;
-                btn.classList.add('loading');
+                // Stop notification sound
+                stopNotificationSound();
+                
+                const btn = event?.target || document.querySelector('#globalIncomingCallModal .btn-decline');
+                if (btn) btn.classList.add('loading');
                 
                 const formData = new FormData();
                 formData.append('response', 'decline');
@@ -2286,7 +2553,7 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                    hideIncomingCallModal();
                     currentGlobalIncomingInvitation = null;
                     stopCallTimer();
                     
@@ -2296,14 +2563,35 @@
                     showNotificationToast('Call declined', 'Call invitation declined', '❌', 3000);
                 })
                 .catch(error => {
-
                     showNotificationToast('Error', 'Failed to decline call', '❌');
                 })
                 .finally(() => {
-                    btn.classList.remove('loading');
+                    if (btn) btn.classList.remove('loading');
                 });
             }
         }
+
+        // Helper function to properly hide the incoming call modal
+        function hideIncomingCallModal() {
+            // Stop notification sound when modal is hidden
+            stopNotificationSound();
+            
+            const modal = document.getElementById('globalIncomingCallModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('mobile-active');
+                
+                // Restore body scroll for mobile
+                if (window.isMobileDevice()) {
+                    document.body.style.overflow = '';
+                    document.body.style.position = '';
+                    document.body.style.width = '';
+                    document.body.style.height = '';
+                }
+            }
+        }
+
+
 
         // Enhanced helper functions for quick actions
         function acceptAudioOnly() {
@@ -2363,7 +2651,6 @@
             
             if (isPageVisible && (Date.now() - lastUserActivity < 300000)) {
                 pollIntervalId = setInterval(checkPendingInvitations, pollInterval);
-
             }
         }
 
@@ -2443,7 +2730,7 @@
                     updatePendingCallsBadge();
                 }
             })
-            .catch(error => console.error('Error checking invitations:', error));
+            .catch(error => {});
         }
 
         // Modal event handlers
@@ -2841,7 +3128,7 @@
                             invitationExpired();
                         }
                     })
-                    .catch(error => console.error('Error checking status:', error));
+                    .catch(error => {});
                 }
             }, 3000);
         };
