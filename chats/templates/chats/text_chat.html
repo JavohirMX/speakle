@@ -102,12 +102,7 @@
         border-radius: 50%;
         z-index: -1;
         opacity: 0.3;
-        animation: pulse-glow 2s ease-in-out infinite alternate;
-    }
-    
-    @keyframes pulse-glow {
-        0% { opacity: 0.3; transform: scale(1); }
-        100% { opacity: 0.6; transform: scale(1.05); }
+        /* Clean design - no animations */
     }
     
     .partner-details h2 {
@@ -522,17 +517,11 @@
         height: 10px;
         border-radius: 50%;
         background: #ef4444;
-        animation: pulse-status 2s infinite;
+        /* Clean design - no animations */
     }
     
     .status-dot.connected {
         background: #10b981;
-    }
-    
-    @keyframes pulse-status {
-        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-        70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
     
     .empty-state {
@@ -772,6 +761,17 @@
         .empty-state h3 {
             color: #f9fafb;
         }
+    }
+    
+    /* Clean design - no pulse animations */
+    .user-online {
+        color: #10b981;
+        font-weight: 600;
+    }
+    
+    .user-offline {
+        color: #6b7280;
+        font-weight: 500;
     }
 </style>
 {% endblock %}

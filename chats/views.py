@@ -333,7 +333,7 @@ def call_history(request, room_id):
 
 @login_required
 def check_partner_availability(request, match_id):
-    """Check if the partner in a match is online and available."""
+    """Check if the partner in a match is online and available (automatic detection)."""
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
@@ -343,43 +343,62 @@ def check_partner_availability(request, match_id):
     # Get partner
     partner = match.get_partner(request.user)
     
-    # Get or create partner presence
+    # Mark current user as active (automatic)
+    user_presence = UserPresence.mark_activity(request.user)
+    
+    # Get or create partner presence and check if they should be online
     partner_presence, created = UserPresence.objects.get_or_create(
         user=partner,
         defaults={'is_online': False}
     )
     
-    # Also ensure current user has presence record
-    user_presence, created = UserPresence.objects.get_or_create(
-        user=request.user,
-        defaults={'is_online': True}  # Assume online since they're making this request
-    )
-    user_presence.is_online = True
-    user_presence.save()
+    # Update partner's status based on their activity
+    if not created:
+        # Check if partner should still be considered online based on activity
+        if partner_presence.should_be_online():
+            partner_presence.is_online = True
+        else:
+            partner_presence.is_online = False
+        partner_presence.save()
+    
+    # Clean up inactive users
+    UserPresence.cleanup_offline_users()
     
     return JsonResponse({
         'is_online': partner_presence.is_online,
         'last_seen': partner_presence.last_seen.isoformat(),
-        'partner_username': partner.username
+        'last_activity': partner_presence.last_activity.isoformat() if partner_presence.last_activity else None,
+        'partner_username': partner.username,
+        'status_type': 'automatic'
+    })
+
+@login_required
+def get_user_status(request):
+    """Get current user's online status (automatic detection)."""
+    # Mark activity for the requesting user
+    presence = UserPresence.mark_activity(request.user)
+    
+    # Clean up inactive users
+    UserPresence.cleanup_offline_users()
+    
+    return JsonResponse({
+        'success': True,
+        'is_online': presence.is_online,
+        'last_activity': presence.last_activity.isoformat(),
+        'last_seen': presence.last_seen.isoformat(),
+        'message': f'Status: {"online" if presence.is_online else "offline"} (automatic)'
     })
 
 @login_required
 @require_POST
-def set_online_status(request):
-    """Set current user's online status (for testing purposes)."""
-    is_online = request.POST.get('is_online', 'true').lower() == 'true'
-    
-    presence, created = UserPresence.objects.get_or_create(
-        user=request.user,
-        defaults={'is_online': is_online}
-    )
-    presence.is_online = is_online
-    presence.save()
+def heartbeat(request):
+    """Update user activity timestamp (heartbeat endpoint)."""
+    presence = UserPresence.mark_activity(request.user)
     
     return JsonResponse({
         'success': True,
-        'is_online': is_online,
-        'message': f'Status set to {"online" if is_online else "offline"}'
+        'is_online': presence.is_online,
+        'timestamp': presence.last_activity.isoformat()
     })
 
 @login_required

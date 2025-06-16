@@ -129,7 +129,7 @@
   - Glassmorphism effects with backdrop-filter blur
   - Gradient buttons and interactive elements
   - Card-based layouts with rounded corners and shadows
-  - Notification badges with pulse animations
+  - Notification badges 
 - **responsiveness**: Mobile-first design with TailwindCSS responsive utilities
 - **accessibility**: Semantic HTML, ARIA labels, keyboard navigation support
 

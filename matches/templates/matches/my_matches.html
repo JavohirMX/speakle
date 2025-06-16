@@ -11,9 +11,9 @@
         
         <!-- Animated background elements -->
         <div class="absolute inset-0 opacity-20">
-            <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow"></div>
-            <div class="absolute top-40 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 1s;"></div>
-            <div class="absolute -bottom-20 left-1/2 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+            <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl"></div>
+            <div class="absolute top-40 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl"></div>
+            <div class="absolute -bottom-20 left-1/2 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl"></div>
         </div>
 
         <div class="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
@@ -290,8 +290,9 @@
                 <!-- Enhanced Empty State -->
                 <div class="text-center py-20">
                     <div class="relative w-32 h-32 mx-auto mb-8">
-                        <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full opacity-20 animate-pulse"></div>
-                        <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
+                        <!-- Status indicator without animations -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full opacity-20"></div>
+                        <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full opacity-40"></div>
                         <div class="absolute inset-0 flex items-center justify-center">
                             <span class="text-6xl">🤝</span>
                         </div>

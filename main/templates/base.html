@@ -44,8 +44,6 @@
                     animation: {
                         'fade-in': 'fadeIn 0.5s ease-in-out',
                         'slide-up': 'slideUp 0.3s ease-out',
-                        'bounce-gentle': 'bounceGentle 0.5s ease-in-out infinite alternate',
-                        'pulse-slow': 'pulse 3s ease-in-out infinite',
                         'slide-down': 'slideDown 0.2s ease-out',
                         'scale-up': 'scaleUp 0.15s ease-out',
                     }
@@ -223,11 +221,8 @@
             transform: translateX(8px);
         }
         
-        /* Enhanced notifications */
+        /* Enhanced notifications - clean design */
         .notification-badge {
-            animation: bounceGentle 0.5s ease-in-out infinite alternate;
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-            animation: pulse-notification 2s infinite;
             position: relative;
         }
         
@@ -239,13 +234,6 @@
             border-radius: inherit;
             z-index: -1;
             opacity: 0.3;
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-        
-        @keyframes pulse-notification {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
         
         @keyframes glow {
@@ -331,7 +319,6 @@
         
         .call-icon-container {
             position: relative;
-            animation: callPulse 2s infinite;
         }
         
         .call-icon-container::before {
@@ -454,10 +441,7 @@
         .particle:nth-child(8) { left: 80%; animation-delay: 3.5s; }
         .particle:nth-child(9) { left: 90%; animation-delay: 4s; }
         
-        @keyframes callPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
+        /* Clean, minimal design - no pulse animations */
         
         @keyframes rotate {
             0% { transform: rotate(0deg); }
@@ -681,7 +665,7 @@
             height: 60px;
             font-size: 24px;
             box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
-            animation: pulse 2s infinite;
+            /* Clean design - no animations */
         }
         
         @keyframes bounceIn {
@@ -1052,10 +1036,7 @@
                 -webkit-backdrop-filter: blur(15px);
             }
             
-            /* Reduce animations for better performance */
-            .animate-pulse {
-                animation-duration: 2s;
-            }
+            /* Clean, minimal design - no pulse animations */
             
             .animate-spin {
                 animation-duration: 1.5s;
@@ -1451,10 +1432,10 @@
                         <!-- Enhanced connection quality indicator -->
                         <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 mb-3 sm:mb-4">
                             <div class="flex space-x-1">
-                                <div class="w-1.5 h-2 sm:w-2 sm:h-3 bg-green-500 rounded-full animate-pulse"></div>
-                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-500 rounded-full animate-pulse" style="animation-delay: 0.1s;"></div>
-                                <div class="w-1.5 h-4 sm:w-2 sm:h-5 bg-green-500 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
-                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-400 rounded-full animate-pulse" style="animation-delay: 0.3s;"></div>
+                                <div class="w-1.5 h-2 sm:w-2 sm:h-3 bg-green-500 rounded-full"></div>
+                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-500 rounded-full"></div>
+                                <div class="w-1.5 h-4 sm:w-2 sm:h-5 bg-green-500 rounded-full"></div>
+                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-400 rounded-full"></div>
                             </div>
                             <span class="text-xs sm:text-sm text-green-600 font-medium">Excellent Connection</span>
                         </div>
@@ -1489,7 +1470,7 @@
                     
                     <!-- Enhanced auto-decline timer -->
                     <div class="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 p-2 sm:p-3 bg-white/50 rounded-lg sm:rounded-xl backdrop-blur-sm border border-white/30">
-                        <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                        <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
                         <span id="callTimer" class="text-xs sm:text-sm text-gray-600 font-medium text-center">
                             Auto-decline in <span id="timerCountdown" class="font-bold text-orange-600">30</span>s
                         </span>
@@ -1766,11 +1747,7 @@
                         
                         badge.style.display = 'flex';
                         
-                        // Add pulsing animation for new notifications
-                        badge.classList.add('animate-pulse-slow');
-                        setTimeout(() => {
-                            badge.classList.remove('animate-pulse-slow');
-                        }, 3000);
+                        // Clean, minimal design - no animations
                     } else {
                         badge.style.display = 'none';
                     }
@@ -1800,11 +1777,7 @@
                         
                         badge.style.display = 'flex';
                         
-                        // Add pulsing animation for new messages
-                        badge.classList.add('animate-pulse-slow');
-                        setTimeout(() => {
-                            badge.classList.remove('animate-pulse-slow');
-                        }, 3000);
+                        // Clean, minimal design - no animations
                     } else {
                         badge.style.display = 'none';
                     }
@@ -2812,7 +2785,7 @@
                                 <!-- Enhanced Partner Status -->
                                 <div id="partnerStatus" class="status-indicator mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/50 backdrop-blur-sm shadow-inner bg-white/30">
                                     <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3">
-                                        <div id="statusIndicator" class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-400 animate-pulse"></div>
+                                        <div id="statusIndicator" class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-400"></div>
                                         <span id="statusText" class="font-medium text-gray-700 text-sm sm:text-base text-center">Checking availability...</span>
                                     </div>
                                 </div>
@@ -2835,7 +2808,7 @@
                                         </div>
                                         <div class="mt-2 sm:mt-3 flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 text-xs sm:text-sm text-gray-600">
                                             <div class="flex items-center space-x-2">
-                                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
                                                 <span>Personal messages increase response rates by 85%</span>
                                             </div>
                                         </div>
@@ -2877,7 +2850,7 @@
                                         <!-- Enhanced timer display -->
                                         <div class="mb-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl border border-orange-200">
                                             <div class="flex items-center justify-center space-x-3">
-                                                <div class="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                                                <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
                                                 <span class="text-orange-800 font-medium">
                                                     Expires in <span id="timeRemaining" class="font-bold text-orange-600">2:00</span>
                                                 </span>
@@ -3234,7 +3207,7 @@
         window.enterRoomAnyway = function() {
             const { matchId } = window.currentCallData;
             
-            fetch(`/chats/api/create-video-room/${matchId}/`, {
+            fetch(`/chats/create-room/${matchId}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCSRFToken(),

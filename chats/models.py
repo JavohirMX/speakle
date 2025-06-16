@@ -71,27 +71,108 @@ class CallInvitation(models.Model):
         return self.status == 'pending' and not self.is_expired()
 
 class UserPresence(models.Model):
-    """Track user online presence for better video chat UX."""
+    """Track user online presence automatically based on activity."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='presence')
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(auto_now=True)
+    last_activity = models.DateTimeField(auto_now=True)  # Track last activity for heartbeat
     current_room = models.ForeignKey(VideoRoom, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Configuration for automatic offline detection
+    OFFLINE_THRESHOLD_MINUTES = 5  # Mark offline after 5 minutes of inactivity
     
     def __str__(self):
         status = "Online" if self.is_online else f"Last seen {self.last_seen}"
         return f"{self.user.username} - {status}"
     
+    def is_recently_active(self):
+        """Check if user has been active within the offline threshold."""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        if not self.last_activity:
+            return False
+        
+        threshold = timezone.now() - timedelta(minutes=self.OFFLINE_THRESHOLD_MINUTES)
+        return self.last_activity > threshold
+    
+    def should_be_online(self):
+        """Determine if user should be considered online based on recent activity."""
+        return self.is_recently_active()
+    
     @classmethod
-    def update_presence(cls, user, is_online=True, room=None):
-        """Update user presence status."""
-        presence, created = cls.objects.get_or_create(user=user)
-        presence.is_online = is_online
+    def update_presence(cls, user, is_online=None, room=None, force_update=False):
+        """
+        Update user presence status automatically or manually.
+        
+        Args:
+            user: User instance
+            is_online: Boolean to force online/offline status, None for automatic detection
+            room: VideoRoom instance to set as current room
+            force_update: Boolean to force update even if status hasn't changed
+        """
+        from django.utils import timezone
+        
+        presence, created = cls.objects.get_or_create(
+            user=user,
+            defaults={'is_online': True, 'last_activity': timezone.now()}
+        )
+        
+        # Update activity timestamp
+        presence.last_activity = timezone.now()
+        
+        # Determine online status
+        if is_online is not None:
+            # Manual override
+            presence.is_online = is_online
+        else:
+            # Automatic detection - set online if recently active
+            presence.is_online = presence.should_be_online()
+        
+        # Handle room assignment
         if room:
             presence.current_room = room
-        elif not is_online:
+        elif not presence.is_online:
             presence.current_room = None
-        presence.save()
+        
+        # Save if changed or forced
+        if created or force_update or presence.is_online != cls.objects.get(user=user).is_online:
+            presence.save(update_fields=['is_online', 'last_activity', 'last_seen', 'current_room'])
+        
         return presence
+    
+    @classmethod
+    def mark_activity(cls, user):
+        """Mark user activity and update online status automatically."""
+        return cls.update_presence(user)
+    
+    @classmethod
+    def get_online_users(cls):
+        """Get all users who are currently online."""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Get users marked as online and recently active
+        threshold = timezone.now() - timedelta(minutes=cls.OFFLINE_THRESHOLD_MINUTES)
+        return cls.objects.filter(
+            is_online=True,
+            last_activity__gt=threshold
+        ).select_related('user')
+    
+    @classmethod
+    def cleanup_offline_users(cls):
+        """Automatically mark inactive users as offline."""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        threshold = timezone.now() - timedelta(minutes=cls.OFFLINE_THRESHOLD_MINUTES)
+        inactive_users = cls.objects.filter(
+            is_online=True,
+            last_activity__lt=threshold
+        )
+        
+        count = inactive_users.update(is_online=False, current_room=None)
+        return count
 
 class CallSession(models.Model):
     """Model to track video call sessions and analytics."""

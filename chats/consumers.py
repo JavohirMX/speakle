@@ -1344,26 +1344,29 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def set_user_online(self):
-        """Set user as online for this chat room."""
+        """Mark user activity when they connect to chat room."""
         try:
             from .models import UserPresence, ChatRoom
             
             room = ChatRoom.objects.get(room_id=self.room_id)
-            UserPresence.update_presence(self.user, is_online=True)
+            # Use mark_activity for automatic status detection
+            UserPresence.mark_activity(self.user)
             
         except Exception as e:
-            print(f"Error setting user online: {e}")
+            print(f"Error marking user activity: {e}")
 
     @database_sync_to_async
     def set_user_offline(self):
-        """Set user as offline."""
+        """Clean up presence when user disconnects from chat room."""
         try:
             from .models import UserPresence
             
-            UserPresence.update_presence(self.user, is_online=False)
+            # Don't force offline, let the automatic system handle it
+            # Just clean up inactive users
+            UserPresence.cleanup_offline_users()
             
         except Exception as e:
-            print(f"Error setting user offline: {e}")
+            print(f"Error cleaning up user presence: {e}")
 
     @database_sync_to_async
     def update_room_activity(self):

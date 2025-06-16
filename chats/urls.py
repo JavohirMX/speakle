@@ -23,9 +23,10 @@ urlpatterns = [
     path('api/call-statistics/<uuid:room_id>/', views.get_call_statistics, name='get_call_statistics'),
     path('api/submit-feedback/', views.submit_feedback, name='submit_feedback'),
     
-    # Partner availability
+    # Partner availability and presence
     path('api/partner-availability/<int:match_id>/', views.check_partner_availability, name='check_partner_availability'),
-    path('api/set-online-status/', views.set_online_status, name='set_online_status'),
+    path('api/user-status/', views.get_user_status, name='get_user_status'),
+    path('api/heartbeat/', views.heartbeat, name='heartbeat'),
     
     # Call history
     path('history/<uuid:room_id>/', views.call_history, name='call_history'),

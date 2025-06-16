@@ -683,18 +683,34 @@ class ChatsViewsTest(TestCase):
         self.assertEqual(data['invitations'][0]['caller'], 'testuser1')
         self.assertEqual(data['invitations'][0]['message'], "Let's practice!")
     
-    def test_set_online_status(self):
-        """Test setting user online status."""
+    def test_get_user_status_automatic(self):
+        """Test getting user online status with automatic detection."""
         self.client.login(username='testuser1', password='testpass123')
         
-        response = self.client.post(
-            reverse('chats:set_online_status'),
-            {'is_online': 'true'}
-        )
+        response = self.client.get(reverse('chats:get_user_status'))
         
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertTrue(data['success'])
+        self.assertIn('is_online', data)
+        self.assertIn('message', data)
+        self.assertIn('automatic', data['message'])
+        
+        # Check presence was updated automatically
+        presence = UserPresence.objects.get(user=self.user1)
+        self.assertTrue(presence.is_online)  # Should be online since they just made a request
+    
+    def test_heartbeat_endpoint(self):
+        """Test heartbeat endpoint for maintaining presence."""
+        self.client.login(username='testuser1', password='testpass123')
+        
+        response = self.client.post(reverse('chats:heartbeat'))
+        
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertTrue(data['success'])
+        self.assertIn('is_online', data)
+        self.assertIn('timestamp', data)
         
         # Check presence was updated
         presence = UserPresence.objects.get(user=self.user1)
@@ -706,7 +722,8 @@ class ChatsViewsTest(TestCase):
             ('chats:get_video_room_url', [self.match.id]),
             ('chats:send_call_invitation', [self.match.id]),
             ('chats:get_pending_invitations', []),
-            ('chats:set_online_status', []),
+            ('chats:get_user_status', []),
+            ('chats:heartbeat', []),
         ]
         
         for endpoint_name, args in endpoints:

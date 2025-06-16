@@ -11,9 +11,9 @@
         
         <!-- Animated background elements -->
         <div class="absolute inset-0 opacity-20">
-            <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow"></div>
-            <div class="absolute top-40 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 1s;"></div>
-            <div class="absolute -bottom-20 left-1/2 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+            <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl"></div>
+            <div class="absolute top-40 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl"></div>
+            <div class="absolute -bottom-20 left-1/2 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl"></div>
         </div>
 
         <div class="relative max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
@@ -201,9 +201,10 @@
                     </div>
                 {% else %}
                     <div class="text-center py-20">
+                        <!-- Status indicator without animations for incoming requests -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20"></div>
+                        <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40"></div>
                         <div class="relative w-32 h-32 mx-auto mb-8">
-                            <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
-                            <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <span class="text-6xl">📭</span>
                             </div>
@@ -360,9 +361,10 @@
                     </div>
                 {% else %}
                     <div class="text-center py-20">
+                        <!-- Status indicator without animations for sent requests -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-20"></div>
+                        <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full opacity-40"></div>
                         <div class="relative w-32 h-32 mx-auto mb-8">
-                            <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-20 animate-pulse"></div>
-                            <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <span class="text-6xl">📤</span>
                             </div>
@@ -497,9 +499,10 @@ function updateIncomingRequests(requests) {
     if (requests.length === 0) {
         container.innerHTML = `
             <div class="text-center py-20">
+                <!-- Status indicator without animations for incoming requests -->
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20"></div>
+                <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40"></div>
                 <div class="relative w-32 h-32 mx-auto mb-8">
-                    <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
-                    <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
                     <div class="absolute inset-0 flex items-center justify-center">
                         <span class="text-6xl">📭</span>
                     </div>
@@ -619,9 +622,10 @@ function updateOutgoingRequests(requests) {
     if (requests.length === 0) {
         container.innerHTML = `
             <div class="text-center py-20">
+                <!-- Status indicator without animations for sent requests -->
+                <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-20"></div>
+                <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full opacity-40"></div>
                 <div class="relative w-32 h-32 mx-auto mb-8">
-                    <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-20 animate-pulse"></div>
-                    <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full opacity-40 animate-pulse" style="animation-delay: 0.5s;"></div>
                     <div class="absolute inset-0 flex items-center justify-center">
                         <span class="text-6xl">📤</span>
                     </div>
