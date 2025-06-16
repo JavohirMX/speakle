@@ -6,7 +6,7 @@ class UserRegistrationForm(UserCreationForm):
     """Extended user registration form with additional fields."""
     email = forms.EmailField(required=True)
     first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=False)
     
     # Updated to use Language model
     native_language = forms.ModelChoiceField(
@@ -48,6 +48,9 @@ class UserRegistrationForm(UserCreationForm):
         for field_name, field in self.fields.items():
             if field_name not in ['native_language', 'target_language', 'target_proficiency']:
                 field.widget.attrs['class'] = 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
+        
+        # Add autofocus to first_name field
+        self.fields['first_name'].widget.attrs['autofocus'] = True
     
     def clean(self):
         cleaned_data = super().clean()
