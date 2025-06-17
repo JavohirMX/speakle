@@ -4,7 +4,8 @@
 - **name**: Speakle
 - **description**: Global Language Exchange Platform - A comprehensive Django-based platform that connects language learners worldwide through intelligent matching and real-time video conversations
 - **primary_language**: Python
-- **repo_url**: __TBD__
+- **repo_url**: [Speakle](https://github.com/JavohirMX/speakle)
+- **project_url**: [Speakle](https://speakle.javohirmx.com/)
 - **version**: __TBD__
 - **mission**: Break down language barriers and cultural boundaries by providing an accessible, secure, and engaging platform for language practice and cultural exchange
 
