@@ -95,6 +95,12 @@ class MatchingService:
         ).values_list('sender_id', 'receiver_id'):
             excluded.update((s_id, r_id))
 
+        from users.models import UserBlock
+        for b1, b2 in UserBlock.objects.filter(
+            Q(blocker=user) | Q(blocked=user)
+        ).values_list('blocker_id', 'blocked_id'):
+            excluded.update((b1, b2))
+
         existing = set(PotentialMatch.objects.filter(user=user).values_list('potential_partner_id', flat=True))
         languages = {l.id: l for l in Language.objects.filter(id__in=set(user_can_teach) | set(user_wants_to_learn))}
 
@@ -142,6 +148,9 @@ class MatchingService:
         - A previously declined/cancelled request is re-opened.
         """
         if sender.id == receiver.id:
+            return None, False
+        from users.models import UserBlock
+        if UserBlock.either_way(sender, receiver):
             return None, False
         with transaction.atomic():
             if Match.objects.filter(

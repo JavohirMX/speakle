@@ -4,8 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth import get_user_model
 from .forms import UserRegistrationForm, UserProfileForm, UserLanguageForm
-from .models import UserLanguage
+from .models import UserLanguage, UserBlock, UserReport
 
 def register_view(request):
     """User registration view."""
@@ -118,3 +120,41 @@ def delete_language_view(request, language_id):
         return redirect('users:profile')
     
     return render(request, 'users/delete_language.html', {'user_language': user_language})
+
+
+
+@login_required
+@require_POST
+def block_user_view(request, user_id):
+    """Block a user: ends any active match, cancels pending requests, hides them from matching."""
+    from django.db.models import Q
+    from django.utils import timezone
+    from matches.models import Match, MatchRequest
+    target = get_object_or_404(get_user_model(), id=user_id)
+    if target.id == request.user.id:
+        return JsonResponse({'success': False, 'error': 'You cannot block yourself.'}, status=400)
+    UserBlock.objects.get_or_create(blocker=request.user, blocked=target)
+    pair = Q(user1=request.user, user2=target) | Q(user1=target, user2=request.user)
+    Match.objects.filter(pair, status__in=['active', 'pending', 'accepted']).update(
+        status='ended', ended_at=timezone.now(), ended_by=request.user,
+        end_reason='Blocked', updated_at=timezone.now())
+    MatchRequest.objects.filter(
+        Q(sender=request.user, receiver=target) | Q(sender=target, receiver=request.user),
+        status='pending').update(status='cancelled', responded_at=timezone.now())
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def report_user_view(request, user_id):
+    """File a report about a user for admin review."""
+    target = get_object_or_404(get_user_model(), id=user_id)
+    if target.id == request.user.id:
+        return JsonResponse({'success': False, 'error': 'You cannot report yourself.'}, status=400)
+    reason = request.POST.get('reason', '')
+    if reason not in dict(UserReport.REASON_CHOICES):
+        return JsonResponse({'success': False, 'error': 'Choose a valid reason.'}, status=400)
+    UserReport.objects.create(
+        reporter=request.user, reported=target, reason=reason,
+        details=request.POST.get('details', '')[:2000])
+    return JsonResponse({'success': True})

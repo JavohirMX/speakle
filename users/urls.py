@@ -11,4 +11,6 @@ urlpatterns = [
     path('profile/add-language/', views.add_language_view, name='add_language'),
     path('profile/edit-language/<int:language_id>/', views.edit_language_view, name='edit_language'),
     path('profile/delete-language/<int:language_id>/', views.delete_language_view, name='delete_language'),
+    path('block/<int:user_id>/', views.block_user_view, name='block_user'),
+    path('report/<int:user_id>/', views.report_user_view, name='report_user'),
 ]
