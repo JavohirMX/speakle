@@ -2,7 +2,7 @@
 
 {% block title %}Speakle - Find Your Perfect Language Exchange Partner{% endblock %}
 
-{% block meta_description %}Find your perfect language exchange partner on Speakle. Practice speaking with native speakers worldwide through video chat. Join thousands of learners improving their language skills naturally.{% endblock %}
+{% block meta_description %}Find your perfect language exchange partner on Speakle. Practice speaking with native speakers worldwide through video chat. Free, two-way language exchange over browser video chat.{% endblock %}
 
 {% block extra_css %}
 
@@ -177,7 +177,7 @@
             <div class="mb-8">
                 <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white border border-white border-opacity-30 backdrop-blur-sm">
                     <span class="pulse-dot"></span>
-                    <span id="userCount">10,000+</span> active learners worldwide
+                    Free language exchange by video - no downloads
                 </span>
             </div>
             
@@ -191,8 +191,8 @@
             </h1>
             
             <p class="text-lg sm:text-xl lg:text-2xl mb-8 max-w-4xl mx-auto leading-relaxed text-blue-50">
-                Join thousands of language learners worldwide. Find your perfect language exchange partner 
-                and practice speaking through real conversations via video chat.
+                Swap languages with real people. Teach what you speak, learn what you want,
+                and practice live over video chat.
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -208,21 +208,23 @@
                 </a>
             </div>
             
-            <!-- Quick stats -->
+            <!-- Quick stats (real numbers from the database) -->
+            {% if stats.members >= 10 %}
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto text-center">
                 <div class="p-4">
-                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-languages">50+</div>
+                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1">{{ stats.languages }}</div>
                     <div class="text-sm text-blue-100">Languages</div>
                 </div>
                 <div class="p-4">
-                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-countries">120+</div>
-                    <div class="text-sm text-blue-100">Countries</div>
+                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1">{{ stats.members }}</div>
+                    <div class="text-sm text-blue-100">Members</div>
                 </div>
                 <div class="p-4">
-                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-matches">1M+</div>
-                    <div class="text-sm text-blue-100">Successful Matches</div>
+                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1">{{ stats.matches }}</div>
+                    <div class="text-sm text-blue-100">Active language partnerships</div>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
     
@@ -256,10 +258,10 @@
                 </div>
                 <h3 class="text-xl font-bold mb-4 text-gray-900">Global Community</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    Connect with native speakers from over 120 countries. Practice with real people, not bots, and experience authentic cultural exchange.
+                    Connect with native speakers from around the world. Practice with real people, not bots, and experience authentic cultural exchange.
                 </p>
                 <div class="mt-6 text-sm text-blue-600 font-medium">
-                    Join 10,000+ active learners →
+                    Join the community →
                 </div>
             </div>
 
@@ -343,7 +345,7 @@
                         </div>
                         <div class="text-left">
                             <div class="text-sm font-medium text-gray-900">Smart matching algorithm</div>
-                            <div class="text-xs text-gray-500">99% compatibility rate</div>
+                            <div class="text-xs text-gray-500">Matched on languages and interests</div>
                         </div>
                     </div>
                 </div>
@@ -428,7 +430,7 @@
         </div>
         
         <div class="text-center fade-in-up">
-            <p class="text-gray-600 mb-6">Don't see your language? We support 50+ languages with new ones added regularly.</p>
+            <p class="text-gray-600 mb-6">Don't see your language? We support {{ stats.languages }} languages with new ones added regularly.</p>
             <a href="{% url 'users:register' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors focus-ring">
                 View All Languages
                 <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,70 +441,25 @@
     </div>
 </section>
 
-<!-- Testimonials Section -->
+<!-- Why language exchange works -->
 <section class="py-20 lg:py-28">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 fade-in-up">
-            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-800 mb-4">
-                💬 Success Stories
-            </div>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">What Our Users Say</h2>
-            <p class="text-lg sm:text-xl text-gray-600">Real stories from language learners who found success on Speakle</p>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Why a language exchange?</h2>
+            <p class="text-lg sm:text-xl text-gray-600">You teach what you speak. Your partner teaches what you want to learn.</p>
         </div>
-
         <div class="grid md:grid-cols-3 gap-8">
             <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                        M
-                    </div>
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-900">Maria Rodriguez</div>
-                        <div class="text-sm text-gray-500">Learning English • Spain</div>
-                    </div>
-                </div>
-                <p class="text-gray-600 leading-relaxed">
-                    "I've improved my English so much in just 3 months! The video chats feel natural and my conversation partner is now a great friend."
-                </p>
-                <div class="flex mt-4 text-yellow-400">
-                    ⭐⭐⭐⭐⭐
-                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">Free, and fair for both sides</h3>
+                <p class="text-gray-600 leading-relaxed">No tutor fees. Every partnership is a two-way swap, so both people get speaking time in the language they care about.</p>
             </div>
-
             <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold">
-                        J
-                    </div>
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-900">James Chen</div>
-                        <div class="text-sm text-gray-500">Learning Spanish • USA</div>
-                    </div>
-                </div>
-                <p class="text-gray-600 leading-relaxed">
-                    "The matching system is incredible. I found someone with similar interests and now we practice twice a week. My Spanish has never been better!"
-                </p>
-                <div class="flex mt-4 text-yellow-400">
-                    ⭐⭐⭐⭐⭐
-                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">Real conversation, not drills</h3>
+                <p class="text-gray-600 leading-relaxed">Talk about shared interests with someone who speaks the language every day. That is the practice apps cannot give you.</p>
             </div>
-
             <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                        A
-                    </div>
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-900">Akiko Tanaka</div>
-                        <div class="text-sm text-gray-500">Learning French • Japan</div>
-                    </div>
-                </div>
-                <p class="text-gray-600 leading-relaxed">
-                    "Speakle made learning French fun and social. I love how easy it is to schedule calls and the video quality is always perfect."
-                </p>
-                <div class="flex mt-4 text-yellow-400">
-                    ⭐⭐⭐⭐⭐
-                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">Start in minutes</h3>
+                <p class="text-gray-600 leading-relaxed">Pick the languages you speak and the ones you are learning. We suggest partners who fit both ways, and you chat or call in the browser.</p>
             </div>
         </div>
     </div>
@@ -520,7 +477,7 @@
                 Ready to Start Your Language Journey?
             </h2>
             <p class="text-lg sm:text-xl mb-8 text-blue-100">
-                Join thousands of learners who are already improving their language skills through real conversations. 
+                Practice your next language through real conversations. 
                 It's free to get started!
             </p>
             
@@ -569,54 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.fade-in-up').forEach(el => {
         observer.observe(el);
     });
-    
-    // Counter animations
-    function animateCounters() {
-        const counters = [
-            { id: 'stat-languages', target: 50, suffix: '+' },
-            { id: 'stat-countries', target: 120, suffix: '+' },
-            { id: 'stat-matches', target: 1000000, suffix: '+', format: 'short' },
-            { id: 'userCount', target: 10000, suffix: '+', format: 'short' }
-        ];
-        
-        counters.forEach(counter => {
-            const element = document.getElementById(counter.id);
-            if (!element) return;
-            
-            let current = 0;
-            const increment = counter.target / 100;
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= counter.target) {
-                    current = counter.target;
-                    clearInterval(timer);
-                }
-                
-                let displayValue = Math.floor(current);
-                if (counter.format === 'short' && displayValue >= 1000) {
-                    if (displayValue >= 1000000) {
-                        displayValue = (displayValue / 1000000).toFixed(1) + 'M';
-                    } else {
-                        displayValue = (displayValue / 1000).toFixed(1) + 'K';
-                    }
-                }
-                element.textContent = displayValue + counter.suffix;
-            }, 20);
-        });
-    }
-    
-    // Trigger counter animation when stats section is visible
-    const statsSection = document.querySelector('.hero-bg');
-    if (statsSection) {
-        const statsObserver = new IntersectionObserver(function(entries) {
-            if (entries[0].isIntersecting) {
-                animateCounters();
-                statsObserver.unobserve(statsSection);
-            }
-        }, { threshold: 0.5 });
-        
-        statsObserver.observe(statsSection);
-    }
     
     // Language card interactions
     document.querySelectorAll('.language-card').forEach(card => {
