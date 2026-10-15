@@ -1,4 +1,7 @@
+import re
+from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from users.models import UserLanguage, Language
 from .models import PotentialMatch, Match, MatchRequest
@@ -8,6 +11,11 @@ User = get_user_model()
 class MatchingService:
     """Service class to handle user matching logic."""
     
+    @staticmethod
+    def _tokenize_interests(text):
+        """Split free-text interests on commas, spaces, semicolons etc. (min 2 chars)."""
+        return {t for t in re.split(r'[^\w+#]+', (text or '').lower()) if len(t) > 1}
+
     @staticmethod
     def calculate_compatibility_score(user, potential_partner, user_teaches_lang, user_learns_lang):
         """Calculate compatibility score between two users."""
@@ -43,10 +51,10 @@ class MatchingService:
         
         # Interest matching bonus
         if user.interests and potential_partner.interests:
-            user_interests = set(user.interests.lower().split())
-            partner_interests = set(potential_partner.interests.lower().split())
-            common_interests = user_interests.intersection(partner_interests)
-            score += len(common_interests) * 5.0
+            user_interests = MatchingService._tokenize_interests(user.interests)
+            partner_interests = MatchingService._tokenize_interests(potential_partner.interests)
+            common_interests = user_interests & partner_interests
+            score += min(len(common_interests), 6) * 5.0
         
         # Bio length bonus (users with detailed bios are more serious)
         if len(user.bio) > 50 and len(potential_partner.bio) > 50:
@@ -76,107 +84,130 @@ class MatchingService:
         if not user_can_teach or not user_wants_to_learn:
             return []
         
-        potential_matches = []
-        
-        # Find users who want to learn what this user can teach
-        # AND can teach what this user wants to learn
-        for teach_lang in user_can_teach:
-            for learn_lang in user_wants_to_learn:
-                # Find users who:
-                # 1. Want to learn what user can teach (teach_lang)
-                # 2. Can teach what user wants to learn (learn_lang)
-                # 3. Are not the same user
-                potential_partners = User.objects.filter(
+        # Users we should not suggest: self, active/pending matches, pending requests either way
+        excluded = {user.id}
+        for u1, u2 in Match.objects.filter(
+            Q(user1=user) | Q(user2=user), status__in=['active', 'pending', 'accepted']
+        ).values_list('user1_id', 'user2_id'):
+            excluded.update((u1, u2))
+        for s_id, r_id in MatchRequest.objects.filter(
+            Q(sender=user) | Q(receiver=user), status='pending'
+        ).values_list('sender_id', 'receiver_id'):
+            excluded.update((s_id, r_id))
+
+        existing = set(PotentialMatch.objects.filter(user=user).values_list('potential_partner_id', flat=True))
+        languages = {l.id: l for l in Language.objects.filter(id__in=set(user_can_teach) | set(user_wants_to_learn))}
+
+        # Keep only the BEST scoring language pairing per partner
+        best = {}
+        for teach_lang in set(user_can_teach):
+            for learn_lang in set(user_wants_to_learn):
+                if teach_lang == learn_lang:
+                    continue
+                partners = User.objects.filter(
                     userlanguage__language=teach_lang,
                     userlanguage__language_type='learning'
                 ).filter(
                     userlanguage__language=learn_lang,
                     userlanguage__language_type__in=['native', 'fluent']
-                ).exclude(id=user.id).distinct()
-                
-                for partner in potential_partners:
-                    # Check if match already exists
-                    existing_match = PotentialMatch.objects.filter(
-                        user=user,
-                        potential_partner=partner
-                    ).exists()
-                    
-                    if not existing_match:
-                        # Calculate compatibility score
-                        score = MatchingService.calculate_compatibility_score(
-                            user, partner, teach_lang, learn_lang
-                        )
-                        
-                        # Create potential match
-                        potential_match = PotentialMatch.objects.create(
-                            user=user,
-                            potential_partner=partner,
-                            user_teaches=Language.objects.get(id=teach_lang),
-                            user_learns=Language.objects.get(id=learn_lang),
-                            compatibility_score=score
-                        )
-                        potential_matches.append(potential_match)
-        
+                ).exclude(id__in=excluded).exclude(id__in=existing).distinct()
+                for partner in partners:
+                    score = MatchingService.calculate_compatibility_score(
+                        user, partner, teach_lang, learn_lang
+                    )
+                    cur = best.get(partner.id)
+                    if cur is None or score > cur[0]:
+                        best[partner.id] = (score, partner, teach_lang, learn_lang)
+
+        potential_matches = []
+        for score, partner, teach_lang, learn_lang in best.values():
+            potential_matches.append(PotentialMatch.objects.create(
+                user=user,
+                potential_partner=partner,
+                user_teaches=languages[teach_lang],
+                user_learns=languages[learn_lang],
+                compatibility_score=score,
+            ))
+        potential_matches.sort(key=lambda m: -m.compatibility_score)
         return potential_matches
-    
+
     @staticmethod
     def send_match_request(sender, receiver, sender_teaches_lang, sender_learns_lang, message=""):
-        """Send a match request from sender to receiver."""
-        # Check if request already exists
-        existing_request = MatchRequest.objects.filter(
-            sender=sender,
-            receiver=receiver
-        ).first()
-        
-        if existing_request:
-            return existing_request, False  # Already exists
-        
-        # Check if there's already a match between these users
-        existing_match = Match.objects.filter(
-            Q(user1=sender, user2=receiver) | Q(user1=receiver, user2=sender)
-        ).first()
-        
-        if existing_match:
-            return None, False  # Already matched
-        
-        # Create new match request
-        match_request = MatchRequest.objects.create(
-            sender=sender,
-            receiver=receiver,
-            sender_teaches=sender_teaches_lang,
-            sender_learns=sender_learns_lang,
-            message=message
-        )
-        
-        return match_request, True
-    
+        """Send a match request. Returns (request_or_None, created).
+
+        - Self requests and already-matched pairs return (None, False).
+        - A pending request already sent returns (existing, False).
+        - If the receiver already asked the sender, that request is left for the
+          sender to accept (returned with created=False) to avoid duplicate matches.
+        - A previously declined/cancelled request is re-opened.
+        """
+        if sender.id == receiver.id:
+            return None, False
+        with transaction.atomic():
+            if Match.objects.filter(
+                Q(user1=sender, user2=receiver) | Q(user1=receiver, user2=sender),
+                status__in=['active', 'pending', 'accepted'],
+            ).exists():
+                return None, False
+
+            reverse = MatchRequest.objects.filter(
+                sender=receiver, receiver=sender, status='pending'
+            ).first()
+            if reverse:
+                return reverse, False
+
+            existing = MatchRequest.objects.select_for_update().filter(
+                sender=sender, receiver=receiver
+            ).first()
+            if existing:
+                if existing.status == 'pending':
+                    return existing, False
+                existing.status = 'pending'
+                existing.sender_teaches = sender_teaches_lang
+                existing.sender_learns = sender_learns_lang
+                existing.message = message
+                existing.responded_at = None
+                existing.save()
+                return existing, True
+
+            match_request = MatchRequest.objects.create(
+                sender=sender,
+                receiver=receiver,
+                sender_teaches=sender_teaches_lang,
+                sender_learns=sender_learns_lang,
+                message=message,
+            )
+            return match_request, True
+
     @staticmethod
     def respond_to_match_request(match_request, accept=True):
-        """Respond to a match request (accept or decline)."""
-        from django.utils import timezone
-        
-        if accept:
-            match_request.status = 'accepted'
+        """Accept or decline a pending request. Idempotent: a non-pending request is a no-op."""
+        with transaction.atomic():
+            match_request = MatchRequest.objects.select_for_update().get(pk=match_request.pk)
+            if match_request.status != 'pending':
+                return None
+            match_request.status = 'accepted' if accept else 'declined'
             match_request.responded_at = timezone.now()
             match_request.save()
-            
-            # Create a confirmed match
-            match = Match.objects.create(
+            if not accept:
+                return None
+            match, created = Match.objects.get_or_create(
                 user1=match_request.sender,
                 user2=match_request.receiver,
-                user1_teaches=match_request.sender_teaches,
-                user1_learns=match_request.sender_learns,
-                status='active'
+                defaults=dict(
+                    user1_teaches=match_request.sender_teaches,
+                    user1_learns=match_request.sender_learns,
+                    status='active',
+                ),
             )
-            
+            if not created and match.status != 'active':
+                match.status = 'active'
+                match.user1_teaches = match_request.sender_teaches
+                match.user1_learns = match_request.sender_learns
+                match.ended_at = None
+                match.save()
             return match
-        else:
-            match_request.status = 'declined'
-            match_request.responded_at = timezone.now()
-            match_request.save()
-            
-            return None
-    
+
     @staticmethod
     def get_user_matches(user, status='active'):
         """Get all matches for a user with a specific status."""

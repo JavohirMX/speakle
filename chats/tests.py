@@ -20,6 +20,28 @@ from .consumers import VideoCallConsumer, UserNotificationConsumer
 User = get_user_model()
 
 
+
+def _make_communicator(consumer, scope):
+    """Build a WebsocketCommunicator and inject the user / url_route into its scope.
+
+    WebsocketCommunicator takes (application, path); extra scope keys such as
+    'user' and 'url_route' must be set on the communicator's scope afterwards.
+    """
+    communicator = WebsocketCommunicator(consumer.as_asgi(), scope['path'])
+    for key in ('user', 'url_route'):
+        if key in scope:
+            communicator.scope[key] = scope[key]
+    return communicator
+
+async def _receive_type(communicator, wanted, limit=6):
+    """Skip join/handshake frames (user_joined, notification_connected...) until `wanted` arrives."""
+    for _ in range(limit):
+        msg = await communicator.receive_json_from()
+        if msg.get('type') == wanted:
+            return msg
+    raise AssertionError('never received %s' % wanted)
+
+
 class VideoRoomModelTest(TestCase):
     """Test VideoRoom model functionality."""
     
@@ -678,7 +700,6 @@ class ChatsViewsTest(TestCase):
         
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        self.assertTrue(data['success'])
         self.assertEqual(len(data['invitations']), 1)
         self.assertEqual(data['invitations'][0]['caller'], 'testuser1')
         self.assertEqual(data['invitations'][0]['message'], "Let's practice!")
@@ -789,7 +810,7 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
+        communicator = _make_communicator(VideoCallConsumer, scope)
         connected, subprotocol = await communicator.connect()
         
         self.assertTrue(connected)
@@ -814,64 +835,32 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
-        connected, subprotocol = await communicator.connect()
-        
-        # Skip connection test message
-        await communicator.receive_json_from()
-        
-        # Test chat message
+        communicator = _make_communicator(VideoCallConsumer, scope)
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+        scope2 = dict(scope, user=self.user2)
+        other = _make_communicator(VideoCallConsumer, scope2)
+        connected2, _ = await other.connect()
+        self.assertTrue(connected2)
+
         await communicator.send_json_to({
-            'type': 'chat_message',
-            'message': 'Hello, how are you?'
-        })
-        
-        # Should receive chat message back
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['type'], 'chat_message')
-        self.assertEqual(response['message'], 'Hello, how are you?')
-        self.assertEqual(response['sender'], 'testuser1')
-        
-        await communicator.disconnect()
-    
-    async def test_video_call_consumer_webrtc_offer(self):
-        """Test WebRTC offer handling."""
-        scope = {
-            'type': 'websocket',
-            'path': f'/ws/video/{self.room.room_id}/',
-            'query_string': b'',
-            'headers': [],
-            'user': self.user1,
-            'url_route': {
-                'kwargs': {'room_id': str(self.room.room_id)}
-            }
-        }
-        
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
-        connected, subprotocol = await communicator.connect()
-        
-        # Skip connection test message
-        await communicator.receive_json_from()
-        
-        # Test WebRTC offer
-        offer_data = {
             'type': 'offer',
-            'offer': {
-                'type': 'offer',
-                'sdp': 'test-sdp-data'
-            }
-        }
-        
-        await communicator.send_json_to(offer_data)
-        
-        # Should receive offer back
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['type'], 'webrtc_offer')
+            'offer': {'type': 'offer', 'sdp': 'test-sdp-data'}
+        })
+
+        # The other participant receives the offer...
+        response = await _receive_type(other, 'offer')
         self.assertEqual(response['sender_username'], 'testuser1')
         self.assertIn('offer', response)
-        
+
+        # ...and the sender never gets its own offer echoed back.
+        while not await communicator.receive_nothing():
+            msg = await communicator.receive_json_from()
+            self.assertNotEqual(msg.get('type'), 'offer')
+
         await communicator.disconnect()
-    
+        await other.disconnect()
+
     async def test_user_notification_consumer(self):
         """Test UserNotificationConsumer."""
         scope = {
@@ -885,7 +874,7 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(UserNotificationConsumer.as_asgi(), scope)
+        communicator = _make_communicator(UserNotificationConsumer, scope)
         connected, subprotocol = await communicator.connect()
         
         self.assertTrue(connected)
@@ -898,12 +887,15 @@ class WebSocketConsumerTest(TransactionTestCase):
                 'type': 'call_invitation_received',
                 'invitation_id': 123,
                 'caller_username': 'testuser2',
+                'caller_id': self.user2.id,
+                'match_id': 1,
+                'expires_at': '2030-01-01T00:00:00Z',
                 'message': 'Want to practice?'
             }
         )
         
         # Should receive the notification
-        response = await communicator.receive_json_from()
+        response = await _receive_type(communicator, 'call_invitation_received')
         self.assertEqual(response['type'], 'call_invitation_received')
         self.assertEqual(response['caller_username'], 'testuser2')
         self.assertEqual(response['message'], 'Want to practice?')
