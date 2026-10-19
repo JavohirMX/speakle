@@ -554,3 +554,20 @@ class QuickMatchEmailGateTests(TestCase):
         u = get_user_model().objects.create_user('uv2', 'uv2@x.com', 'pw12345!')
         with self.settings(QUICK_MATCH_REQUIRE_VERIFIED_EMAIL=False):
             self.assertTrue(quick.can_quick_match(u))
+
+
+class RequestsPageTests(TestCase):
+    def test_requests_page_lists_incoming_and_outgoing(self):
+        from .models import MatchRequest
+        U = get_user_model()
+        a = U.objects.create_user('ra', 'ra@x.com', 'pw12345!')
+        b = U.objects.create_user('rb', 'rb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        MatchRequest.objects.create(sender=b, receiver=a, sender_teaches=ko, sender_learns=en, message='hi there')
+        MatchRequest.objects.create(sender=a, receiver=b, sender_teaches=en, sender_learns=ko)
+        c = Client(); c.force_login(a)
+        r = c.get(reverse('matches:requests'))
+        self.assertContains(r, 'data-respond="accept"')
+        self.assertContains(r, 'hi there')
+        self.assertContains(r, 'data-cancel')
