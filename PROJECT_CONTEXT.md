@@ -22,7 +22,7 @@
 - **frontend**:
   - **framework**: Vanilla JavaScript (no frameworks)
   - **language**: JavaScript/HTML5
-  - **styling**: TailwindCSS (CDN), Custom CSS
+  - **styling**: TailwindCSS (compiled to static/css/tailwind.css), custom CSS in main/templates/partials/design_css.html
   - **video**: WebRTC APIs (browser native)
 - **backend**:
   - **framework**: Django 5.2.1

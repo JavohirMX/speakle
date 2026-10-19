@@ -1,0 +1,24 @@
+# Changelog
+
+## Unreleased (dev)
+
+### Added
+- Redesign: "sticker pop" design system, app shell with side rail and mobile tab bar, new landing page.
+- UX pass: toasts for server messages, inline sign-up validation, auto-login after sign-up, working password reset, safe `?next=` redirect, nav badges and correct active states.
+- Email verification (signed, expiring tokens). Quick match can require a verified email.
+- Quick match: timed trial call with keep or skip.
+- Conversation prompts and private post-call feedback on matches.
+- Block and report users, with admin review.
+- SEO: canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, `noindex` on non-public pages.
+- Favicons, web manifest, custom 404 and 500 pages.
+- CI workflow for tests and migration checks.
+
+### Changed
+- Tailwind CDN replaced by compiled CSS. Fonts are self-hosted.
+- Matching: no duplicate or reverse requests, re-send after decline, best language pairing per partner.
+- Landing page copy: removed invented statistics and testimonials.
+- Text chat and video room: labelled controls, specific camera and microphone errors, auto-reconnect, input no longer hidden by the tab bar.
+
+### Migrations
+- `matches/0003_matchfeedback`, `matches/0004_quick_match`, `users/0003_userblock_userreport`, `users/0004_email_verified`.
+- If you applied the earlier `matches/0003_quick_match` locally, it was renamed to `0004_quick_match`. Remove its row from `django_migrations` and run `migrate matches 0004 --fake`, or recreate your dev database.

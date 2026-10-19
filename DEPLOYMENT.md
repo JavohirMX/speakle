@@ -1,3 +1,5 @@
+> Note: the admin user is only created when `DJANGO_SUPERUSER_PASSWORD` is set. Set `SECRET_KEY` and `SITE_URL` too. See `env.example`.
+
 # Speakle Docker Deployment Guide
 
 This guide provides comprehensive instructions for deploying the Speakle language exchange platform using Docker.
@@ -64,7 +66,7 @@ speakle/
 ├── Dockerfile              # Production Django container
 ├── Dockerfile.dev          # Development Django container
 ├── docker-compose.yml      # Production stack
-├── docker-compose.dev.yml  # Development stack
+├── docker-compose.dev.yml  # Development stack (not in the repo yet; use the local run steps in README.md)
 ├── nginx.conf              # Nginx configuration
 ├── entrypoint.sh           # Container initialization script
 ├── .dockerignore           # Docker build context exclusions
