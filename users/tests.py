@@ -292,3 +292,36 @@ class BlockClearsSuggestionsTests(TestCase):
         r = self.client.post(f'/users/block/{b.id}/')
         self.assertEqual(r.status_code, 200)
         self.assertFalse(PotentialMatch.objects.exists())
+
+
+class PasswordResetFlowTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        self.U = get_user_model()
+        self.u = self.U.objects.create_user('pr_user', 'pr@x.com', 'OldPw12345!')
+
+    def test_unknown_email_looks_the_same_and_sends_nothing(self):
+        from django.core import mail
+        r = self.client.post('/users/password-reset/', {'email': 'nobody@x.com'})
+        self.assertRedirects(r, '/users/password-reset/sent/')
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_full_flow_sets_new_password(self):
+        import re
+        from django.core import mail
+        r = self.client.post('/users/password-reset/', {'email': 'pr@x.com'})
+        self.assertRedirects(r, '/users/password-reset/sent/')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['pr@x.com'])
+        link = re.search(r'/users/password-reset/[\w-]+/[\w-]+/', mail.outbox[0].body).group(0)
+        r = self.client.get(link, follow=True)
+        r = self.client.post(r.redirect_chain[-1][0], {'new_password1': 'BrandNew-98765!', 'new_password2': 'BrandNew-98765!'})
+        self.assertRedirects(r, '/users/password-reset/done/')
+        self.assertTrue(self.client.login(username='pr_user', password='BrandNew-98765!'))
+        self.assertFalse(self.client.login(username='pr_user', password='OldPw12345!'))
+
+    def test_deactivated_account_gets_no_reset_email(self):
+        from django.core import mail
+        self.U.objects.filter(pk=self.u.pk).update(is_active=False)
+        self.client.post('/users/password-reset/', {'email': 'pr@x.com'})
+        self.assertEqual(len(mail.outbox), 0)
