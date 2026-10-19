@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from users.throttle import chat_allowed
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -871,6 +872,9 @@ def send_chat_message(request, room_id):
         if not room.can_user_access(request.user):
             return JsonResponse({'error': 'Access denied'}, status=403)
         
+        if not chat_allowed(request.user.id):
+            return JsonResponse({'error': 'You are sending messages too fast. Wait a moment.'}, status=429)
+
         content = request.POST.get('content', '').strip()
         reply_to_id = request.POST.get('reply_to')
         

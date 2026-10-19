@@ -30,3 +30,22 @@ def record_login_failure(request, username):
 
 def clear_login_failures(request, username):
     cache.delete(_login_key(request, username))
+
+
+def allow(key, limit, window):
+    """Count one event under `key`. Returns False once more than `limit` happened in `window` seconds."""
+    cache.add(key, 0, window)
+    try:
+        count = cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, window)
+        count = 1
+    return count <= limit
+
+
+CHAT_LIMIT = 30
+CHAT_WINDOW = 60
+
+
+def chat_allowed(user_id):
+    return allow('chat-send:%s' % user_id, CHAT_LIMIT, CHAT_WINDOW)

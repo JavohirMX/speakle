@@ -1059,6 +1059,8 @@ class ChatListPageTests(TestCase):
 
 class TextChatApiTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()  # the send throttle lives in the cache
         from matches.models import Match
         from .models import ChatRoom
         U = get_user_model()
@@ -1076,6 +1078,17 @@ class TextChatApiTests(TestCase):
         with patch('chats.views.send_user_notification'):
             return self.client.post(reverse('chats:send_chat_message', args=[self.room.room_id]),
                                     {'content': content, **extra})
+
+    def test_flooding_is_limited_per_user(self):
+        from django.core.cache import cache
+        from .models import ChatMessage
+        from users.throttle import CHAT_LIMIT
+        cache.clear()
+        for i in range(CHAT_LIMIT):
+            self.assertEqual(self._send('m%d' % i).status_code, 200)
+        self.assertEqual(self._send('one too many').status_code, 429)
+        self.assertEqual(ChatMessage.objects.filter(content='one too many').count(), 0)
+        cache.clear()
 
     def test_send_message_saves_it(self):
         r = self._send('  hello  ')

@@ -5,6 +5,7 @@ from channels.db import database_sync_to_async
 from django.db.models import Q
 from django.db import models
 from django.urls import reverse
+from users.throttle import chat_allowed
 
 class VideoCallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -993,6 +994,13 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_send_message(self, data):
         """Handle sending a new text message."""
+        if not chat_allowed(self.user.id):
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'You are sending messages too fast. Wait a moment.'
+            }))
+            return
+
         message_content = data.get('message', '').strip()
         reply_to_id = data.get('reply_to')
         
