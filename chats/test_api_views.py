@@ -470,3 +470,56 @@ class EndCallHttpSanitizesTests(ChatApiBase):
         s.refresh_from_db()
         self.assertEqual(s.end_reason, 'user_hangup')
         self.assertEqual(len(s.end_notes), 500)
+
+
+class UserNotificationConsumerTests(TransactionTestCase):
+    def setUp(self):
+        self.u = User.objects.create_user('nt_a', 'nta@x.com', 'pw12345!')
+
+    async def _connect(self):
+        from .consumers import UserNotificationConsumer
+        c = _make_communicator(UserNotificationConsumer, {'path': '/ws/notifications/', 'user': self.u})
+        ok, _ = await c.connect()
+        self.assertTrue(ok)
+        self.assertEqual((await c.receive_json_from())['type'], 'notification_connected')
+        return c
+
+    async def _push(self, kind, **data):
+        from channels.layers import get_channel_layer
+        await get_channel_layer().group_send(f'user_notifications_{self.u.id}', {'type': kind, **data})
+
+    async def test_ping_pong(self):
+        c = await self._connect()
+        await c.send_json_to({'type': 'ping'})
+        self.assertEqual((await c.receive_json_from())['type'], 'pong')
+        await c.disconnect()
+
+    async def test_http_views_notification_types_reach_the_client(self):
+        """send_user_notification() from the HTTP views uses these types; the socket must not choke on them."""
+        c = await self._connect()
+        await self._push('new_chat_message', room_id='r', message_id=1, content='hey',
+                         sender_username='x', timestamp='t')
+        frame = await c.receive_json_from()
+        self.assertEqual((frame['type'], frame['content']), ('new_chat_message', 'hey'))
+        await self._push('message_edited', room_id='r', message_id=1, new_content='n', editor_username='x')
+        self.assertEqual((await c.receive_json_from())['new_content'], 'n')
+        await self._push('call_ended_enhanced', ended_by='x', end_reason='normal', session_summaries=[])
+        self.assertEqual((await c.receive_json_from())['end_reason'], 'normal')
+        # still alive afterwards
+        await c.send_json_to({'type': 'ping'})
+        self.assertEqual((await c.receive_json_from())['type'], 'pong')
+        await c.disconnect()
+
+    async def test_invitation_events_are_forwarded(self):
+        c = await self._connect()
+        await self._push('call_invitation_declined', invitation_id=3, decliner_username='b')
+        frame = await c.receive_json_from()
+        self.assertEqual((frame['type'], frame['invitation_id']), ('call_invitation_declined', 3))
+        await c.disconnect()
+
+    async def test_anonymous_is_rejected(self):
+        from django.contrib.auth.models import AnonymousUser
+        from .consumers import UserNotificationConsumer
+        c = _make_communicator(UserNotificationConsumer, {'path': '/ws/notifications/', 'user': AnonymousUser()})
+        ok, _ = await c.connect()
+        self.assertFalse(ok)
