@@ -125,6 +125,10 @@ class UserPresence(models.Model):
             defaults={'is_online': True, 'last_activity': timezone.now()}
         )
         
+        previous_activity = presence.last_activity
+        previous_online = presence.is_online
+        previous_room_id = presence.current_room_id
+
         # Update activity timestamp
         presence.last_activity = timezone.now()
         
@@ -143,7 +147,15 @@ class UserPresence(models.Model):
             presence.current_room = None
         
         # Save if changed or forced
-        if created or force_update or presence.is_online != cls.objects.get(user=user).is_online:
+        # The activity timestamp must be persisted too, otherwise a user who keeps sending
+        # heartbeats is still marked offline after OFFLINE_THRESHOLD_MINUTES. Writes are
+        # throttled to one per 30 seconds unless the status or room changed.
+        stale = (
+            previous_activity is None
+            or (presence.last_activity - previous_activity).total_seconds() >= 30
+        )
+        changed = presence.is_online != previous_online or presence.current_room_id != previous_room_id
+        if created or force_update or changed or stale:
             presence.save(update_fields=['is_online', 'last_activity', 'last_seen', 'current_room'])
         
         return presence

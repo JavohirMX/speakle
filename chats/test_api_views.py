@@ -721,3 +721,28 @@ class PartnerAvailabilityTests(ChatApiBase):
         self.assertTrue(c.get(reverse('chats:get_user_status')).json()['success'])
         self.assertEqual(c.post(reverse('chats:heartbeat')).status_code, 200)
         self.assertEqual(c.get(reverse('chats:heartbeat')).status_code, 405)
+
+
+class PresenceHeartbeatTests(ChatApiBase):
+    def test_heartbeat_refreshes_activity_for_an_already_online_user(self):
+        from .models import UserPresence
+        p = UserPresence.objects.create(user=self.a, is_online=True)
+        old = timezone.now() - timedelta(minutes=4)
+        UserPresence.objects.filter(pk=p.pk).update(last_activity=old, last_seen=old)
+
+        self.client_for(self.a).post(reverse('chats:heartbeat'))
+
+        p.refresh_from_db()
+        self.assertGreater(p.last_activity, timezone.now() - timedelta(minutes=1))
+
+    def test_active_user_is_not_cleaned_up_after_threshold(self):
+        from .models import UserPresence
+        p = UserPresence.objects.create(user=self.a, is_online=True)
+        old = timezone.now() - timedelta(minutes=10)
+        UserPresence.objects.filter(pk=p.pk).update(last_activity=old, last_seen=old)
+        self.client_for(self.a).post(reverse('chats:heartbeat'))
+
+        UserPresence.cleanup_offline_users()
+
+        p.refresh_from_db()
+        self.assertTrue(p.is_online)
