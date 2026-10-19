@@ -892,7 +892,7 @@ def send_chat_message(request, room_id):
         if reply_to_id:
             try:
                 reply_to = ChatMessage.objects.get(id=reply_to_id, room=room)
-            except ChatMessage.DoesNotExist:
+            except (ChatMessage.DoesNotExist, ValueError, TypeError):
                 return JsonResponse({'error': 'Reply message not found'}, status=400)
         
         # Create message
@@ -936,6 +936,12 @@ def edit_chat_message(request, message_id):
         
         if not new_content:
             return JsonResponse({'error': 'Message content is required'}, status=400)
+
+        if len(new_content) > 1000:
+            return JsonResponse({'error': 'Message too long (max 1000 characters)'}, status=400)
+
+        if not message.room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
         
         if not message.can_edit(request.user):
             return JsonResponse({'error': 'Cannot edit this message'}, status=403)

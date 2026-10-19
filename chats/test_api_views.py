@@ -176,3 +176,76 @@ class EndCallTests(ChatApiBase):
         self.assertEqual(r.status_code, 403)
         s.refresh_from_db()
         self.assertEqual(s.status, 'active')
+
+
+class SendAndEditMessageTests(ChatApiBase):
+    def setUp(self):
+        super().setUp()
+        from django.core.cache import cache
+        cache.clear()
+
+    def send(self, user, **data):
+        with patch('chats.views.send_user_notification'):
+            return self.client_for(user).post(
+                reverse('chats:send_chat_message', args=[self.chat.room_id]), data
+            )
+
+    def test_send_creates_message_and_notifies_partner(self):
+        with patch('chats.views.send_user_notification') as notify:
+            r = self.client_for(self.a).post(
+                reverse('chats:send_chat_message', args=[self.chat.room_id]), {'content': ' hello '}
+            )
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(ChatMessage.objects.get().content, 'hello')
+        self.assertEqual(notify.call_args[0][0], self.b.id)
+
+    def test_send_validation(self):
+        self.assertEqual(self.send(self.a, content='   ').status_code, 400)
+        self.assertEqual(self.send(self.a, content='x' * 1001).status_code, 400)
+        self.assertEqual(self.send(self.outsider, content='hi').status_code, 403)
+        self.assertEqual(ChatMessage.objects.count(), 0)
+
+    def test_reply_to_must_be_in_same_room_and_numeric(self):
+        self.assertEqual(self.send(self.a, content='hi', reply_to='999999').status_code, 400)
+        self.assertEqual(self.send(self.a, content='hi', reply_to='abc').status_code, 400)
+
+    def test_edit_own_message(self):
+        m = ChatMessage.objects.create(room=self.chat, sender=self.a, content='old')
+        with patch('chats.views.send_user_notification'):
+            r = self.client_for(self.a).post(
+                reverse('chats:edit_chat_message', args=[m.id]), {'content': 'new'}
+            )
+        self.assertEqual(r.status_code, 200)
+        m.refresh_from_db()
+        self.assertEqual(m.content, 'new')
+        self.assertIsNotNone(m.edited_at)
+
+    def test_edit_respects_length_limit_and_ownership(self):
+        m = ChatMessage.objects.create(room=self.chat, sender=self.a, content='old')
+        url = reverse('chats:edit_chat_message', args=[m.id])
+        with patch('chats.views.send_user_notification'):
+            self.assertEqual(self.client_for(self.a).post(url, {'content': 'x' * 1001}).status_code, 400)
+            self.assertEqual(self.client_for(self.b).post(url, {'content': 'hijack'}).status_code, 404)
+        m.refresh_from_db()
+        self.assertEqual(m.content, 'old')
+
+    def test_blocked_user_cannot_edit_after_block(self):
+        from users.models import UserBlock
+        m = ChatMessage.objects.create(room=self.chat, sender=self.a, content='old')
+        UserBlock.objects.create(blocker=self.b, blocked=self.a)
+        with patch('chats.views.send_user_notification') as notify:
+            r = self.client_for(self.a).post(
+                reverse('chats:edit_chat_message', args=[m.id]), {'content': 'new'}
+            )
+        self.assertEqual(r.status_code, 403)
+        notify.assert_not_called()
+        m.refresh_from_db()
+        self.assertEqual(m.content, 'old')
+
+    def test_mark_read_only_marks_partner_messages(self):
+        ChatMessage.objects.create(room=self.chat, sender=self.b, content='1')
+        mine = ChatMessage.objects.create(room=self.chat, sender=self.a, content='2')
+        r = self.client_for(self.a).post(reverse('chats:mark_messages_read', args=[self.chat.room_id]))
+        self.assertEqual(r.json()['marked_read'], 1)
+        mine.refresh_from_db()
+        self.assertFalse(mine.is_read)
