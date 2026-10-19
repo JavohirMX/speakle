@@ -415,6 +415,18 @@ class TextChatConsumerEditAndHistoryTests(TransactionTestCase):
         self.assertEqual(saved.content, 'old')
         await ca.disconnect()
 
+    async def test_blocked_user_typing_is_not_forwarded(self):
+        from users.models import UserBlock
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await database_sync_to_async(UserBlock.objects.create)(blocker=self.b, blocked=self.a)
+        await ca.send_json_to({'type': 'typing_start'})
+        await ca.send_json_to({'type': 'ping', 'timestamp': 1})
+        await self._next(ca, 'pong')
+        while not await cb.receive_nothing(timeout=0.3):
+            frame = await cb.receive_json_from(timeout=5)
+            self.assertNotEqual(frame.get('type'), 'typing_start')
+        await ca.disconnect(); await cb.disconnect()
+
     async def test_load_messages_survives_bad_paging_values(self):
         await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.b, content='hi')
         ca = await self._connect(self.a)

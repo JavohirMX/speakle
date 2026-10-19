@@ -1153,12 +1153,16 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_mark_messages_read(self, data):
         """Handle marking messages as read."""
+        if not await self.check_chat_room_access():
+            return
         message_ids = data.get('message_ids', [])
         if message_ids:
             await self.mark_messages_read(message_ids)
 
     async def handle_typing_start(self, data):
         """Handle typing start notification."""
+        if not await self.check_chat_room_access():
+            return
         await self.set_typing_status(True)
         
         # Broadcast typing status to others in room
