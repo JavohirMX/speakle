@@ -20,7 +20,7 @@
 - Call summary showed call success rate as language progress. Removed.
 - Text chat: reply preview and reply quote inserted message text as HTML (script injection from a partner's message). Escaped. Also the reply button could not work because a property shadowed the method.
 - Nav unread badge overlapped the Chats label.
-- Blocking someone ended the match but both people could still use the text chat and video room. A block now cuts off access to both rooms for both people, including sending in an open chat.
+- Blocking someone ended the match but both people could still use the text chat and video room. A block now cuts off access to both rooms for both people, including sending in an open chat or sending an offer in an open call.
 - Potential matches API returned each suggested person's email address to any signed-in user. Removed.
 - Find matches ran several queries per match card. Now a fixed number of queries.
 

@@ -861,6 +861,24 @@ class WebSocketConsumerTest(TransactionTestCase):
         await communicator.disconnect()
         await other.disconnect()
 
+    async def test_block_during_call_stops_offers(self):
+        from users.models import UserBlock
+        scope = {'type': 'websocket', 'path': f'/ws/video/{self.room.room_id}/', 'query_string': b'',
+                 'headers': [], 'user': self.user1,
+                 'url_route': {'kwargs': {'room_id': str(self.room.room_id)}}}
+        mine = _make_communicator(VideoCallConsumer, scope)
+        self.assertTrue((await mine.connect())[0])
+        other = _make_communicator(VideoCallConsumer, dict(scope, user=self.user2))
+        self.assertTrue((await other.connect())[0])
+        await database_sync_to_async(UserBlock.objects.create)(blocker=self.user2, blocked=self.user1)
+
+        await mine.send_json_to({'type': 'offer', 'offer': {'type': 'offer', 'sdp': 'x'}})
+        err = await _receive_type(mine, 'error')
+        self.assertIn('no longer available', err['message'])
+        while not await other.receive_nothing():
+            self.assertNotEqual((await other.receive_json_from()).get('type'), 'offer')
+        await other.disconnect()
+
     async def test_user_notification_consumer(self):
         """Test UserNotificationConsumer."""
         scope = {
