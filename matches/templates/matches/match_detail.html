@@ -698,7 +698,7 @@ function loadRecentSessions() {
                         <span class="font-medium">${new Date(session.start_time).toLocaleDateString()}</span>
                         <span class="text-sm text-gray-600">${session.duration || 'N/A'} minutes</span>
                     </div>
-                    <p class="text-sm text-gray-600 mt-1">${session.status || 'Completed'}</p>
+                    <p class="text-sm text-gray-600 mt-1">${escapeHtml(session.status || 'Completed')}</p>
                 </div>
             `).join('');
         } else {
@@ -713,6 +713,12 @@ function loadRecentSessions() {
 }
 
 // Text chat functions
+function escapeHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = value == null ? '' : String(value);
+    return div.innerHTML;
+}
+
 function loadRecentMessages() {
     // Check if there's a chat room for this match
     fetch(`/chats/api/chat-url/{{ match.id }}/`)
@@ -728,7 +734,7 @@ function loadRecentMessages() {
                     container.innerHTML = messageData.messages.slice(-10).map(msg => `
                         <div class="mb-3 ${msg.user_id === {{ user.id }} ? 'text-right' : 'text-left'}">
                             <div class="inline-block max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${msg.user_id === {{ user.id }} ? 'bg-blue-500 text-white' : 'bg-white border'}">
-                                <p class="text-sm">${msg.content}</p>
+                                <p class="text-sm">${escapeHtml(msg.content)}</p>
                                 <p class="text-xs mt-1 opacity-70">${new Date(msg.timestamp).toLocaleString()}</p>
                             </div>
                         </div>

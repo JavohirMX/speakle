@@ -690,3 +690,18 @@ class PotentialMatchesApiPrivacyTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertNotIn('secret-stranger@x.com', r.content.decode())
         self.assertEqual(r.json()['potential_matches'][0]['partner']['username'], 'pm_other')
+
+
+class MatchDetailEscapesChatPreviewTests(TestCase):
+    def test_recent_message_preview_escapes_partner_content(self):
+        U = get_user_model()
+        u1 = U.objects.create_user('xa', 'xa@x.com', 'pw12345!')
+        u2 = U.objects.create_user('xb', 'xb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=u1, user2=u2, user1_teaches=en, user1_learns=ko, status='active')
+        c = Client(); c.force_login(u1)
+        html = c.get(reverse('matches:match_detail', args=[m.id])).content.decode()
+        # Message text from the partner must never be interpolated into innerHTML raw.
+        self.assertNotIn('${msg.content}', html)
+        self.assertIn('${escapeHtml(msg.content)}', html)
