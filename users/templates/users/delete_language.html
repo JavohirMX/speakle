@@ -3,13 +3,9 @@
 {% block title %}Remove Language - Speakle{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white border border-gray-200 rounded-2xl">
-            <div class="px-6 py-4 border-b">
-                <h1 class="text-2xl font-bold text-gray-900">Remove Language</h1>
-                <p class="mt-1 text-sm text-gray-600">Are you sure you want to remove this language from your profile?</p>
-            </div>
+<div class="page-head"><div class="page-head-in"><h1>Remove Language</h1><p class="lede">Are you sure you want to remove this language from your profile?</p></div></div>
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+<div class="bg-white border-2 border-black rounded-2xl" style="border-color:var(--ink,#111)">
 
             <div class="px-6 py-6">
                 <div class="mb-6">
@@ -44,10 +40,10 @@
                 <form method="post" class="space-y-6">
                     {% csrf_token %}
                     <div class="flex justify-end space-x-3">
-                        <a href="{% url 'users:profile' %}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition">
+                        <a href="{% url 'users:profile' %}" class="btn btn-outline">
                             Cancel
                         </a>
-                        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition">
+                        <button type="submit" class="btn btn-coral">
                             Remove Language
                         </button>
                     </div>
@@ -55,5 +51,4 @@
             </div>
         </div>
     </div>
-</div>
-{% endblock %} 
+{% endblock %}

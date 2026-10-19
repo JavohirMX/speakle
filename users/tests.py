@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+from users.models import Language, UserLanguage
 from django.test import TestCase
 
 # Create your tests here.
@@ -154,3 +156,32 @@ class ProfilePageTests(TestCase):
         self.assertEqual(r.status_code, 302)
         u.refresh_from_db()
         self.assertEqual((u.first_name, u.bio), ('Pat', 'hello'))
+
+
+class LanguagePagesTests(TestCase):
+    def setUp(self):
+        U = get_user_model()
+        self.u = U.objects.create_user('lpu', 'lpu@x.com', 'pw12345!')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.ul = UserLanguage.objects.create(user=self.u, language=self.ko, proficiency='beginner', language_type='learning')
+        self.client.force_login(self.u)
+
+    def test_add_page_renders_and_adds(self):
+        en = Language.objects.create(name='English', code='en')
+        r = self.client.get(reverse('users:add_language'))
+        self.assertContains(r, 'page-head')
+        r = self.client.post(reverse('users:add_language'), {'language': en.id, 'proficiency': 'native', 'language_type': 'native'})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(UserLanguage.objects.filter(user=self.u, language=en).exists())
+
+    def test_delete_page_confirms_then_removes(self):
+        url = reverse('users:delete_language', args=[self.ul.id])
+        self.assertContains(self.client.get(url), 'Korean')
+        self.client.post(url)
+        self.assertFalse(UserLanguage.objects.filter(id=self.ul.id).exists())
+
+    def test_cannot_delete_other_users_language(self):
+        o = get_user_model().objects.create_user('lpo', 'lpo@x.com', 'pw12345!')
+        self.client.force_login(o)
+        self.client.post(reverse('users:delete_language', args=[self.ul.id]))
+        self.assertTrue(UserLanguage.objects.filter(id=self.ul.id).exists())

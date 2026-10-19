@@ -3,13 +3,9 @@
 {% block title %}Add Language - Speakle{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white border border-gray-200 rounded-2xl">
-            <div class="px-6 py-4 border-b">
-                <h1 class="text-2xl font-bold text-gray-900">Add a New Language</h1>
-                <p class="mt-1 text-sm text-gray-600">Add a language to your profile with your proficiency level.</p>
-            </div>
+<div class="page-head"><div class="page-head-in"><h1>Add a New Language</h1><p class="lede">Add a language to your profile with your proficiency level.</p></div></div>
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-6">
+<div class="bg-white border-2 border-black rounded-2xl" style="border-color:var(--ink,#111)">
 
             <div class="px-6 py-6">
                 <form method="post" class="space-y-6">
@@ -64,10 +60,10 @@
                     </div>
 
                     <div class="flex justify-end space-x-3 pt-4">
-                        <a href="{% url 'users:profile' %}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition">
+                        <a href="{% url 'users:profile' %}" class="btn btn-outline">
                             Cancel
                         </a>
-                        <button type="submit" class="btn btn-solid w-full">
+                        <button type="submit" class="btn btn-solid">
                             Add Language
                         </button>
                     </div>
@@ -75,5 +71,4 @@
             </div>
         </div>
     </div>
-</div>
-{% endblock %} 
+{% endblock %}
