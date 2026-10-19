@@ -369,7 +369,7 @@ class TextChatConsumerEditAndHistoryTests(TransactionTestCase):
 
     async def _next(self, c, wanted, limit=8):
         for _ in range(limit):
-            msg = await c.receive_json_from()
+            msg = await c.receive_json_from(timeout=5)
             if msg.get('type') == wanted:
                 return msg
         self.fail(f'no {wanted} frame')
@@ -542,18 +542,24 @@ class VideoCallConsumerFlowTests(TransactionTestCase):
                                                    'url_route': {'kwargs': {'room_id': rid}}})
         ok, _ = await c.connect()
         self.assertTrue(ok)
+        # The consumer joins the room group after accepting; wait for its own join echo
+        # so frames sent next are not lost to a race.
+        while True:
+            frame = await c.receive_json_from(timeout=5)
+            if frame.get('type') == 'user_joined' and frame.get('user_id') == user.id:
+                break
         return c
 
     async def _next(self, c, wanted, limit=10):
         for _ in range(limit):
-            msg = await c.receive_json_from()
+            msg = await c.receive_json_from(timeout=5)
             if msg.get('type') == wanted:
                 return msg
         self.fail(f'no {wanted} frame')
 
     async def _no_frame(self, c, wanted):
         while not await c.receive_nothing(timeout=0.2):
-            msg = await c.receive_json_from()
+            msg = await c.receive_json_from(timeout=5)
             self.assertNotEqual(msg.get('type'), wanted)
 
     async def test_offer_reaches_partner_but_not_sender(self):
