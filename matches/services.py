@@ -116,7 +116,7 @@ class MatchingService:
                 ).filter(
                     userlanguage__language=learn_lang,
                     userlanguage__language_type__in=['native', 'fluent']
-                ).exclude(id__in=excluded).exclude(id__in=existing).distinct()
+                ).filter(is_active=True).exclude(id__in=excluded).exclude(id__in=existing).distinct()
                 for partner in partners:
                     score = MatchingService.calculate_compatibility_score(
                         user, partner, teach_lang, learn_lang

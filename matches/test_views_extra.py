@@ -128,3 +128,24 @@ class FindMatchesOnboardingMessageTests(TestCase):
         UserLanguage.objects.create(user=u, language=en, language_type='native', proficiency='native')
         r = self.client.get(reverse('matches:find_matches'), follow=True)
         self.assertContains(r, 'Add a language you want to learn')
+
+
+class InactiveUsersNotSuggestedTests(TestCase):
+    def test_deactivated_user_is_not_suggested(self):
+        from .services import MatchingService
+        U = get_user_model()
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        me = U.objects.create_user('me_a', 'mea@x.com', 'pw12345!')
+        UserLanguage.objects.create(user=me, language=en, language_type='native', proficiency='native')
+        UserLanguage.objects.create(user=me, language=ko, language_type='learning', proficiency='beginner')
+        def partner(name):
+            p = U.objects.create_user(name, name + '@x.com', 'pw12345!')
+            UserLanguage.objects.create(user=p, language=ko, language_type='native', proficiency='native')
+            UserLanguage.objects.create(user=p, language=en, language_type='learning', proficiency='beginner')
+            return p
+        ok = partner('active_p')
+        gone = partner('gone_p')
+        U.objects.filter(pk=gone.pk).update(is_active=False)
+        got = {m.potential_partner_id for m in MatchingService.find_potential_matches(me)}
+        self.assertEqual(got, {ok.id})
