@@ -858,6 +858,37 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
             'canceller_username': event['canceller_username']
         }))
 
+    async def new_chat_message(self, event):
+        """Forward a chat message sent over HTTP so the partner's page can show it."""
+        await self.send(text_data=json.dumps({
+            'type': 'new_chat_message',
+            'room_id': event.get('room_id'),
+            'message_id': event.get('message_id'),
+            'content': event.get('content', ''),
+            'sender_username': event.get('sender_username'),
+            'timestamp': event.get('timestamp'),
+        }))
+
+    async def message_edited(self, event):
+        """Forward a message edit made over HTTP."""
+        await self.send(text_data=json.dumps({
+            'type': 'message_edited',
+            'room_id': event.get('room_id'),
+            'message_id': event.get('message_id'),
+            'new_content': event.get('new_content', ''),
+            'editor_username': event.get('editor_username'),
+        }))
+
+    async def call_ended_enhanced(self, event):
+        """Forward a call end made over HTTP."""
+        await self.send(text_data=json.dumps({
+            'type': 'call_ended_enhanced',
+            'ended_by': event.get('ended_by'),
+            'end_reason': event.get('end_reason'),
+            'session_summaries': event.get('session_summaries', []),
+        }))
+
+
 class TextChatConsumer(AsyncWebsocketConsumer):
     """WebSocket consumer specifically for text chat functionality."""
     

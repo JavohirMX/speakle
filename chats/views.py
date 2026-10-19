@@ -355,11 +355,10 @@ def check_partner_availability(request, match_id):
     # Update partner's status based on their activity
     if not created:
         # Check if partner should still be considered online based on activity
-        if partner_presence.should_be_online():
-            partner_presence.is_online = True
-        else:
-            partner_presence.is_online = False
-        partner_presence.save()
+        # Use update(): save() would refresh the auto_now timestamps and make a partner who
+        # has gone quiet look active again the next time anyone polls.
+        partner_presence.is_online = partner_presence.should_be_online()
+        UserPresence.objects.filter(pk=partner_presence.pk).update(is_online=partner_presence.is_online)
     
     # Clean up inactive users
     UserPresence.cleanup_offline_users()
@@ -791,8 +790,11 @@ def get_chat_messages(request, room_id):
             return JsonResponse({'error': 'Access denied'}, status=403)
         
         # Get pagination parameters
-        page = int(request.GET.get('page', 1))
-        page_size = min(int(request.GET.get('page_size', 50)), 100)  # Max 100 messages per request
+        try:
+            page = max(int(request.GET.get('page', 1)), 1)
+            page_size = min(max(int(request.GET.get('page_size', 50)), 1), 100)  # Max 100 messages per request
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'page and page_size must be integers'}, status=400)
         
         # Get messages with pagination
         from django.core.paginator import Paginator
