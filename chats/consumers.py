@@ -649,8 +649,8 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             # Create new session
             session = CallSession.objects.create(
                 room=room,
-                video_enabled=data.get('video_enabled', True),
-                audio_enabled=data.get('audio_enabled', True),
+                video_enabled=data.get('video_enabled') if isinstance(data.get('video_enabled'), bool) else True,
+                audio_enabled=data.get('audio_enabled') if isinstance(data.get('audio_enabled'), bool) else True,
                 status='active'
             )
             session.participants.add(self.user)

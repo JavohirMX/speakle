@@ -615,6 +615,15 @@ class VideoCallConsumerFlowTests(TransactionTestCase):
         self.assertEqual(status, 'ended')
         await ca.disconnect(); await cb.disconnect()
 
+    async def test_call_start_with_garbage_media_flags_still_creates_a_session(self):
+        from .models import CallSession
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await ca.send_json_to({'type': 'call_start', 'video_enabled': 'banana', 'audio_enabled': {'x': 1}})
+        await self._next(cb, 'call_started')
+        count = await database_sync_to_async(lambda: CallSession.objects.filter(status='active').count())()
+        self.assertEqual(count, 1)
+        await ca.disconnect(); await cb.disconnect()
+
     async def test_media_status_typing_and_misc_frames(self):
         ca = await self._connect(self.a); cb = await self._connect(self.b)
         await ca.send_json_to({'type': 'video_status', 'video_enabled': False})
