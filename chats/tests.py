@@ -1055,3 +1055,80 @@ class ChatListPageTests(TestCase):
         self.assertContains(r, 'annyeong')
         self.assertContains(r, reverse('chats:text_chat', args=[room.room_id]))
         self.assertEqual(r.context['total_unread'], 1)
+
+
+class TextChatApiTests(TestCase):
+    def setUp(self):
+        from matches.models import Match
+        from .models import ChatRoom
+        U = get_user_model()
+        self.a = U.objects.create_user('tca', 'tca@x.com', 'pw12345!')
+        self.b = U.objects.create_user('tcb', 'tcb@x.com', 'pw12345!')
+        self.c = U.objects.create_user('tcc', 'tcc@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = ChatRoom.objects.create(match=m)
+        self.client = Client()
+        self.client.force_login(self.a)
+
+    def _send(self, content, **extra):
+        with patch('chats.views.send_user_notification'):
+            return self.client.post(reverse('chats:send_chat_message', args=[self.room.room_id]),
+                                    {'content': content, **extra})
+
+    def test_send_message_saves_it(self):
+        r = self._send('  hello  ')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.room.messages.get().content, 'hello')
+
+    def test_empty_and_too_long_messages_rejected(self):
+        self.assertEqual(self._send('   ').status_code, 400)
+        self.assertEqual(self._send('x' * 1001).status_code, 400)
+        self.assertEqual(self.room.messages.count(), 0)
+
+    def test_outsider_cannot_send_or_read(self):
+        self.client.force_login(self.c)
+        self.assertEqual(self._send('hi').status_code, 403)
+        r = self.client.get(reverse('chats:get_chat_messages', args=[self.room.room_id]))
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(self.room.messages.count(), 0)
+
+    def test_reply_to_message_from_other_room_rejected(self):
+        r = self._send('hi', reply_to=99999)
+        self.assertEqual(r.status_code, 400)
+
+    def test_login_required(self):
+        r = Client().post(reverse('chats:send_chat_message', args=[self.room.room_id]), {'content': 'x'})
+        self.assertEqual(r.status_code, 302)
+
+    def test_edit_only_own_message(self):
+        from .models import ChatMessage
+        mine = ChatMessage.objects.create(room=self.room, sender=self.a, content='old')
+        theirs = ChatMessage.objects.create(room=self.room, sender=self.b, content='theirs')
+        with patch('chats.views.send_user_notification'):
+            ok = self.client.post(reverse('chats:edit_chat_message', args=[mine.id]), {'content': 'new'})
+            no = self.client.post(reverse('chats:edit_chat_message', args=[theirs.id]), {'content': 'hack'})
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(no.status_code, 404)
+        mine.refresh_from_db(); theirs.refresh_from_db()
+        self.assertEqual(mine.content, 'new')
+        self.assertEqual(theirs.content, 'theirs')
+
+    def test_text_chat_page_renders_for_participant_only(self):
+        url = reverse('chats:text_chat', args=[self.room.room_id])
+        self.assertEqual(self.client.get(url).status_code, 200)
+        self.client.force_login(self.c)
+        self.assertNotEqual(self.client.get(url).status_code, 200)
+
+    def test_mark_read_only_clears_partner_messages(self):
+        from .models import ChatMessage
+        ChatMessage.objects.create(room=self.room, sender=self.b, content='1')
+        ChatMessage.objects.create(room=self.room, sender=self.b, content='2')
+        ChatMessage.objects.create(room=self.room, sender=self.a, content='mine')
+        url = reverse('chats:get_unread_count', args=[self.room.room_id])
+        self.assertEqual(self.client.get(url).json()['unread_count'], 2)
+        r = self.client.post(reverse('chats:mark_messages_read', args=[self.room.room_id]))
+        self.assertEqual(r.json()['marked_read'], 2)
+        self.assertEqual(self.client.get(url).json()['unread_count'], 0)
+        self.assertFalse(self.room.messages.get(content='mine').is_read)
