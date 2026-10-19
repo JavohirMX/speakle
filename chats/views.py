@@ -10,7 +10,7 @@ from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from matches.models import Match
-from .models import VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
+from .models import pair_is_blocked, VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
 import uuid
 from django.db import transaction
 
@@ -36,7 +36,7 @@ def create_video_room(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         messages.error(request, 'You do not have access to this match.')
         return redirect('matches:my_matches')
     
@@ -54,7 +54,7 @@ def get_video_room_url(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get or create video room
@@ -74,7 +74,7 @@ def send_call_invitation(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get partner
@@ -355,7 +355,7 @@ def check_partner_availability(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get partner
@@ -734,7 +734,7 @@ def create_chat_room(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         messages.error(request, 'You do not have access to this match.')
         return redirect('matches:my_matches')
     
@@ -794,7 +794,7 @@ def get_chat_room_url(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get or create chat room

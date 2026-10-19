@@ -6,6 +6,16 @@ import uuid
 
 User = get_user_model()
 
+
+def pair_is_blocked(user_a, user_b):
+    """True if either user has blocked the other."""
+    from django.db.models import Q
+    from users.models import UserBlock
+    return UserBlock.objects.filter(
+        Q(blocker=user_a, blocked=user_b) | Q(blocker=user_b, blocked=user_a)
+    ).exists()
+
+
 class VideoRoom(models.Model):
     """Model for video chat rooms linked to matches."""
     match = models.OneToOneField(Match, on_delete=models.CASCADE, related_name='video_room')
@@ -22,8 +32,8 @@ class VideoRoom(models.Model):
         return [self.match.user1, self.match.user2]
     
     def can_user_access(self, user):
-        """Check if a user has access to this room."""
-        return user in self.get_participants()
+        """Check if a user has access to this room. A block between the two ends access."""
+        return user in self.get_participants() and not pair_is_blocked(self.match.user1, self.match.user2)
 
 class CallInvitation(models.Model):
     """Model for video call invitations between matched users."""
@@ -285,8 +295,8 @@ class ChatRoom(models.Model):
         return [self.match.user1, self.match.user2]
     
     def can_user_access(self, user):
-        """Check if a user has access to this room."""
-        return user in self.get_participants()
+        """Check if a user has access to this room. A block between the two ends access."""
+        return user in self.get_participants() and not pair_is_blocked(self.match.user1, self.match.user2)
     
     def get_partner(self, user):
         """Get the partner of the given user in this chat room."""

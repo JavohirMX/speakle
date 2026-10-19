@@ -994,6 +994,13 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_send_message(self, data):
         """Handle sending a new text message."""
+        if not await self.check_chat_room_access():
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'This conversation is no longer available.'
+            }))
+            return
+
         if not chat_allowed(self.user.id):
             await self.send(text_data=json.dumps({
                 'type': 'error',

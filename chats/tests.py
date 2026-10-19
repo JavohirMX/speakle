@@ -1324,3 +1324,41 @@ class OutsiderAccessSweepTests(TestCase):
             r = self.client.post(url)
             self.assertNotEqual(r.status_code, 200, url)
             self.assertEqual(before, (VideoRoom.objects.count(), CallInvitation.objects.count()), url)
+
+
+class BlockEndsRoomAccessTests(TestCase):
+    """After one user blocks the other, the blocked user must not keep chatting or calling."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        from users.models import UserBlock
+        from .models import ChatRoom
+        cache.clear()
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.a = User.objects.create_user('bl_a', 'bl_a@x.com', 'pw12345!')
+        self.b = User.objects.create_user('bl_b', 'bl_b@x.com', 'pw12345!')
+        self.match = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.chat = ChatRoom.objects.create(match=self.match)
+        self.video = VideoRoom.objects.create(match=self.match)
+        self.UserBlock = UserBlock
+
+    def _send(self, user):
+        c = Client(); c.force_login(user)
+        with patch('chats.views.send_user_notification'):
+            return c.post(reverse('chats:send_chat_message', args=[self.chat.room_id]), {'content': 'hi'})
+
+    def test_access_before_block(self):
+        self.assertEqual(self._send(self.b).status_code, 200)
+
+    def test_blocked_user_cannot_send_or_open_rooms(self):
+        self.UserBlock.objects.create(blocker=self.a, blocked=self.b)
+        self.assertEqual(self._send(self.b).status_code, 403)
+        c = Client(); c.force_login(self.b)
+        self.assertNotEqual(c.get(reverse('chats:video_room', args=[self.video.room_id])).status_code, 200)
+        self.assertNotEqual(c.get(reverse('chats:text_chat', args=[self.chat.room_id])).status_code, 200)
+        self.assertEqual(c.get(reverse('chats:get_video_room_url', args=[self.match.id])).status_code, 403)
+
+    def test_blocker_is_also_cut_off(self):
+        self.UserBlock.objects.create(blocker=self.a, blocked=self.b)
+        self.assertEqual(self._send(self.a).status_code, 403)
