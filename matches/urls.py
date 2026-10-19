@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/my-matches/', views.get_my_matches, name='get_my_matches'),
     path('api/match-detail/<int:match_id>/', views.get_match_detail, name='get_match_detail'),
     path('api/end-match/<int:match_id>/', views.end_match, name='end_match'),
+    path('api/feedback/<int:match_id>/', views.submit_feedback, name='submit_feedback'),
     
     # API endpoints - Potential matches
     path('api/potential-matches/', views.get_potential_matches, name='get_potential_matches'),

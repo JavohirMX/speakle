@@ -639,6 +639,55 @@
                             </button>
                         </div>
 
+                        <!-- Private feedback -->
+                        <div class="bg-white border border-gray-200 rounded-2xl p-6 mt-6" id="feedback-panel">
+                            <h3 class="text-lg font-bold text-gray-900 mb-1">How is practice with {{ partner.username }}?</h3>
+                            <p class="text-sm text-gray-600 mb-4">Private. Only you and our moderators can see this, {{ partner.username }} cannot.</p>
+                            <form id="feedback-form" class="space-y-4">
+                                <div>
+                                    <label for="fb-rating" class="block text-sm font-semibold text-gray-800 mb-1">Rating</label>
+                                    <select id="fb-rating" name="rating" class="w-full rounded-xl border border-gray-300 px-3 py-2">
+                                        {% for n in "54321" %}<option value="{{ n }}" {% if my_feedback and my_feedback.rating|stringformat:"s" == n %}selected{% endif %}>{{ n }} / 5</option>{% endfor %}
+                                    </select>
+                                </div>
+                                <label class="flex items-center gap-2 text-sm text-gray-800">
+                                    <input type="checkbox" id="fb-helpful" {% if not my_feedback or my_feedback.helpful %}checked{% endif %}>
+                                    Good practice fit for my goals
+                                </label>
+                                <div>
+                                    <label for="fb-comment" class="block text-sm font-semibold text-gray-800 mb-1">Comment (optional)</label>
+                                    <textarea id="fb-comment" maxlength="500" rows="3" class="w-full rounded-xl border border-gray-300 px-3 py-2">{% if my_feedback %}{{ my_feedback.comment }}{% endif %}</textarea>
+                                </div>
+                                <button type="submit" class="px-4 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-black focus-ring">{% if my_feedback %}Update feedback{% else %}Save feedback{% endif %}</button>
+                                <p id="feedback-msg" class="text-sm hidden" role="status"></p>
+                            </form>
+                        </div>
+                        <script>
+                        (function () {
+                            var form = document.getElementById('feedback-form');
+                            if (!form) return;
+                            form.addEventListener('submit', function (e) {
+                                e.preventDefault();
+                                var msg = document.getElementById('feedback-msg');
+                                var body = new URLSearchParams();
+                                body.append('rating', document.getElementById('fb-rating').value);
+                                body.append('helpful', document.getElementById('fb-helpful').checked ? 'true' : 'false');
+                                body.append('comment', document.getElementById('fb-comment').value);
+                                fetch("{% url 'matches:submit_feedback' match.id %}", {
+                                    method: 'POST',
+                                    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'},
+                                    body: body.toString()
+                                }).then(function (r) { return r.json(); }).then(function (d) {
+                                    msg.classList.remove('hidden');
+                                    msg.textContent = d.success ? 'Thanks, saved.' : (d.error || 'Could not save.');
+                                }).catch(function () {
+                                    msg.classList.remove('hidden');
+                                    msg.textContent = 'Could not save. Try again.';
+                                });
+                            });
+                        })();
+                        </script>
+
                         <!-- Safety: block / report -->
                         <div class="bg-white border border-gray-200 rounded-2xl p-6 mt-6" id="safety-panel">
                             <h3 class="text-lg font-bold text-gray-900 mb-1">Safety</h3>

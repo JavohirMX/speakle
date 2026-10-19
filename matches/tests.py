@@ -383,3 +383,41 @@ class MatchingLogicTests(TestCase):
         self.assertIsNotNone(m1)
         self.assertIsNone(m2)
         self.assertEqual(Match.objects.count(), 1)
+
+
+class MatchFeedbackTests(TestCase):
+    def setUp(self):
+        U = get_user_model()
+        self.u1 = U.objects.create_user('fa', 'fa@x.com', 'pw12345!')
+        self.u2 = U.objects.create_user('fb', 'fb@x.com', 'pw12345!')
+        self.u3 = U.objects.create_user('fc', 'fc@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.m = Match.objects.create(user1=self.u1, user2=self.u2, user1_teaches=en, user1_learns=ko, status='active')
+        self.url = reverse('matches:submit_feedback', args=[self.m.id])
+
+    def test_create_and_update(self):
+        from .models import MatchFeedback
+        c = Client(); c.force_login(self.u1)
+        r = c.post(self.url, {'rating': '4', 'comment': 'nice', 'helpful': 'true'})
+        self.assertEqual(r.json()['created'], True)
+        r = c.post(self.url, {'rating': '2', 'helpful': 'false'})
+        self.assertEqual(r.json()['created'], False)
+        fb = MatchFeedback.objects.get(match=self.m, author=self.u1)
+        self.assertEqual((fb.rating, fb.helpful), (2, False))
+        self.assertEqual(MatchFeedback.objects.count(), 1)
+
+    def test_validation_and_access(self):
+        c = Client(); c.force_login(self.u1)
+        for bad in ('0', '6', 'x', ''):
+            self.assertEqual(c.post(self.url, {'rating': bad}).status_code, 400)
+        c3 = Client(); c3.force_login(self.u3)
+        self.assertEqual(c3.post(self.url, {'rating': '5'}).status_code, 403)
+
+    def test_detail_renders_panel_and_hides_partner_feedback(self):
+        from .models import MatchFeedback
+        MatchFeedback.objects.create(match=self.m, author=self.u2, rating=1, comment='SECRETCOMMENT')
+        c = Client(); c.force_login(self.u1)
+        r = c.get(reverse('matches:match_detail', args=[self.m.id]))
+        self.assertContains(r, 'feedback-panel')
+        self.assertNotContains(r, 'SECRETCOMMENT')
