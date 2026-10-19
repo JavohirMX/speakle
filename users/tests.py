@@ -136,3 +136,21 @@ class UxFlowTests(TestCase):
 
     def test_password_reset_page_exists(self):
         self.assertEqual(self.client.get('/users/password-reset/').status_code, 200)
+
+
+from django.test import Client
+from django.urls import reverse
+
+
+class ProfilePageTests(TestCase):
+    def test_profile_renders_and_saves(self):
+        U = get_user_model()
+        u = U.objects.create_user('pp', 'pp@x.com', 'pw12345!')
+        c = Client(); c.force_login(u)
+        r = c.get(reverse('users:profile'))
+        self.assertContains(r, 'Profile information')
+        self.assertContains(r, 'No languages yet')
+        r = c.post(reverse('users:profile'), {'first_name': 'Pat', 'last_name': '', 'email': 'pp@x.com', 'bio': 'hello', 'interests': 'tea'})
+        self.assertEqual(r.status_code, 302)
+        u.refresh_from_db()
+        self.assertEqual((u.first_name, u.bio), ('Pat', 'hello'))
