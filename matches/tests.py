@@ -571,3 +571,19 @@ class RequestsPageTests(TestCase):
         self.assertContains(r, 'data-respond="accept"')
         self.assertContains(r, 'hi there')
         self.assertContains(r, 'data-cancel')
+
+
+class MyMatchesPageTests(TestCase):
+    def test_empty_and_filled(self):
+        U = get_user_model()
+        a = U.objects.create_user('ma', 'ma@x.com', 'pw12345!')
+        b = U.objects.create_user('mb', 'mb@x.com', 'pw12345!')
+        c = Client(); c.force_login(a)
+        self.assertContains(c.get(reverse('matches:my_matches')), 'No matches yet')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        r = c.get(reverse('matches:my_matches'))
+        self.assertContains(r, 'mb')
+        self.assertContains(r, reverse('matches:match_detail', args=[m.id]))
+        self.assertNotContains(r, 'No matches yet')
