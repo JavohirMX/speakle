@@ -638,3 +638,38 @@ class SendRequestPageTests(TestCase):
     def test_other_users_potential_match_is_404(self):
         self.client.force_login(self.b)
         self.assertEqual(self.client.get(self.url).status_code, 404)
+
+
+class FindMatchesQueryCountTests(TestCase):
+    """The card list must not issue per-card queries for partner and languages."""
+
+    def test_query_count_does_not_grow_with_cards(self):
+        U = get_user_model()
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+
+        def mk(name, teach, learn):
+            u = U.objects.create_user(name, f'{name}@x.com', 'pw12345!', email_verified=True)
+            UserLanguage.objects.create(user=u, language=teach, language_type='native', proficiency='native')
+            UserLanguage.objects.create(user=u, language=learn, language_type='learning', proficiency='beginner')
+            return u
+        me = mk('fm0', en, ko)
+        c = Client(); c.force_login(me)
+
+        def count():
+            from django.test.utils import CaptureQueriesContext
+            from django.db import connection
+            with CaptureQueriesContext(connection) as q:
+                r = c.get(reverse('matches:find_matches'))
+            self.assertEqual(r.status_code, 200)
+            return len(q)
+
+        for i in range(2):
+            p = mk(f'fm{i + 1}', ko, en)
+            PotentialMatch.objects.create(user=me, potential_partner=p, user_teaches=en, user_learns=ko, compatibility_score=50)
+        count()  # warm-up: first request creates presence/session rows
+        few = count()
+        for i in range(2, 8):
+            p = mk(f'fm{i + 1}', ko, en)
+            PotentialMatch.objects.create(user=me, potential_partner=p, user_teaches=en, user_learns=ko, compatibility_score=50)
+        self.assertEqual(count(), few)

@@ -36,19 +36,21 @@ def find_matches(request):
             MatchingService.find_potential_matches(request.user)
     
     # Get potential matches
-    potential_matches = PotentialMatch.objects.filter(user=request.user)[:20]  # Limit to 20
+    potential_matches = PotentialMatch.objects.filter(user=request.user).select_related(
+        'potential_partner', 'user_teaches', 'user_learns')[:20]  # Limit to 20
     
     # Get existing match requests to avoid duplicates
     sent_requests = MatchRequest.objects.filter(
         sender=request.user,
         status='pending'
     ).values_list('receiver_id', flat=True)
+    sent_requests = set(sent_requests)
     
     # Get confirmed matches to avoid showing them again
     confirmed_matches = Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
         status='active'
-    )
+    ).select_related('user1', 'user2')
     confirmed_partner_ids = []
     for match in confirmed_matches:
         partner = match.get_partner(request.user)
