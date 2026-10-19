@@ -264,8 +264,9 @@ class MatchesAPITestCase(TestCase):
             user1_teaches=self.english,
             user1_learns=self.korean,
             status='active',
-            created_at=timezone.now() - timezone.timedelta(days=10)
         )
+        # created_at is auto_now_add, so backdate with update()
+        Match.objects.filter(pk=match.pk).update(created_at=timezone.now() - timezone.timedelta(days=10))
         
         self.client.login(username='user1', password='testpass123')
         response = self.client.get(f'/matches/api/match-statistics/{match.id}/')
@@ -327,3 +328,58 @@ class MatchesAPITestCase(TestCase):
         })
         
         self.assertEqual(response.status_code, 404)  # Should not find the request
+
+
+
+class MatchingLogicTests(TestCase):
+    """Regression tests for the matching service logic."""
+
+    def setUp(self):
+        from users.models import Language, UserLanguage
+        from .services import MatchingService
+        self.S = MatchingService
+        U = get_user_model()
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.a = U.objects.create_user('a', password='x', interests='music, travel, coding')
+        self.b = U.objects.create_user('b', password='x', interests='Travel;Coding')
+        for u, native, learning in ((self.a, self.en, self.ko), (self.b, self.ko, self.en)):
+            UserLanguage.objects.create(user=u, language=native, proficiency='native', language_type='native')
+            UserLanguage.objects.create(user=u, language=learning, proficiency='beginner', language_type='learning')
+
+    def test_interest_tokenizer_handles_punctuation(self):
+        self.assertEqual(self.S._tokenize_interests('Music, travel;Coding'), {'music', 'travel', 'coding'})
+
+    def test_finds_mutual_partner_once(self):
+        found = self.S.find_potential_matches(self.a, refresh=True)
+        self.assertEqual([m.potential_partner for m in found], [self.b])
+        self.assertGreaterEqual(found[0].compatibility_score, 60)
+
+    def test_excludes_active_match_and_pending_request(self):
+        req, created = self.S.send_match_request(self.a, self.b, self.en, self.ko)
+        self.assertTrue(created)
+        self.assertEqual(self.S.find_potential_matches(self.a, refresh=True), [])
+
+    def test_self_request_rejected(self):
+        self.assertEqual(self.S.send_match_request(self.a, self.a, self.en, self.ko), (None, False))
+
+    def test_reverse_request_does_not_create_duplicate(self):
+        req, _ = self.S.send_match_request(self.a, self.b, self.en, self.ko)
+        again, created = self.S.send_match_request(self.b, self.a, self.ko, self.en)
+        self.assertFalse(created)
+        self.assertEqual(again.pk, req.pk)
+
+    def test_resend_after_decline_reopens(self):
+        req, _ = self.S.send_match_request(self.a, self.b, self.en, self.ko)
+        self.S.respond_to_match_request(req, accept=False)
+        again, created = self.S.send_match_request(self.a, self.b, self.en, self.ko, 'hi')
+        self.assertTrue(created)
+        self.assertEqual(again.status, 'pending')
+
+    def test_accept_twice_is_idempotent(self):
+        req, _ = self.S.send_match_request(self.a, self.b, self.en, self.ko)
+        m1 = self.S.respond_to_match_request(req, accept=True)
+        m2 = self.S.respond_to_match_request(req, accept=True)
+        self.assertIsNotNone(m1)
+        self.assertIsNone(m2)
+        self.assertEqual(Match.objects.count(), 1)

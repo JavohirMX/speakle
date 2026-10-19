@@ -607,7 +607,7 @@
                                 <div class="text-center p-4 bg-white/50 rounded-xl border border-purple-300">
                                     <div class="text-2xl mb-2">🕒</div>
                                     <p class="text-sm text-gray-600 mb-1">Last Activity</p>
-                                    <p class="font-bold text-purple-600">{{ match.last_activity|timesince|default:"Never" }} ago</p>
+                                    <p class="font-bold text-purple-600">{% if match.last_activity %}{{ match.last_activity|timesince }} ago{% else %}No activity yet{% endif %}</p>
                                 </div>
                             </div>
                         </div>
@@ -637,6 +637,17 @@
                                 </span>
                                 <div class="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             </button>
+                        </div>
+
+                        <!-- Safety: block / report -->
+                        <div class="bg-white border border-gray-200 rounded-2xl p-6 mt-6" id="safety-panel">
+                            <h3 class="text-lg font-bold text-gray-900 mb-1">Safety</h3>
+                            <p class="text-sm text-gray-600 mb-4">Something not right? Block {{ partner.username }} to end contact, or report them to our moderators.</p>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button type="button" id="report-btn" class="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-800 font-semibold hover:bg-gray-50 focus-ring">Report</button>
+                                <button type="button" id="block-btn" class="flex-1 px-4 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-black focus-ring">Block</button>
+                            </div>
+                            <p id="safety-msg" class="text-sm mt-3 hidden" role="status"></p>
                         </div>
                     </div>
                 </div>
@@ -1120,4 +1131,38 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+<script>
+(function () {
+    function csrf() {
+        var m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+    function post(url, data) {
+        return fetch(url, {method: 'POST', credentials: 'same-origin',
+            headers: {'X-CSRFToken': csrf(), 'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams(data || {})}).then(function (r) { return r.json(); });
+    }
+    function say(text, ok) {
+        var el = document.getElementById('safety-msg');
+        el.textContent = text;
+        el.className = 'text-sm mt-3 ' + (ok ? 'text-green-700' : 'text-red-700');
+    }
+    var userId = {{ partner.id }};
+    document.getElementById('block-btn').addEventListener('click', function () {
+        if (!confirm('Block {{ partner.username|escapejs }}? This ends your match and they will not be able to contact you.')) return;
+        post('/users/block/' + userId + '/').then(function (d) {
+            if (d.success) { window.location.href = '/matches/my-matches/'; } else { say(d.error || 'Could not block.', false); }
+        }).catch(function () { say('Network error. Try again.', false); });
+    });
+    document.getElementById('report-btn').addEventListener('click', function () {
+        var reason = prompt('Reason? Type one of: harassment, spam, inappropriate, underage, other');
+        if (!reason) return;
+        var details = prompt('Optional details for moderators:') || '';
+        post('/users/report/' + userId + '/', {reason: reason.trim().toLowerCase(), details: details}).then(function (d) {
+            say(d.success ? 'Thanks. Our moderators will review your report.' : (d.error || 'Could not send report.'), !!d.success);
+        }).catch(function () { say('Network error. Try again.', false); });
+    });
+})();
+</script>
 {% endblock %} 
