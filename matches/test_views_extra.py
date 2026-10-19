@@ -113,3 +113,18 @@ class EditLanguageTests(MatchViewExtraBase):
         url = reverse('users:edit_language', args=[ul.id])
         self.assertEqual(self.login(self.b).get(url).status_code, 404)
         self.assertEqual(self.login(self.a).get(url).status_code, 200)
+
+
+class FindMatchesOnboardingMessageTests(TestCase):
+    def test_message_says_which_language_is_missing(self):
+        from django.contrib.auth import get_user_model
+        from users.models import Language, UserLanguage
+        U = get_user_model()
+        u = U.objects.create_user('onb', 'onb@x.com', 'pw12345!')
+        self.client.force_login(u)
+        r = self.client.get(reverse('matches:find_matches'), follow=True)
+        self.assertContains(r, 'a language you speak and one you want to learn')
+        en = Language.objects.create(name='English', code='en')
+        UserLanguage.objects.create(user=u, language=en, language_type='native', proficiency='native')
+        r = self.client.get(reverse('matches:find_matches'), follow=True)
+        self.assertContains(r, 'Add a language you want to learn')

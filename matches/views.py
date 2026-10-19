@@ -21,7 +21,13 @@ def find_matches(request):
     has_learning_langs = user_languages.filter(language_type='learning').exists()
     
     if not has_teaching_langs or not has_learning_langs:
-        messages.warning(request, 'Please set up your languages in your profile to find matches.')
+        if not has_teaching_langs and not has_learning_langs:
+            need = 'Add a language you speak and one you want to learn'
+        elif not has_teaching_langs:
+            need = 'Add a language you speak (native or fluent)'
+        else:
+            need = 'Add a language you want to learn'
+        messages.warning(request, f'{need} to start finding matches.')
         return redirect('users:profile')
     
     # Get or generate potential matches
