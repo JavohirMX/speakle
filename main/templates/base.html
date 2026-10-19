@@ -1080,7 +1080,7 @@
     </style>
     {% include 'partials/design_css.html' %}
 </head>
-<body class="antialiased{% if user.is_authenticated %} app-shell{% endif %}">
+<body class="antialiased{% if user.is_authenticated %} app-shell{% endif %}{% if request.resolver_match.url_name == 'text_chat' %} immersive{% endif %}">
     {% include "partials/icons.html" %}
     <!-- Skip to content link for accessibility -->
     <a href="#main-content" class="skip-link focus-ring">Skip to main content</a>
