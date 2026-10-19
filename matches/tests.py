@@ -383,3 +383,25 @@ class MatchingLogicTests(TestCase):
         self.assertIsNotNone(m1)
         self.assertIsNone(m2)
         self.assertEqual(Match.objects.count(), 1)
+
+
+class ConversationPromptsTests(TestCase):
+    def test_prompts_are_mixed_levels_and_deterministic(self):
+        from .prompts import conversation_prompts
+        a = conversation_prompts(seed=1)
+        b = conversation_prompts(seed=1)
+        self.assertEqual(a, b)
+        self.assertEqual(len(a), 6)
+        self.assertEqual({p['level'] for p in a}, {'warmup', 'everyday', 'deeper'})
+
+    def test_match_detail_shows_prompts(self):
+        U = get_user_model()
+        u1 = U.objects.create_user('pa', 'pa@x.com', 'pw12345!')
+        u2 = U.objects.create_user('pb', 'pb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=u1, user2=u2, user1_teaches=en, user1_learns=ko, status='active')
+        c = Client(); c.force_login(u1)
+        r = c.get(reverse('matches:match_detail', args=[m.id]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Not sure what to talk about?')
