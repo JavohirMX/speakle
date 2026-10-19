@@ -588,23 +588,11 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 room = VideoRoom.objects.get(room_id=self.room_id)
                 return room.can_user_access(self.user)
             except VideoRoom.DoesNotExist:
-                # If room doesn't exist, check if user has a match that could create this room
-                # This is a more permissive approach for development
-                print(f"Room {self.room_id} doesn't exist, checking match access")
-                
-                # Get all matches where user is involved
-                user_matches = Match.objects.filter(
-                    Q(user1=self.user) | Q(user2=self.user),
-                    status='active'
-                )
-                
-                # For development, allow access if user has any active matches
-                return user_matches.exists()
-                
+                return False
+
         except Exception as e:
             print(f"Error checking room access: {e}")
-            # For development, be permissive
-            return True
+            return False
 
     @database_sync_to_async
     def save_chat_message(self, content):

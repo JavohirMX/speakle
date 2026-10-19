@@ -569,6 +569,19 @@ class VideoCallConsumerFlowTests(TransactionTestCase):
         await self._no_frame(ca, 'offer')
         await ca.disconnect(); await cb.disconnect()
 
+    async def test_unknown_room_id_is_refused_even_with_an_active_match(self):
+        import uuid
+        from .consumers import VideoCallConsumer
+        rid = str(uuid.uuid4())
+        c = _make_communicator(VideoCallConsumer, {'path': f'/ws/video-call/{rid}/', 'user': self.a,
+                                                   'url_route': {'kwargs': {'room_id': rid}}})
+        await c.connect()
+        frame = await c.receive_json_from(timeout=5)
+        while frame['type'] == 'connection_test':
+            frame = await c.receive_json_from(timeout=5)
+        self.assertEqual(frame['type'], 'error')
+        self.assertIn('denied', frame['message'])
+
     async def test_offer_without_payload_is_an_error(self):
         ca = await self._connect(self.a)
         await ca.send_json_to({'type': 'offer'})
