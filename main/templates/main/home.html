@@ -1,106 +1,120 @@
 {% extends 'base.html' %}
 
-{% block title %}Speakle - Language exchange with real people{% endblock %}
+{% block title %}Speakle - Swap languages, make a friend{% endblock %}
 {% block meta_description %}Practice a language by video with someone who is learning yours. Free two-way language exchange in your browser, with block and report built in.{% endblock %}
 
 {% block content %}
-<div>
+<div class="overflow-x-clip">
   <!-- Hero -->
-  <section class="max-w-6xl mx-auto px-5 sm:px-8 pt-14 pb-16 lg:pt-24 lg:pb-24 grid lg:grid-cols-[1.1fr_.9fr] gap-12 lg:gap-16 items-center">
+  <section class="max-w-6xl mx-auto px-5 sm:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
     <div>
-      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05] text-gray-900">Learn a language by talking to someone who wants to learn yours.</h1>
-      <p class="mt-6 text-lg text-gray-600 max-w-xl">You teach what you speak. They teach what you are learning. Five minutes on video is enough to find out if you click.</p>
-      <div class="mt-9 flex flex-col sm:flex-row gap-3">
+      <span class="pill tilt-l"><svg class="ico"><use href="#i-video"/></svg> Two-way language swap, on video</span>
+      <h1 class="mt-5 text-5xl sm:text-6xl lg:text-7xl">Swap languages.<br>Make a <span class="hl">friend</span>.</h1>
+      <p class="mt-6 text-lg sm:text-xl font-medium max-w-xl">You speak English and want Korean. Someone speaks Korean and wants English. Speakle puts you on a call and you teach each other. That is the whole idea.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
         {% if user.is_authenticated %}
-        <a href="{% url 'matches:quick_match' %}" class="btn btn-coral text-base px-6">Start a quick match <svg class="ico"><use href="#i-arrow"/></svg></a>
-        <a href="{% url 'matches:find_matches' %}" class="btn btn-outline text-base px-6">Browse partners</a>
+        <a href="{% url 'matches:quick_match' %}" class="btn btn-solid text-lg px-7 py-3.5">Start a quick match <svg class="ico"><use href="#i-bolt"/></svg></a>
+        <a href="{% url 'matches:find_matches' %}" class="btn btn-outline text-lg px-7 py-3.5">Browse partners</a>
         {% else %}
-        <a href="{% url 'users:register' %}" class="btn btn-coral text-base px-6">Create a free account <svg class="ico"><use href="#i-arrow"/></svg></a>
-        <a href="{% url 'users:login' %}" class="btn btn-outline text-base px-6">Sign in</a>
+        <a href="{% url 'users:register' %}" class="btn btn-solid text-lg px-7 py-3.5">Start swapping <svg class="ico"><use href="#i-arrow"/></svg></a>
+        <a href="{% url 'users:login' %}" class="btn btn-outline text-lg px-7 py-3.5">Sign in</a>
         {% endif %}
       </div>
-      <p class="mt-5 text-sm text-gray-600 flex items-center gap-2"><svg class="ico text-teal-700"><use href="#i-shield"/></svg> Block or report anyone, any time. Free, no downloads.</p>
-      {% if stats.members >= 10 %}
-      <p class="mt-3 text-sm text-gray-600">{{ stats.members }} members across {{ stats.languages }} languages.</p>
-      {% endif %}
+      <p class="mt-5 text-sm font-semibold flex items-center gap-2"><svg class="ico"><use href="#i-shield"/></svg> Block or report anyone, any time.</p>
     </div>
 
-    <!-- Example of a quick match (illustrative) -->
-    <div class="relative" aria-label="Example of a quick match call screen">
-      <div class="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-[0_24px_60px_-28px_rgba(28,25,21,.35)]">
-        <div class="flex items-center justify-between text-sm text-gray-600">
-          <span class="inline-flex items-center gap-2 font-semibold text-teal-800"><span class="w-2 h-2 rounded-full bg-teal-500"></span> Quick match</span>
-          <span>Example</span>
-        </div>
-        <div class="mt-6 flex items-center gap-4">
-          <div class="w-14 h-14 rounded-full bg-coral-100 text-coral-700 grid place-items-center font-display text-2xl font-semibold">M</div>
-          <div>
-            <p class="font-display text-xl font-semibold text-gray-900">Minho</p>
-            <p class="text-sm text-gray-600">Speaks Korean, learning English</p>
-          </div>
-        </div>
-        <p class="mt-8 font-display text-6xl font-semibold tabular-nums text-gray-900">4:12</p>
-        <p class="text-sm text-gray-600">left in your trial call</p>
-        <div class="mt-8 grid grid-cols-2 gap-3">
-          <span class="btn btn-solid" aria-hidden="true">Keep in touch</span>
-          <span class="btn btn-outline" aria-hidden="true">Skip</span>
-        </div>
-        <p class="mt-5 text-xs text-gray-600">After the timer you both choose. Nothing is shared unless you both say keep.</p>
+    <!-- Sticker collage -->
+    <div class="relative h-[26rem] sm:h-[30rem]" aria-hidden="true">
+      <div class="sticker absolute left-0 top-2 w-52 sm:w-60 p-5 tilt-l" style="background:var(--sky)">
+        <p class="font-display text-4xl">Hello!</p>
+        <p class="text-sm font-bold mt-1">Minho, speaks Korean</p>
+      </div>
+      <div class="sticker absolute right-0 top-24 sm:top-16 w-48 sm:w-56 p-5 tilt-r" style="background:var(--mint)">
+        <p class="font-display text-4xl">Annyeong</p>
+        <p class="text-sm font-bold mt-1">is how you say it back</p>
+      </div>
+      <div class="sticker absolute left-6 top-44 sm:top-48 w-72 p-5 tilt-r">
+        <p class="text-xs font-bold uppercase tracking-wider">Your pairing</p>
+        <p class="font-display text-2xl mt-1">You teach English<br>you learn Korean</p>
+        <div class="mt-3 flex gap-2"><span class="pill" style="background:var(--sun)">Mirror match</span></div>
+      </div>
+      <div class="sticker absolute right-2 bottom-0 w-44 p-4 tilt-l text-center" style="background:var(--tomato-bright)">
+        <p class="font-display text-5xl leading-none">4:12</p>
+        <p class="text-xs font-bold mt-1">left in the trial call</p>
       </div>
     </div>
   </section>
+
+  <!-- Greeting marquee -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      {% for i in "12" %}<span>Hello</span><span>*</span><span>Hola</span><span>*</span><span>Bonjour</span><span>*</span><span>Ciao</span><span>*</span><span>Olá</span><span>*</span><span>Merhaba</span><span>*</span><span>Привет</span><span>*</span><span>Selamat siang</span><span>*</span><span>Hej</span><span>*</span>{% endfor %}
+    </div>
+  </div>
 
   <!-- How it works -->
-  <section class="bg-white border-y border-gray-200">
-    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-16 lg:py-20">
-      <h2 class="text-3xl sm:text-4xl font-semibold text-gray-900 max-w-2xl">Three steps, and the first call is short on purpose.</h2>
-      <ol class="mt-12 grid md:grid-cols-3 gap-10 md:gap-8">
-        <li>
-          <p class="font-display text-5xl font-semibold text-coral-500 leading-none">1</p>
-          <h3 class="mt-4 text-xl font-semibold text-gray-900">Say what you speak and what you are learning</h3>
-          <p class="mt-2 text-gray-600">Add your languages to your profile. Every match is a two-way swap, so both of you get something.</p>
-        </li>
-        <li>
-          <p class="font-display text-5xl font-semibold text-coral-500 leading-none">2</p>
-          <h3 class="mt-4 text-xl font-semibold text-gray-900">Get paired for a 5 minute call</h3>
-          <p class="mt-2 text-gray-600">Quick match finds someone with the mirror image of your languages. Or browse partners and send a request.</p>
-        </li>
-        <li>
-          <p class="font-display text-5xl font-semibold text-coral-500 leading-none">3</p>
-          <h3 class="mt-4 text-xl font-semibold text-gray-900">Keep the ones you click with</h3>
-          <p class="mt-2 text-gray-600">When time is up, each of you picks keep in touch or skip. Keep means chat and call whenever you like.</p>
-        </li>
-      </ol>
+  <section class="max-w-6xl mx-auto px-5 sm:px-8 py-16 lg:py-24">
+    <h2 class="text-4xl sm:text-5xl max-w-2xl">Three steps. <span class="squiggle">No homework.</span></h2>
+    <div class="mt-10 grid md:grid-cols-3 gap-6">
+      <article class="sticker p-6 tilt-l" style="background:var(--sun-soft)">
+        <span class="font-display text-6xl">1</span>
+        <h3 class="text-2xl mt-2">Say what you speak</h3>
+        <p class="mt-2 font-medium">Add the language you know and the one you want. Every match is a swap, so both sides get something.</p>
+      </article>
+      <article class="sticker p-6 md:mt-8" style="background:var(--sky-soft)">
+        <span class="font-display text-6xl">2</span>
+        <h3 class="text-2xl mt-2">Get paired</h3>
+        <p class="mt-2 font-medium">Hit quick match for a five minute trial call, or browse partners and send a request.</p>
+      </article>
+      <article class="sticker p-6 tilt-r" style="background:var(--mint-soft)">
+        <span class="font-display text-6xl">3</span>
+        <h3 class="text-2xl mt-2">Keep the good ones</h3>
+        <p class="mt-2 font-medium">When time is up you each pick keep or skip. Keep means you can chat and call again.</p>
+      </article>
     </div>
   </section>
 
-  <!-- Safety -->
-  <section class="bg-teal-900 text-white">
-    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-16 lg:py-20 grid lg:grid-cols-[1fr_1.2fr] gap-10 lg:gap-16">
+  <!-- Quick match band -->
+  <section class="border-y-[3px] border-[var(--ink)]" style="background:var(--sky)">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-14 lg:py-20 grid lg:grid-cols-2 gap-10 items-center">
       <div>
-        <h2 class="text-3xl sm:text-4xl font-semibold leading-tight">Language practice, not a dating app.</h2>
-        <p class="mt-4 text-teal-100 max-w-md">Many language apps are known for awkward messages. Speakle is built around the opposite: you stay in control of who can reach you.</p>
+        <span class="pill"><svg class="ico"><use href="#i-bolt"/></svg> Quick match</span>
+        <h2 class="mt-4 text-4xl sm:text-5xl">Five minutes with someone new.</h2>
+        <p class="mt-4 text-lg font-medium max-w-lg">We pair you with a person who speaks what you are learning and is learning what you speak. After the call you both choose whether to stay in touch. Nothing is shared unless you both say yes.</p>
+        <a href="{% if user.is_authenticated %}{% url 'matches:quick_match' %}{% else %}{% url 'users:register' %}{% endif %}" class="btn btn-solid mt-6 text-lg px-7 py-3.5">Try it <svg class="ico"><use href="#i-arrow"/></svg></a>
       </div>
-      <ul class="grid sm:grid-cols-2 gap-x-10 gap-y-8">
-        <li class="flex gap-4"><svg class="ico w-6 h-6 text-teal-300 mt-1"><use href="#i-ban"/></svg><div><h3 class="font-semibold text-lg">Block in one tap</h3><p class="text-teal-100 mt-1">A blocked person can never be matched with you again, in either direction.</p></div></li>
-        <li class="flex gap-4"><svg class="ico w-6 h-6 text-teal-300 mt-1"><use href="#i-flag"/></svg><div><h3 class="font-semibold text-lg">Report to moderators</h3><p class="text-teal-100 mt-1">Pick a reason and add details. Reports go to a review queue.</p></div></li>
-        <li class="flex gap-4"><svg class="ico w-6 h-6 text-teal-300 mt-1"><use href="#i-mail"/></svg><div><h3 class="font-semibold text-lg">Verified email for quick match</h3><p class="text-teal-100 mt-1">You confirm your email before you can be paired with strangers.</p></div></li>
-        <li class="flex gap-4"><svg class="ico w-6 h-6 text-teal-300 mt-1"><use href="#i-clock"/></svg><div><h3 class="font-semibold text-lg">A short first call</h3><p class="text-teal-100 mt-1">Five minutes, then a clear yes or no from both sides. No awkward exits.</p></div></li>
+      <ul class="space-y-4">
+        <li class="sticker p-4 flex gap-3 items-start"><svg class="ico mt-1" style="width:1.6em;height:1.6em"><use href="#i-globe"/></svg><div><p class="font-bold">Mirrored languages</p><p class="text-sm font-medium">You teach what they learn, they teach what you learn.</p></div></li>
+        <li class="sticker p-4 flex gap-3 items-start tilt-r"><svg class="ico mt-1" style="width:1.6em;height:1.6em"><use href="#i-ban"/></svg><div><p class="font-bold">Blocked people are skipped</p><p class="text-sm font-medium">Anyone either side has blocked never shows up.</p></div></li>
+        <li class="sticker p-4 flex gap-3 items-start"><svg class="ico mt-1" style="width:1.6em;height:1.6em"><use href="#i-check"/></svg><div><p class="font-bold">You decide after</p><p class="text-sm font-medium">Keep or skip. Nothing is automatic.</p></div></li>
       </ul>
     </div>
   </section>
 
+  <!-- Safety -->
+  <section class="max-w-6xl mx-auto px-5 sm:px-8 py-16 lg:py-24">
+    <h2 class="text-4xl sm:text-5xl max-w-2xl">A language app, <span class="hl">not a dating app.</span></h2>
+    <p class="mt-4 text-lg font-medium max-w-2xl">Strangers on camera need guardrails. These are in the app today.</p>
+    <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="sticker p-5"><span class="pill" style="background:var(--tomato-soft)"><svg class="ico"><use href="#i-ban"/></svg> Block</span><p class="mt-3 font-medium text-sm">Block someone and you will never be matched again, either way.</p></div>
+      <div class="sticker p-5 tilt-r"><span class="pill" style="background:var(--sun-soft)"><svg class="ico"><use href="#i-flag"/></svg> Report</span><p class="mt-3 font-medium text-sm">Pick a reason and add details. Reports go to a review queue.</p></div>
+      <div class="sticker p-5"><span class="pill" style="background:var(--mint-soft)"><svg class="ico"><use href="#i-mail"/></svg> Verified email</span><p class="mt-3 font-medium text-sm">Quick match needs a confirmed email address.</p></div>
+      <div class="sticker p-5 tilt-l"><span class="pill" style="background:var(--sky-soft)"><svg class="ico"><use href="#i-clock"/></svg> Short first call</span><p class="mt-3 font-medium text-sm">Five minutes, then a clear yes or no from both sides.</p></div>
+    </div>
+  </section>
+
   <!-- Closing -->
-  <section class="max-w-6xl mx-auto px-5 sm:px-8 py-16 lg:py-24 text-center">
-    <h2 class="text-3xl sm:text-4xl font-semibold text-gray-900 max-w-2xl mx-auto">Ready for your first five minutes?</h2>
-    <p class="mt-4 text-gray-600">Free to use. Works in your browser.</p>
-    <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-      {% if user.is_authenticated %}
-      <a href="{% url 'matches:quick_match' %}" class="btn btn-coral px-6">Start a quick match</a>
-      {% else %}
-      <a href="{% url 'users:register' %}" class="btn btn-coral px-6">Create a free account</a>
-      <a href="{% url 'users:login' %}" class="btn btn-outline px-6">I already have an account</a>
-      {% endif %}
+  <section class="border-t-[3px] border-[var(--ink)]" style="background:var(--sun)">
+    <div class="max-w-4xl mx-auto px-5 sm:px-8 py-16 text-center">
+      <h2 class="text-5xl sm:text-6xl">Say <span class="squiggle">hola</span> to someone today.</h2>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        {% if user.is_authenticated %}
+        <a href="{% url 'matches:quick_match' %}" class="btn btn-outline text-lg px-7 py-3.5">Start a quick match</a>
+        {% else %}
+        <a href="{% url 'users:register' %}" class="btn btn-outline text-lg px-7 py-3.5">Create an account</a>
+        <a href="{% url 'users:login' %}" class="btn text-lg px-7 py-3.5" style="background:var(--cream)">I already have one</a>
+        {% endif %}
+      </div>
     </div>
   </section>
 </div>
