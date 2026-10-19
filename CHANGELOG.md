@@ -18,6 +18,7 @@
 - Call summary showed the other person's private star rating (it was stored in the shared call notes). Ratings are now hidden from the partner.
 - Call history showed the latest call as total time and a made-up 5m average. Both are now computed from real calls.
 - Call summary showed call success rate as language progress. Removed.
+- Text chat: reply preview and reply quote inserted message text as HTML (script injection from a partner's message). Escaped. Also the reply button could not work because a property shadowed the method.
 - Nav unread badge overlapped the Chats label.
 
 ### Changed

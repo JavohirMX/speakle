@@ -980,7 +980,7 @@ class TextChat {
         this.isConnected = false;
         this.typingTimeout = null;
         this.isTyping = false;
-        this.replyToMessage = null;
+        this.replyTarget = null;
         this.editingMessage = null;
         
         this.initializeElements();
@@ -1122,7 +1122,7 @@ class TextChat {
         const messageData = {
             type: 'send_message',
             message: content,
-            reply_to: this.replyToMessage ? this.replyToMessage.id : null
+            reply_to: this.replyTarget ? this.replyTarget.id : null
         };
         
         this.ws.send(JSON.stringify(messageData));
@@ -1143,8 +1143,8 @@ class TextChat {
         const isOwn = data.sender_id == this.userId;
         const replyHtml = data.reply_to ? `
             <div class="reply-indicator">
-                <strong>${data.reply_to.sender_username}:</strong>
-                ${data.reply_to.content}
+                <strong>${this.escapeHtml(data.reply_to.sender_username)}:</strong>
+                ${this.escapeHtml(data.reply_to.content)}
             </div>
         ` : '';
         
@@ -1198,20 +1198,20 @@ class TextChat {
             const senderElement = messageElement.querySelector('.reply-indicator strong') || 
                                  { textContent: messageElement.classList.contains('own') ? 'You' : this.partnerUsername };
             
-            this.replyToMessage = {
+            this.replyTarget = {
                 id: messageId,
                 content: messageText,
                 sender: senderElement.textContent.replace(':', '')
             };
             
-            this.replyPreviewContent.innerHTML = `<strong>${this.replyToMessage.sender}:</strong> ${this.replyToMessage.content}`;
+            this.replyPreviewContent.innerHTML = `<strong>${this.escapeHtml(this.replyTarget.sender)}:</strong> ${this.escapeHtml(this.replyTarget.content)}`;
             this.replyPreview.style.display = 'block';
             this.messageInput.focus();
         }
     }
     
     cancelReply() {
-        this.replyToMessage = null;
+        this.replyTarget = null;
         this.replyPreview.style.display = 'none';
     }
     
