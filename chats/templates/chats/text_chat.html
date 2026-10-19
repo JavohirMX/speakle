@@ -797,7 +797,7 @@
                 ← Back to Chats
             </a>
             <button onclick="initiateVideoCall({{ match.id }}, '{{ partner.username }}')" class="header-btn">
-                📹 Video Call
+                <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Video Call
             </button>
         </div>
     </div>
@@ -834,12 +834,12 @@
                         
                         {% if message.sender == user %}
                             <div class="message-actions">
-                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩️</button>
-                                <button class="action-btn edit-btn" title="Edit" data-message-id="{{ message.id }}">✏️</button>
+                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩</button>
+                                <button class="action-btn edit-btn" title="Edit" data-message-id="{{ message.id }}"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></button>
                             </div>
                         {% else %}
                             <div class="message-actions">
-                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩️</button>
+                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩</button>
                             </div>
                         {% endif %}
                     </div>
@@ -847,7 +847,7 @@
             {% endfor %}
         {% else %}
             <div class="empty-state">
-                <div class="icon">💬</div>
+                <div class="icon"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></div>
                 <h3>Start your conversation!</h3>
                 <p>Send a message to {{ partner.username }} to begin your language exchange journey.</p>
             </div>
@@ -877,7 +877,7 @@
         <div class="input-area">
             <textarea id="messageInput" class="message-input" placeholder="Type your message..." rows="1"></textarea>
             <button id="sendBtn" class="send-btn" disabled>
-                ➤
+                <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg>
             </button>
         </div>
     </div>
@@ -902,7 +902,7 @@
 <div id="callInvitationModal" class="edit-modal">
     <div class="edit-modal-content">
         <div class="edit-modal-header">
-            <h3 class="edit-modal-title">📞 Start Video Call</h3>
+            <h3 class="edit-modal-title"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Start Video Call</h3>
             <button class="close-modal" onclick="closeCallModal()">×</button>
         </div>
         
@@ -926,7 +926,7 @@
                     Cancel
                 </button>
                 <button onclick="sendCallInvitation()" class="btn btn-primary">
-                    📞 Send Invitation
+                    <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Send Invitation
                 </button>
             </div>
         </div>
@@ -1150,12 +1150,12 @@ class TextChat {
         
         const actionsHtml = isOwn ? `
             <div class="message-actions">
-                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩️</button>
-                <button class="action-btn edit-btn" title="Edit" data-message-id="${data.message_id}">✏️</button>
+                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩</button>
+                <button class="action-btn edit-btn" title="Edit" data-message-id="${data.message_id}"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></button>
             </div>
         ` : `
             <div class="message-actions">
-                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩️</button>
+                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩</button>
             </div>
         `;
         

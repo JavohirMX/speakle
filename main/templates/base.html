@@ -27,43 +27,18 @@
      {% endcomment %}
     <!-- Critical CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    
-                    colors: {
-                        'brand': {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
-                        'slide-down': 'slideDown 0.2s ease-out',
-                        'scale-up': 'scaleUp 0.15s ease-out',
-                    }
-                }
-            }
-        }
-    </script>
+    {% include 'partials/design_tailwind.html' %}
+    {% include 'partials/design_head.html' %}
     
     {% comment %} <!-- Web Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"> {% endcomment %}
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗣️</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2317766e'/%3E%3Cpath d='M8 10h16v9H14l-4 4v-4H8z' fill='white'/%3E%3C/svg%3E">
     
     <style>
         :root {
             --nav-height: 5rem;
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            --warning-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
             --nav-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
         }
         
@@ -1103,8 +1078,10 @@
         
         {% block extra_css %}{% endblock %}
     </style>
+    {% include 'partials/design_css.html' %}
 </head>
 <body class="bg-gray-50 antialiased">
+    {% include "partials/icons.html" %}
     <!-- Skip to content link for accessibility -->
     <a href="#main-content" class="skip-link focus-ring">Skip to main content</a>
     
@@ -1113,15 +1090,9 @@
         <div class="nav-container">
             <!-- Enhanced Logo -->
             <div class="flex items-center">
-                <a href="{% url 'main:home' %}" class="logo-container flex items-center space-x-2 sm:space-x-3 text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors focus-ring rounded-xl px-3 py-2">
-                    <div class="relative">
-                        <span class="text-3xl sm:text-4xl filter drop-shadow-lg">🗣️</span>
-                        <div class="absolute inset-0 text-3xl sm:text-4xl opacity-20 transform translate-x-1 translate-y-1">🗣️</div>
-                    </div>
-                    <div class="block">
-                        <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-extrabold tracking-tight text-lg sm:text-2xl">Speakle</span>
-                        <div class="text-xs text-gray-500 font-normal -mt-1 hidden sm:block">Language Exchange</div>
-                    </div>
+                <a href="{% url 'main:home' %}" class="logo-container flex items-center gap-2.5 focus-ring rounded-xl px-2 py-2" aria-label="Speakle home">
+                    <span class="logo-mark"><svg class="ico" viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-message"/></svg></span>
+                    <span class="logo-wordmark">Speakle</span>
                 </a>
             </div>
             
@@ -1131,14 +1102,14 @@
                     <!-- Navigation Items -->
                     <a href="{% url 'matches:find_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'find_matches' %}active text-blue-600{% endif %}">
                         <span class="flex items-center space-x-2">
-                            <span>🔍</span>
+                            <svg class="ico"><use href="#i-search"/></svg>
                             <span>Find Partners</span>
                         </span>
                     </a>
                     
                     <a href="{% url 'matches:my_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'my_matches' %}active text-blue-600{% endif %}">
                         <span class="flex items-center space-x-2">
-                            <span>🤝</span>
+                            <svg class="ico"><use href="#i-users"/></svg>
                             <span>My Matches</span>
                             <span id="pendingCallsBadge" class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
                         </span>
@@ -1146,7 +1117,7 @@
                     
                     <a href="{% url 'chats:chat_list' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.app_name == 'chats' %}active text-blue-600{% endif %}">
                         <span class="flex items-center space-x-2">
-                            <span>💬</span>
+                            <svg class="ico"><use href="#i-message"/></svg>
                             <span>Chats</span>
                             <span id="unreadMessagesBadge" class="notification-badge absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
                         </span>
@@ -1154,7 +1125,7 @@
                     
                     <a href="{% url 'matches:requests' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'requests' %}active text-blue-600{% endif %}">
                         <span class="flex items-center space-x-2">
-                            <span>📩</span>
+                            <svg class="ico"><use href="#i-mail"/></svg>
                             <span>Requests</span>
                         </span>
                     </a>
@@ -1203,30 +1174,30 @@
                             <!-- Menu Items -->
                             <div class="py-2">
                                 <a href="{% url 'users:profile' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
-                                    <span class="text-lg">👤</span>
+                                    <svg class="ico"><use href="#i-user"/></svg>
                                     <span>Profile Settings</span>
                                 </a>
                                 <a href="{% url 'matches:my_matches' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
-                                    <span class="text-lg">🤝</span>
+                                    <svg class="ico"><use href="#i-users"/></svg>
                                     <span>My Matches</span>
                                 </a>
                                 <a href="{% url 'chats:chat_list' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
-                                    <span class="text-lg">💬</span>
+                                    <svg class="ico"><use href="#i-message"/></svg>
                                     <span>My Chats</span>
                                 </a>
                                 <a href="#" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
-                                    <span class="text-lg">📊</span>
+                                    <svg class="ico"><use href="#i-chart"/></svg>
                                     <span>Statistics</span>
                                 </a>
                                 <a href="#" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
-                                    <span class="text-lg">⚙️</span>
+                                    <svg class="ico"><use href="#i-sliders"/></svg>
                                     <span>Settings</span>
                                 </a>
                             </div>
                             
                             <div class="border-t border-gray-100 py-2">
                                 <a href="{% url 'users:logout' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-red-600 hover:text-red-700 font-medium">
-                                    <span class="text-lg">🚪</span>
+                                    <svg class="ico"><use href="#i-logout"/></svg>
                                     <span>Sign Out</span>
                                 </a>
                             </div>
@@ -1276,33 +1247,33 @@
                 <!-- Mobile Menu Items -->
                 <div class="space-y-2">
                     <a href="{% url 'matches:find_matches' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
-                        <span class="text-xl">🔍</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span>
                         <span>Find Partners</span>
                     </a>
                     <a href="{% url 'matches:my_matches' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
-                        <span class="text-xl">🤝</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
                         <span>My Matches</span>
                         <span id="pendingCallsBadgeMobile" class="notification-badge absolute top-3 right-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
                     </a>
                     <a href="{% url 'chats:chat_list' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
-                        <span class="text-xl">💬</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
                         <span>Chats</span>
                         <span id="unreadMessagesBadgeMobile" class="notification-badge absolute top-3 right-3 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
                     </a>
                     <a href="{% url 'matches:requests' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
-                        <span class="text-xl">📩</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
                         <span>Requests</span>
                     </a>
                     <a href="{% url 'users:profile' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
-                        <span class="text-xl">👤</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></span>
                         <span>Profile</span>
                     </a>
                     <a href="#" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
-                        <span class="text-xl">📊</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg></span>
                         <span>Statistics</span>
                     </a>
                     <a href="#" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
-                        <span class="text-xl">⚙️</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-sliders"/></svg></span>
                         <span>Settings</span>
                     </a>
                 </div>
@@ -1311,7 +1282,7 @@
                 <div class="pt-6 border-t border-gray-200">
                     <a href="{% url 'users:logout' %}" class="block w-full text-center bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-colors font-semibold focus-ring">
                         <span class="flex items-center justify-center space-x-2">
-                            <span>🚪</span>
+                            <svg class="ico"><use href="#i-logout"/></svg>
                             <span>Sign Out</span>
                         </span>
                     </a>
@@ -1320,12 +1291,12 @@
                 <!-- Non-authenticated Mobile Menu -->
                 <div class="space-y-4">
                     <a href="{% url 'users:login' %}" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
-                        <span class="text-xl">🔐</span>
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg></span>
                         <span>Sign In</span>
                     </a>
                     <a href="{% url 'users:register' %}" class="block w-full text-center btn-primary text-white px-6 py-4 rounded-xl font-semibold border-0 focus-ring">
                         <span class="flex items-center justify-center space-x-2">
-                            <span>✨</span>
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                             <span>Get Started</span>
                         </span>
                     </a>
@@ -1343,7 +1314,7 @@
             <div class="relative z-10 flex items-start">
                 <div class="flex-shrink-0 pt-1">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                        <span id="toastIcon" class="text-2xl text-white block">📞</span>
+                        <span id="toastIcon" class="text-2xl text-white block"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                     </div>
                 </div>
                 <div class="ml-4 flex-1 min-w-0">
@@ -1373,7 +1344,7 @@
     <!-- Mobile Call Helper Button -->
     <div id="mobileCallHelper" class="mobile-call-helper">
         <button onclick="joinLastCall()" title="Join Your Accepted Call" aria-label="Join Your Accepted Call">
-            📞
+            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg>
         </button>
     </div>
     
@@ -1402,7 +1373,7 @@
                     <div class="call-icon-container w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-6 relative">
                         <div class="call-avatar w-full h-full bg-gradient-to-br from-blue-500 via-purple-600 to-cyan-500 rounded-full flex items-center justify-center shadow-2xl">
                             <div class="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center">
-                                <span class="text-3xl sm:text-4xl" id="callerAvatar">📞</span>
+                                <span class="text-3xl sm:text-4xl" id="callerAvatar"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                             </div>
                         </div>
                         
@@ -1445,7 +1416,7 @@
                     <div id="globalCallerMessage" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-xl sm:rounded-2xl border border-white/50 backdrop-blur-sm shadow-inner" style="display: none;">
                         <div class="flex items-start space-x-2 sm:space-x-3">
                             <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span class="text-white text-xs sm:text-sm">💬</span>
+                                <span class="text-white text-xs sm:text-sm"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
                             </div>
                             <div class="flex-1">
                                 <p class="text-xs font-medium text-gray-600 mb-1">Message from caller:</p>
@@ -1458,12 +1429,12 @@
                     <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mb-3 sm:mb-4">
                         <button onclick="globalDeclineCall()" 
                                 class="btn-enhanced btn-decline flex-1 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center space-x-2 focus-visible transition-all duration-300 hover:scale-105">
-                            <span class="text-lg sm:text-xl">📞</span>
+                            <span class="text-lg sm:text-xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                             <span>Decline</span>
                         </button>
                         <button onclick="globalAcceptCall()" 
                                 class="btn-enhanced btn-accept flex-1 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center space-x-2 focus-visible transition-all duration-300 hover:scale-105">
-                            <span class="text-lg sm:text-xl">📹</span>
+                            <span class="text-lg sm:text-xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                             <span>Accept</span>
                         </button>
                     </div>
@@ -1479,15 +1450,15 @@
                     <!-- Quick actions -->
                     <div class="flex items-center justify-center flex-wrap gap-2 sm:gap-4 mt-3 sm:mt-4 text-xs text-gray-500">
                         <button onclick="globalAcceptCall()" class="flex items-center space-x-1 hover:text-green-600 transition-colors focus-visible px-2 py-1 rounded-lg">
-                            <span>📹</span>
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                             <span class="hidden sm:inline">Video</span>
                         </button>
                         <button onclick="acceptAudioOnly()" class="flex items-center space-x-1 hover:text-blue-600 transition-colors focus-visible px-2 py-1 rounded-lg">
-                            <span>🎤</span>
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg></span>
                             <span class="hidden sm:inline">Audio Only</span>
                         </button>
                         <button onclick="sendQuickMessage()" class="flex items-center space-x-1 hover:text-purple-600 transition-colors focus-visible px-2 py-1 rounded-lg">
-                            <span>💬</span>
+                            <svg class="ico"><use href="#i-message"/></svg>
                             <span class="hidden sm:inline">Message</span>
                         </button>
                     </div>
@@ -1504,69 +1475,35 @@
     </main>
 
     <!-- Enhanced Footer -->
-    <footer class="bg-gradient-to-r from-gray-900 to-gray-800 text-white mt-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Main footer content -->
-            <div class="py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
-                <!-- Brand section -->
-                <div class="col-span-1 md:col-span-2">
-                    <div class="flex items-center space-x-2 mb-4">
-                        <span class="text-3xl">🗣️</span>
-                        <span class="text-2xl font-bold">Speakle</span>
-                    </div>
-                    <p class="text-gray-400 mb-4 max-w-md">
-                        Connect with language learners worldwide through video chat. Practice speaking with native speakers and improve your language skills naturally.
-                    </p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors focus-ring rounded p-1" aria-label="Facebook">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                            </svg>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors focus-ring rounded p-1" aria-label="Twitter">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                            </svg>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors focus-ring rounded p-1" aria-label="Instagram">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.004 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.297-3.323C5.901 8.248 7.052 7.758 8.349 7.758s2.448.49 3.323 1.297c.896.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323c-.875.807-2.026 1.297-3.323 1.297zm7.009 0c-1.297 0-2.448-.49-3.323-1.297-.896-.875-1.297-2.026-1.297-3.323s.49-2.448 1.297-3.323c.875-.896 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.896.875 1.297 2.026 1.297 3.323s-.49 2.448-1.297 3.323c-.875.807-2.026 1.297-3.323 1.297z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Quick links -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="{% url 'main:home' %}" class="hover:text-white transition-colors focus-ring rounded">Home</a></li>
-                        {% if user.is_authenticated %}
-                            <li><a href="{% url 'matches:find_matches' %}" class="hover:text-white transition-colors focus-ring rounded">Find Partners</a></li>
-                            <li><a href="{% url 'matches:my_matches' %}" class="hover:text-white transition-colors focus-ring rounded">My Matches</a></li>
-                        {% else %}
-                            <li><a href="{% url 'users:register' %}" class="hover:text-white transition-colors focus-ring rounded">Sign Up</a></li>
-                            <li><a href="{% url 'users:login' %}" class="hover:text-white transition-colors focus-ring rounded">Login</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
-                
-                <!-- Support -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Support</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Help Center</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Terms of Service</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors focus-ring rounded">Contact Us</a></li>
-                    </ul>
-                </div>
+    <footer class="bg-gray-900 text-gray-300 mt-0">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 py-12 grid sm:grid-cols-[1.5fr_1fr_1fr] gap-10">
+            <div>
+                <p class="font-display text-2xl font-semibold text-white">Speakle</p>
+                <p class="mt-3 text-sm text-gray-400 max-w-sm">Language exchange by video. You teach what you speak, they teach what you are learning.</p>
             </div>
-            
-            <!-- Copyright -->
-            <div class="py-6 border-t border-gray-700 text-center text-gray-400">
-                <p>&copy; 2025 Speakle. All rights reserved. Connect with language learners worldwide.</p>
+            <div>
+                <p class="text-sm font-semibold text-white">Explore</p>
+                <ul class="mt-3 space-y-2 text-sm">
+                    <li><a class="hover:text-white" href="{% url 'main:home' %}">Home</a></li>
+                    <li><a class="hover:text-white" href="{% url 'matches:find_matches' %}">Find partners</a></li>
+                    <li><a class="hover:text-white" href="{% url 'matches:my_matches' %}">My matches</a></li>
+                </ul>
             </div>
+            <div>
+                <p class="text-sm font-semibold text-white">Account</p>
+                <ul class="mt-3 space-y-2 text-sm">
+                    {% if user.is_authenticated %}
+                    <li><a class="hover:text-white" href="{% url 'users:profile' %}">Profile</a></li>
+                    <li><a class="hover:text-white" href="{% url 'users:logout' %}">Sign out</a></li>
+                    {% else %}
+                    <li><a class="hover:text-white" href="{% url 'users:login' %}">Sign in</a></li>
+                    <li><a class="hover:text-white" href="{% url 'users:register' %}">Create account</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-800">
+            <p class="max-w-6xl mx-auto px-5 sm:px-8 py-5 text-xs text-gray-400">&copy; Speakle</p>
         </div>
     </footer>
 
@@ -1900,7 +1837,7 @@
                         showNotificationToast(
                             'Enable Notifications?', 
                             'Get notified when someone calls you', 
-                            '🔔', 
+                            '', 
                             3000
                         );
                         
@@ -1909,9 +1846,9 @@
                             Notification.requestPermission().then(permission => {
                                 browserNotificationsEnabled = permission === 'granted';
                                 if (browserNotificationsEnabled) {
-                                    showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '✅');
+                                    showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '');
                                 } else {
-                                    showNotificationToast('Notifications Disabled', 'You may miss incoming calls', '⚠️');
+                                    showNotificationToast('Notifications Disabled', 'You may miss incoming calls', '');
                                 }
                             }).catch(error => {
                                 browserNotificationsEnabled = false;
@@ -1922,7 +1859,7 @@
                         Notification.requestPermission().then(permission => {
                             browserNotificationsEnabled = permission === 'granted';
                             if (browserNotificationsEnabled) {
-                                showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '🔔');
+                                showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '');
                             }
                         });
                     }
@@ -1935,7 +1872,7 @@
         }
 
         // Enhanced browser notification
-        function showBrowserNotification(title, message, icon = '📞', tag = 'speakle-call') {
+        function showBrowserNotification(title, message, icon = '', tag = 'speakle-call') {
             if (browserNotificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
                 const notification = new Notification(title, {
                     body: message,
@@ -1956,7 +1893,7 @@
         }
 
         // Enhanced notification toast with actions
-        function showNotificationToast(title, message, icon = '📞', duration = NOTIFICATION_DURATION, actions = null) {
+        function showNotificationToast(title, message, icon = '', duration = NOTIFICATION_DURATION, actions = null) {
             const toast = document.getElementById('notificationToast');
             const toastTitle = document.getElementById('toastTitle');
             const toastMessage = document.getElementById('toastMessage');
@@ -2119,9 +2056,9 @@
                     if (window.isMobileDevice()) {
                         // For mobile: Show notification with manual entry option
                         showNotificationToast(
-                            'Call Accepted! 🎉',
+                            'Call Accepted!',
                             `${accepterUsername} accepted your call`,
-                            '✅',
+                            '',
                             0, // Don't auto-hide
                             {
                                 primary: {
@@ -2153,9 +2090,9 @@
                             // Check if user is still on the same page (redirect might have failed)
                             if (window.location.pathname === window.location.pathname) {
                                 showNotificationToast(
-                                    'Join Your Call 📞',
+                                    'Join Your Call',
                                     `Tap the button or notification to join your call`,
-                                    '🔄',
+                                    '',
                                     0, // Don't auto-hide
                                     {
                                         primary: {
@@ -2180,9 +2117,9 @@
                     } else {
                         // For desktop: Keep the existing behavior with notification
                         showNotificationToast(
-                            'Call Accepted! 🎉',
+                            'Call Accepted!',
                             `${accepterUsername} accepted your call`,
-                            '✅',
+                            '',
                             2000
                         );
                         setTimeout(() => {
@@ -2193,14 +2130,14 @@
                     showBrowserNotification(
                         'Call Accepted!',
                         `${accepterUsername} accepted your call`,
-                        '✅'
+                        ''
                     );
                     break;
                 case 'call_invitation_declined':
                     showNotificationToast(
                         'Call Declined',
                         `${data.decliner_username} declined your call`,
-                        '❌',
+                        '',
                         4000
                     );
                     break;
@@ -2218,7 +2155,7 @@
             const browserNotif = showBrowserNotification(
                 'Incoming Video Call',
                 `${data.caller_username} wants to start a video call${data.message ? ': ' + data.message : ''}`,
-                '📞'
+                ''
             );
 
             // Show main incoming call modal (primary UI)
@@ -2357,7 +2294,7 @@
             showNotificationToast(
                 'Call Cancelled',
                 `${data.canceller_username} cancelled the call`,
-                '🚫'
+                ''
             );
         }
 
@@ -2483,7 +2420,7 @@
                         pendingCallsCount = Math.max(0, pendingCallsCount - 1);
                         updatePendingCallsBadge();
                         
-                        showNotificationToast('Joining call... 🎥', 'Redirecting to video room', '🎥', 1500);
+                        showNotificationToast('Joining call...', 'Redirecting to video room', '', 1500);
                         
                         // Mobile-friendly redirection - immediate redirect without timeout
                         if (window.isMobileDevice()) {
@@ -2500,7 +2437,7 @@
                     }
                 })
                 .catch(error => {
-                    showNotificationToast('Error', 'Failed to accept call', '❌');
+                    showNotificationToast('Error', 'Failed to accept call', '');
                 })
                 .finally(() => {
                     if (btn) btn.classList.remove('loading');
@@ -2533,10 +2470,10 @@
                     pendingCallsCount = Math.max(0, pendingCallsCount - 1);
                     updatePendingCallsBadge();
                     
-                    showNotificationToast('Call declined', 'Call invitation declined', '❌', 3000);
+                    showNotificationToast('Call declined', 'Call invitation declined', '', 3000);
                 })
                 .catch(error => {
-                    showNotificationToast('Error', 'Failed to decline call', '❌');
+                    showNotificationToast('Error', 'Failed to decline call', '');
                 })
                 .finally(() => {
                     if (btn) btn.classList.remove('loading');
@@ -2599,7 +2536,7 @@
                 })
                 .catch(error => {
 
-                    showNotificationToast('Error', 'Failed to send message', '❌');
+                    showNotificationToast('Error', 'Failed to send message', '');
                 });
                 
                 currentGlobalIncomingInvitation = null;
@@ -2694,7 +2631,7 @@
                         showNotificationToast(
                             'Multiple Calls',
                             `You have ${data.invitations.length} pending invitations`,
-                            '📞',
+                            '',
                             5000
                         );
                     }
@@ -2768,7 +2705,7 @@
                                 <div class="call-icon-container w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 mx-auto mb-4 sm:mb-6 relative">
                                     <div class="call-avatar w-full h-full bg-gradient-to-br from-green-500 via-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
                                         <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center">
-                                            <span class="text-2xl sm:text-3xl md:text-4xl">📞</span>
+                                            <span class="text-2xl sm:text-3xl md:text-4xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                                         </div>
                                     </div>
                                 </div>
@@ -2794,7 +2731,7 @@
                                 <div id="invitationForm" style="display: none;">
                                     <div class="mb-6 sm:mb-8">
                                         <label class="block text-left font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center space-x-2">
-                                            <span class="text-base sm:text-lg">💬</span>
+                                            <span class="text-base sm:text-lg"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
                                             <span class="text-sm sm:text-base">Add a personal message (optional)</span>
                                         </label>
                                         <div class="relative">
@@ -2818,14 +2755,14 @@
                                         <button onclick="closeQuickCallModal()" 
                                                 class="btn-enhanced flex-1 bg-gradient-to-r from-gray-400 to-gray-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 hover:scale-105 focus-visible">
                                             <span class="flex items-center justify-center space-x-2">
-                                                <span>✕</span>
+                                                <span><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
                                                 <span>Cancel</span>
                                             </span>
                                         </button>
                                         <button onclick="sendQuickCallInvitation()" 
                                                 class="btn-enhanced btn-accept flex-1 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 hover:scale-105 focus-visible">
                                             <span class="flex items-center justify-center space-x-2">
-                                                <span class="text-base sm:text-lg">📞</span>
+                                                <span class="text-base sm:text-lg"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                                                 <span>Send Invitation</span>
                                             </span>
                                         </button>
@@ -2840,7 +2777,7 @@
                                             <div class="absolute inset-0 rounded-full border-4 border-blue-200 animate-spin"></div>
                                             <div class="absolute inset-2 rounded-full border-4 border-blue-500 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
                                             <div class="absolute inset-0 flex items-center justify-center">
-                                                <span class="text-lg">📞</span>
+                                                <span class="text-lg"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                                             </div>
                                         </div>
                                         
@@ -2860,7 +2797,7 @@
                                         <button onclick="cancelInvitation()" 
                                                 class="btn-enhanced btn-decline px-6 py-3 rounded-2xl font-semibold text-white transition-all duration-300 hover:scale-105 focus-visible">
                                             <span class="flex items-center justify-center space-x-2">
-                                                <span>✕</span>
+                                                <span><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
                                                 <span>Cancel Invitation</span>
                                             </span>
                                         </button>
@@ -2883,14 +2820,14 @@
                                         <button onclick="enterRoomAnyway()" 
                                                 class="btn-enhanced btn-accept w-full text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 focus-visible">
                                             <span class="flex items-center justify-center space-x-2">
-                                                <span class="text-lg">🚪</span>
+                                                <svg class="ico"><use href="#i-logout"/></svg>
                                                 <span>Enter Room Anyway</span>
                                             </span>
                                         </button>
                                         <button onclick="closeQuickCallModal()" 
                                                 class="btn-enhanced w-full bg-gradient-to-r from-gray-400 to-gray-500 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 focus-visible">
                                             <span class="flex items-center justify-center space-x-2">
-                                                <span>✕</span>
+                                                <span><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
                                                 <span>Close</span>
                                             </span>
                                         </button>
@@ -3045,7 +2982,7 @@
             })
             .catch(error => {
 
-                showNotificationToast('Error', error.message || 'Failed to send invitation', '❌');
+                showNotificationToast('Error', error.message || 'Failed to send invitation', '');
             })
             .finally(() => {
                 btn.classList.remove('loading');
@@ -3112,9 +3049,9 @@
             
             if (settings.showNotifications) {
                 showNotificationToast(
-                    'Call Accepted! 🎉',
+                    'Call Accepted!',
                     `${partnerUsername} accepted your call`,
-                    '✅',
+                    '',
                     1500
                 );
             }
@@ -3145,7 +3082,7 @@
                 showNotificationToast(
                     'Call Declined',
                     `${partnerUsername} declined your call invitation`,
-                    '❌',
+                    '',
                     4000
                 );
             }
@@ -3226,7 +3163,7 @@
             })
             .catch(error => {
 
-                showNotificationToast('Error', 'Failed to create video room. Please try again.', '❌');
+                showNotificationToast('Error', 'Failed to create video room. Please try again.', '');
             });
             
             closeQuickCallModal();
@@ -3353,7 +3290,7 @@
                 showNotificationToast(
                     'No Active Call',
                     'No active call to join. Please wait for a call invitation.',
-                    '📞',
+                    '',
                     3000
                 );
                 return false;

@@ -10,7 +10,7 @@
             <h1 class="text-3xl font-bold text-gray-900">Call History</h1>
             <button onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username }}')" 
                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
-                🎥 Start New Call
+                <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Start New Call
             </button>
         </div>
         
@@ -89,15 +89,15 @@
                                 <div class="flex-shrink-0">
                                     {% if session.status == 'ended' %}
                                         <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                            <span class="text-green-600 text-xl">📞</span>
+                                            <span class="text-green-600 text-xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                                         </div>
                                     {% elif session.status == 'failed' %}
                                         <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                                            <span class="text-red-600 text-xl">❌</span>
+                                            <span class="text-red-600 text-xl"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
                                         </div>
                                     {% else %}
                                         <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <span class="text-blue-600 text-xl">🔄</span>
+                                            <span class="text-blue-600 text-xl"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -127,15 +127,15 @@
                             <!-- Call Features -->
                             <div class="flex items-center space-x-3">
                                 {% if session.video_enabled %}
-                                    <span class="text-green-600" title="Video enabled">📹</span>
+                                    <span class="text-green-600" title="Video enabled"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                                 {% else %}
-                                    <span class="text-gray-400" title="Video disabled">📹</span>
+                                    <span class="text-gray-400" title="Video disabled"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                                 {% endif %}
                                 
                                 {% if session.audio_enabled %}
-                                    <span class="text-green-600" title="Audio enabled">🎤</span>
+                                    <span class="text-green-600" title="Audio enabled"><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg></span>
                                 {% else %}
-                                    <span class="text-gray-400" title="Audio disabled">🎤</span>
+                                    <span class="text-gray-400" title="Audio disabled"><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg></span>
                                 {% endif %}
                                 
                                 {% if session.connection_quality %}
@@ -163,12 +163,12 @@
             </div>
         {% else %}
             <div class="px-6 py-12 text-center">
-                <div class="text-gray-400 text-6xl mb-4">📞</div>
+                <div class="text-gray-400 text-6xl mb-4"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No call history yet</h3>
                 <p class="text-gray-500 mb-6">Start your first video call with {{ partner.username }} to begin building your conversation history.</p>
                 <button onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username }}')" 
                    class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition inline-flex items-center">
-                    🎥 Start First Call
+                    <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Start First Call
                 </button>
             </div>
         {% endif %}

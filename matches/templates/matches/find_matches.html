@@ -5,7 +5,7 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
     <!-- Enhanced Header Section -->
-    <div class="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700">
+    <div class="speakle-hero relative overflow-hidden">
         <div class="absolute inset-0 bg-black/10"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-purple-600/90"></div>
         
@@ -35,7 +35,7 @@
                     <button onclick="refreshMatches()" 
                         class="group relative bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white/30 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
                         <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl group-hover:animate-spin transition-transform duration-500">🔄</span>
+                            <span class="text-2xl group-hover:animate-spin transition-transform duration-500"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                             <span>Refresh Matches</span>
                         </span>
                     </button>
@@ -43,7 +43,7 @@
                     <a href="{% url 'matches:requests' %}" 
                         class="group relative bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
                         <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl">📩</span>
+                            <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
                             <span>Match Requests</span>
                         </span>
                         <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -52,7 +52,7 @@
                     <a href="{% url 'matches:my_matches' %}" 
                         class="group relative bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
                         <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl">🤝</span>
+                            <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
                             <span>My Matches</span>
                         </span>
                         <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -78,7 +78,7 @@
                     <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 w-full lg:w-auto">
                         <div class="flex items-center space-x-3">
                             <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                                <span class="text-white text-xl">🎯</span>
+                                <span class="text-white text-xl"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></span>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Smart Matching</h3>
@@ -122,7 +122,7 @@
                     <div class="absolute inset-0 border-4 border-blue-200 rounded-full animate-spin"></div>
                     <div class="absolute inset-2 border-4 border-blue-500 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-2xl">🔍</span>
+                        <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span>
                     </div>
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">Finding Your Perfect Matches</h3>
@@ -148,7 +148,7 @@
             <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-3xl p-6 text-white">
                 <div class="flex items-center space-x-4">
                     <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                        <span class="text-3xl">💌</span>
+                        <span class="text-3xl"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
                     </div>
                     <div>
                         <h3 class="text-2xl font-bold">Send Match Request</h3>
@@ -167,7 +167,7 @@
                 <div class="mb-8">
                     <label for="requestMessage" class="block text-sm font-semibold text-gray-800 mb-3">
                         <span class="flex items-center space-x-2">
-                            <span>✨</span>
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                             <span>Introduce yourself (optional):</span>
                         </span>
                     </label>
@@ -195,7 +195,7 @@
                     <button onclick="sendMatchRequest()" 
                             class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl focus-ring">
                         <span class="flex items-center justify-center space-x-2">
-                            <span>💌</span>
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
                             <span>Send Request</span>
                         </span>
                     </button>
@@ -247,7 +247,7 @@ function refreshMatches() {
     // Enhanced button loading state
     btn.innerHTML = `
         <span class="flex items-center justify-center space-x-3">
-            <span class="animate-spin text-2xl">🔄</span>
+            <span class="animate-spin text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
             <span>Refreshing...</span>
         </span>
     `;
@@ -265,7 +265,7 @@ function refreshMatches() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('success', 'Matches refreshed successfully! 🎉');
+            showNotification('success', 'Matches refreshed successfully!');
             loadPotentialMatches();
         } else {
             showNotification('error', data.error || 'Failed to refresh matches');
@@ -320,7 +320,7 @@ function updateMatchesDisplay(matches) {
                     <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20"></div>
                     <div class="absolute inset-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full opacity-40"></div>
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-6xl">🔍</span>
+                        <span class="text-6xl"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span>
                     </div>
                 </div>
                 <h3 class="text-3xl font-bold text-gray-900 mb-4">No matches found yet</h3>
@@ -331,14 +331,14 @@ function updateMatchesDisplay(matches) {
                                     <a href="/users/profile/" 
                    class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
                     <span class="flex items-center space-x-2">
-                        <span>✨</span>
+                        <span><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                         <span>Complete Profile</span>
                     </span>
                 </a>
                     <button onclick="refreshMatches()" 
                        class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
                         <span class="flex items-center space-x-2">
-                            <span>🔄</span>
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                             <span>Try Again</span>
                         </span>
                     </button>
@@ -394,7 +394,7 @@ function updateMatchesDisplay(matches) {
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
                                 <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
-                                    <span class="text-white text-lg">📚</span>
+                                    <span class="text-white text-lg"><svg class="ico" aria-hidden="true"><use href="#i-globe"/></svg></span>
                                 </div>
                                 <div>
                                     <div class="text-sm text-blue-700 font-medium">You teach</div>
@@ -409,7 +409,7 @@ function updateMatchesDisplay(matches) {
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
                                 <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-md">
-                                    <span class="text-white text-lg">🎯</span>
+                                    <span class="text-white text-lg"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></span>
                                 </div>
                                 <div>
                                     <div class="text-sm text-green-700 font-medium">You learn</div>
@@ -430,13 +430,13 @@ function updateMatchesDisplay(matches) {
                         </div>` :
                         match.is_confirmed_partner ?
                         `<div class="flex items-center space-x-3 bg-green-50 text-green-800 px-6 py-3 rounded-2xl border border-green-200 w-full justify-center">
-                            <span class="text-xl">✅</span>
+                            <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span>
                             <span class="font-semibold">Already Matched</span>
                         </div>` :
                         `<button onclick="openSendRequestModal(${match.id}, '${match.partner.username}', '${match.user_teaches}', '${match.user_learns}')" 
                            class="group w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 focus-ring">
                             <span class="flex items-center justify-center space-x-2">
-                                <span class="text-xl group-hover:animate-bounce">💌</span>
+                                <span class="text-xl group-hover:animate-bounce"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
                                 <span>Send Request</span>
                             </span>
                         </button>`
@@ -491,7 +491,7 @@ function openSendRequestModal(matchId, partnerName, userTeaches, userLearns) {
                     </div>
                 </div>
             </div>
-            <div class="text-4xl">🤝</div>
+            <div class="text-4xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></div>
         </div>
     `;
     
@@ -588,10 +588,10 @@ function updateCharCount() {
 function showNotification(type, message) {
     if (typeof showNotificationToast === 'function') {
         const icons = {
-            success: '✅',
-            error: '❌',
-            info: 'ℹ️',
-            warning: '⚠️'
+            success: '',
+            error: '',
+            info: '',
+            warning: ''
         };
         const titles = {
             success: 'Success',
@@ -599,7 +599,7 @@ function showNotification(type, message) {
             info: 'Info',
             warning: 'Warning'
         };
-        showNotificationToast(titles[type] || 'Notification', message, icons[type] || '📢');
+        showNotificationToast(titles[type] || 'Notification', message, icons[type] || '');
     } else {
         alert(message);
     }
