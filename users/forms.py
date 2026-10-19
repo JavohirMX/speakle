@@ -107,6 +107,29 @@ class UserProfileForm(forms.ModelForm):
             'interests': forms.Textarea(attrs={'rows': 3}),
         }
     
+    MAX_BIO = 1000
+    MAX_INTERESTS = 500
+    MAX_PICTURE_BYTES = 5 * 1024 * 1024
+
+    def clean_bio(self):
+        bio = self.cleaned_data.get('bio', '')
+        if len(bio) > self.MAX_BIO:
+            raise forms.ValidationError(f'Keep your bio under {self.MAX_BIO} characters.')
+        return bio
+
+    def clean_interests(self):
+        text = self.cleaned_data.get('interests', '')
+        if len(text) > self.MAX_INTERESTS:
+            raise forms.ValidationError(f'Keep interests under {self.MAX_INTERESTS} characters.')
+        return text
+
+    def clean_profile_picture(self):
+        pic = self.cleaned_data.get('profile_picture')
+        size = getattr(pic, 'size', None)
+        if pic and hasattr(pic, 'content_type') and size and size > self.MAX_PICTURE_BYTES:
+            raise forms.ValidationError('Pick a picture under 5 MB.')
+        return pic
+
     def save(self, commit=True):
         user = super().save(commit=False)
         # A changed address is unverified until the new one is confirmed.

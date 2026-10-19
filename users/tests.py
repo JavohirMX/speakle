@@ -247,3 +247,31 @@ class SignupLimitTests(TestCase):
             self.client.logout()
             self.assertEqual(self._post(9).status_code, 429)
             self.assertFalse(get_user_model().objects.filter(username='su9').exists())
+
+
+class ProfileFormLimitsTests(TestCase):
+    def _form(self, **over):
+        from .forms import UserProfileForm
+        data = {'first_name': 'A', 'last_name': '', 'email': 'pf@x.com', 'bio': '', 'interests': ''}
+        data.update(over)
+        return UserProfileForm(data)
+
+    def test_overlong_bio_and_interests_are_rejected(self):
+        self.assertIn('bio', self._form(bio='x' * 1001).errors)
+        self.assertIn('interests', self._form(interests='y' * 501).errors)
+
+    def test_limits_are_inclusive(self):
+        f = self._form(bio='x' * 1000, interests='y' * 500)
+        self.assertNotIn('bio', f.errors)
+        self.assertNotIn('interests', f.errors)
+
+    def test_oversized_picture_is_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .forms import UserProfileForm
+        import io
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new('RGB', (4, 4)).save(buf, 'PNG')
+        big = SimpleUploadedFile('a.png', buf.getvalue() + b'0' * (5 * 1024 * 1024 + 1), content_type='image/png')
+        f = UserProfileForm({'first_name': 'A', 'email': 'pf@x.com', 'bio': '', 'interests': ''}, {'profile_picture': big})
+        self.assertIn('under 5 MB', str(f.errors.get('profile_picture')))
