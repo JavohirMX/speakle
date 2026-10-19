@@ -688,6 +688,8 @@ def submit_feedback(request):
     try:
         import json
         data = json.loads(request.body)
+        if not isinstance(data, dict):
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
         
         session_id = data.get('session_id')
         rating = data.get('rating')
@@ -713,6 +715,11 @@ def submit_feedback(request):
         # For now, we can store this in the session's end_notes or create a separate model
         # Let's append it to end_notes for simplicity
         feedback_text = f"User {request.user.username} rated this call: {rating}/5 stars"
+
+        # One rating line per user: a repeat submit must not grow the notes without bound.
+        marker = f"User {request.user.username} rated this call:"
+        kept = [line for line in (session.end_notes or '').split('\n') if not line.startswith(marker)]
+        session.end_notes = '\n'.join(kept)
         
         if session.end_notes:
             session.end_notes += f"\n{feedback_text}"

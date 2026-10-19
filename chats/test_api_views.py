@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -623,3 +624,56 @@ class VideoCallConsumerFlowTests(TransactionTestCase):
                                                        'url_route': {'kwargs': {'room_id': rid}}})
             await c.connect()
             await self._next(c, 'error')
+
+
+class SubmitFeedbackTests(ChatApiBase):
+    def setUp(self):
+        super().setUp()
+        self.session = CallSession.objects.create(room=self.video, status='ended')
+        self.session.participants.add(self.a, self.b)
+
+    def post(self, user, payload, raw=None):
+        body = raw if raw is not None else json.dumps(payload)
+        return self.client_for(user).post(reverse('chats:submit_feedback'), body, content_type='application/json')
+
+    def payload(self, **over):
+        d = {'session_id': self.session.id, 'rating': 5, 'room_id': str(self.video.room_id)}
+        d.update(over)
+        return d
+
+    def test_rating_is_saved_once_per_user(self):
+        self.assertEqual(self.post(self.a, self.payload()).status_code, 200)
+        self.assertEqual(self.post(self.a, self.payload(rating=3)).status_code, 200)
+        self.post(self.b, self.payload(rating=4))
+        self.session.refresh_from_db()
+        lines = self.session.end_notes.split('\n')
+        self.assertEqual(len([l for l in lines if 'apia rated' in l]), 1)
+        self.assertIn('apia rated this call: 3/5', self.session.end_notes)
+        self.assertIn('apib rated this call: 4/5', self.session.end_notes)
+
+    def test_validation(self):
+        self.assertEqual(self.post(self.a, self.payload(rating=9)).status_code, 400)
+        self.assertEqual(self.post(self.a, self.payload(rating='5')).status_code, 400)
+        self.assertEqual(self.post(self.a, {'rating': 5}).status_code, 400)
+        self.assertEqual(self.post(self.a, None, raw='not json').status_code, 400)
+        self.assertEqual(self.post(self.a, None, raw='[1, 2]').status_code, 400)
+        self.assertEqual(self.post(self.a, self.payload(session_id=99999)).status_code, 404)
+
+    def test_outsider_and_non_participant_denied(self):
+        self.assertEqual(self.post(self.outsider, self.payload()).status_code, 403)
+        other = CallSession.objects.create(room=self.video, status='ended')
+        other.participants.add(self.b)
+        self.assertEqual(self.post(self.a, self.payload(session_id=other.id)).status_code, 403)
+
+
+class CallPagesTests(ChatApiBase):
+    def test_history_and_summary_pages_for_participants_only(self):
+        s = CallSession.objects.create(room=self.video, status='ended', end_reason='normal')
+        s.participants.add(self.a, self.b)
+        hist = reverse('chats:call_history', args=[self.video.room_id])
+        summ = reverse('chats:call_summary', args=[self.video.room_id, s.id])
+        self.assertEqual(self.client_for(self.a).get(hist).status_code, 200)
+        self.assertEqual(self.client_for(self.a).get(summ).status_code, 200)
+        for url in (hist, summ):
+            r = self.client_for(self.outsider).get(url)
+            self.assertIn(r.status_code, (302, 403, 404))
