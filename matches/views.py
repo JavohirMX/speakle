@@ -42,7 +42,7 @@ def find_matches(request):
             MatchingService.find_potential_matches(request.user)
     
     # Get potential matches
-    potential_matches = PotentialMatch.objects.filter(user=request.user).select_related(
+    potential_matches = PotentialMatch.objects.filter(user=request.user, potential_partner__is_active=True).select_related(
         'potential_partner', 'user_teaches', 'user_learns')[:20]  # Limit to 20
     
     # Get existing match requests to avoid duplicates
@@ -432,7 +432,7 @@ def get_potential_matches(request):
         }, status=400)
     
     # Get potential matches
-    potential_matches = PotentialMatch.objects.filter(user=request.user).select_related(
+    potential_matches = PotentialMatch.objects.filter(user=request.user, potential_partner__is_active=True).select_related(
         'potential_partner', 'user_teaches', 'user_learns')[:20]
     
     # Get existing match requests to avoid duplicates

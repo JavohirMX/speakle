@@ -58,7 +58,7 @@ def join_queue(user):
     cutoff = timezone.now() - timedelta(minutes=WAIT_TTL_MINUTES)
     candidates = (QuickMatchEntry.objects.select_for_update()
                   .filter(match__isnull=True, created_at__gte=cutoff,
-                          teaches=learns, learns=teaches)
+                          teaches=learns, learns=teaches, user__is_active=True)
                   .exclude(user=user).select_related('user').order_by('created_at'))
     for entry in candidates:
         other = entry.user

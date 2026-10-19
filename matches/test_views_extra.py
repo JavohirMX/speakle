@@ -149,3 +149,33 @@ class InactiveUsersNotSuggestedTests(TestCase):
         U.objects.filter(pk=gone.pk).update(is_active=False)
         got = {m.potential_partner_id for m in MatchingService.find_potential_matches(me)}
         self.assertEqual(got, {ok.id})
+
+
+class DeactivatedUsersHiddenTests(TestCase):
+    def setUp(self):
+        U = get_user_model()
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.me = U.objects.create_user('dh_me', 'dhme@x.com', 'pw12345!')
+        self.other = U.objects.create_user('dh_other', 'dhother@x.com', 'pw12345!')
+        UserLanguage.objects.create(user=self.me, language=self.en, language_type='native', proficiency='native')
+        UserLanguage.objects.create(user=self.me, language=self.ko, language_type='learning', proficiency='beginner')
+
+    def test_stored_suggestion_of_a_since_deactivated_user_is_hidden(self):
+        from .models import PotentialMatch
+        PotentialMatch.objects.create(user=self.me, potential_partner=self.other, user_teaches=self.en,
+                                      user_learns=self.ko, compatibility_score=80)
+        self.client.force_login(self.me)
+        self.assertContains(self.client.get(reverse('matches:find_matches')), 'dh_other')
+        get_user_model().objects.filter(pk=self.other.pk).update(is_active=False)
+        self.assertNotContains(self.client.get(reverse('matches:find_matches')), 'dh_other')
+
+    def test_quick_match_skips_a_deactivated_waiting_user(self):
+        from django.test import override_settings
+        from . import quick
+        UserLanguage.objects.create(user=self.other, language=self.ko, language_type='native', proficiency='native')
+        UserLanguage.objects.create(user=self.other, language=self.en, language_type='learning', proficiency='beginner')
+        with override_settings(QUICK_MATCH_REQUIRE_VERIFIED_EMAIL=False):
+            self.assertIsNone(quick.join_queue(self.other))
+            get_user_model().objects.filter(pk=self.other.pk).update(is_active=False)
+            self.assertIsNone(quick.join_queue(self.me))
