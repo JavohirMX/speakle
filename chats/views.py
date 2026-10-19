@@ -308,6 +308,18 @@ def room_status(request, room_id):
     except VideoRoom.DoesNotExist:
         return JsonResponse({'error': 'Room not found'}, status=404)
 
+from datetime import timedelta
+
+
+def _format_minutes(delta):
+    """Format a timedelta as '1h 05m' or '7m'."""
+    if delta.total_seconds() < 60:
+        return f'{int(delta.total_seconds())}s'
+    minutes = int(delta.total_seconds() // 60)
+    hours, minutes = divmod(minutes, 60)
+    return f'{hours}h {minutes:02d}m' if hours else f'{minutes}m'
+
+
 @login_required
 def call_history(request, room_id):
     """View call history for a room."""
@@ -321,11 +333,16 @@ def call_history(request, room_id):
         messages.error(request, 'You do not have access to this room.')
         return redirect('matches:my_matches')
     
-    sessions = room.sessions.filter(status='ended').order_by('-started_at')
-    
+    sessions = list(room.sessions.filter(status='ended').order_by('-started_at'))
+    durations = [x.duration for x in sessions if x.duration]
+    total = sum(durations, timedelta())
+    average = total / len(durations) if durations else None
+
     context = {
         'room': room,
         'sessions': sessions,
+        'total_time': _format_minutes(total) if durations else None,
+        'average_time': _format_minutes(average) if durations else None,
         'partner': room.match.get_partner(request.user),
     }
     

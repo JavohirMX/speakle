@@ -1,189 +1,63 @@
 {% extends 'base.html' %}
 
-{% block title %}Call History with {{ partner.username }} - Speakle{% endblock %}
+{% block title %}Call history with {{ partner.username }} - Speakle{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <h1 class="text-3xl font-bold text-gray-900">Call History</h1>
-            <button onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username }}')" 
-               class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
-                <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Start New Call
-            </button>
-        </div>
-        
-        <div class="flex items-center space-x-4 text-gray-600">
-            {% if partner.profile_picture %}
-                <img src="{{ partner.profile_picture.url }}" 
-                     alt="{{ partner.username }}" 
-                     class="w-12 h-12 rounded-full object-cover">
-            {% else %}
-                <div class="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
-                    {{ partner.username|first|upper }}
-                </div>
-            {% endif %}
-            <div>
-                <h2 class="text-xl font-semibold text-gray-900">{{ partner.username }}</h2>
-                <p class="text-sm">Language exchange partner</p>
-            </div>
-        </div>
+<div class="page-head">
+  <div class="page-head-in flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-4">
+      {% if partner.profile_picture %}<img class="pm-avatar" style="width:56px;height:56px" src="{{ partner.profile_picture.url }}" alt="">{% else %}<span class="pm-avatar pm-initial" style="width:56px;height:56px;font-size:1.6rem" aria-hidden="true">{{ partner.username|first|upper }}</span>{% endif %}
+      <div>
+        <h1>Calls with {{ partner.username }}</h1>
+        <p class="lede">Your finished video calls.</p>
+      </div>
     </div>
-
-    <!-- Call Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6 text-center">
-            <div class="text-3xl font-bold text-blue-600">{{ sessions.count }}</div>
-            <p class="text-sm text-gray-600 mt-1">Total Calls</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center">
-            <div class="text-3xl font-bold text-green-600">
-                {% with total_duration=sessions|length %}
-                    {% if total_duration > 0 %}
-                        {{ sessions.0.duration|default:"0h" }}
-                    {% else %}
-                        0h
-                    {% endif %}
-                {% endwith %}
-            </div>
-            <p class="text-sm text-gray-600 mt-1">Total Time</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center">
-            <div class="text-3xl font-bold text-purple-600">
-                {% if sessions %}
-                    {{ sessions.0.started_at|date:"M d" }}
-                {% else %}
-                    -
-                {% endif %}
-            </div>
-            <p class="text-sm text-gray-600 mt-1">Last Call</p>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6 text-center">
-            <div class="text-3xl font-bold text-orange-600">
-                {% if sessions %}
-                    {% with avg_duration=sessions.0.duration %}
-                        {{ avg_duration|default:"5m" }}
-                    {% endwith %}
-                {% else %}
-                    -
-                {% endif %}
-            </div>
-            <p class="text-sm text-gray-600 mt-1">Avg Duration</p>
-        </div>
-    </div>
-
-    <!-- Call History List -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">Recent Calls</h3>
-        </div>
-        
-        {% if sessions %}
-            <div class="divide-y divide-gray-200">
-                {% for session in sessions %}
-                    <div class="px-6 py-4 hover:bg-gray-50 transition">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4">
-                                <!-- Call Status Icon -->
-                                <div class="flex-shrink-0">
-                                    {% if session.status == 'ended' %}
-                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                            <span class="text-green-600 text-xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
-                                        </div>
-                                    {% elif session.status == 'failed' %}
-                                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                                            <span class="text-red-600 text-xl"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
-                                        </div>
-                                    {% else %}
-                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <span class="text-blue-600 text-xl"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Call Details -->
-                                <div>
-                                    <div class="flex items-center space-x-2">
-                                        <h4 class="text-sm font-medium text-gray-900">
-                                            Video Call
-                                        </h4>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            {% if session.status == 'ended' %}bg-green-100 text-green-800
-                                            {% elif session.status == 'failed' %}bg-red-100 text-red-800
-                                            {% else %}bg-blue-100 text-blue-800{% endif %}">
-                                            {{ session.get_status_display }}
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                                        <span>{{ session.started_at|date:"M d, Y" }} at {{ session.started_at|time:"g:i A" }}</span>
-                                        {% if session.duration %}
-                                            <span>Duration: {{ session.duration }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Call Features -->
-                            <div class="flex items-center space-x-3">
-                                {% if session.video_enabled %}
-                                    <span class="text-green-600" title="Video enabled"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
-                                {% else %}
-                                    <span class="text-gray-400" title="Video disabled"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
-                                {% endif %}
-                                
-                                {% if session.audio_enabled %}
-                                    <span class="text-green-600" title="Audio enabled"><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg></span>
-                                {% else %}
-                                    <span class="text-gray-400" title="Audio disabled"><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg></span>
-                                {% endif %}
-                                
-                                {% if session.connection_quality %}
-                                    <span class="text-xs px-2 py-1 rounded
-                                        {% if session.connection_quality == 'good' %}bg-green-100 text-green-800
-                                        {% elif session.connection_quality == 'fair' %}bg-yellow-100 text-yellow-800
-                                        {% else %}bg-red-100 text-red-800{% endif %}">
-                                        {{ session.connection_quality|title }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- Participants -->
-                        <div class="mt-3 flex items-center space-x-2 text-sm text-gray-500">
-                            <span>Participants:</span>
-                            {% for participant in session.participants.all %}
-                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100">
-                                    {{ participant.username }}
-                                </span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="px-6 py-12 text-center">
-                <div class="text-gray-400 text-6xl mb-4"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">No call history yet</h3>
-                <p class="text-gray-500 mb-6">Start your first video call with {{ partner.username }} to begin building your conversation history.</p>
-                <button onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username }}')" 
-                   class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition inline-flex items-center">
-                    <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Start First Call
-                </button>
-            </div>
-        {% endif %}
-    </div>
-
-    <!-- Navigation -->
-    <div class="mt-8 flex justify-between">
-        <a href="{% url 'matches:match_detail' room.match.id %}" 
-           class="text-blue-600 hover:text-blue-800 transition">
-            ← Back to Match Details
-        </a>
-        <a href="{% url 'matches:my_matches' %}" 
-           class="text-blue-600 hover:text-blue-800 transition">
-            View All Matches →
-        </a>
-    </div>
+    <button type="button" class="btn btn-solid" onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username|escapejs }}')">
+      <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Start a call
+    </button>
+  </div>
 </div>
-{% endblock %} 
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+  <dl class="grid grid-cols-2 md:grid-cols-4 gap-4" aria-label="Call totals">
+    <div class="bg-white border-2 rounded-2xl p-4 text-center" style="border-color:var(--ink)"><dd class="text-3xl font-bold">{{ sessions|length }}</dd><dt class="text-sm text-gray-600">Calls</dt></div>
+    <div class="bg-white border-2 rounded-2xl p-4 text-center" style="border-color:var(--ink)"><dd class="text-3xl font-bold">{{ total_time|default:"-" }}</dd><dt class="text-sm text-gray-600">Total time</dt></div>
+    <div class="bg-white border-2 rounded-2xl p-4 text-center" style="border-color:var(--ink)"><dd class="text-3xl font-bold">{% if sessions %}{{ sessions.0.started_at|date:"M j" }}{% else %}-{% endif %}</dd><dt class="text-sm text-gray-600">Last call</dt></div>
+    <div class="bg-white border-2 rounded-2xl p-4 text-center" style="border-color:var(--ink)"><dd class="text-3xl font-bold">{{ average_time|default:"-" }}</dd><dt class="text-sm text-gray-600">Average length</dt></div>
+  </dl>
+
+  <section aria-labelledby="recentCalls" class="bg-white border-2 rounded-2xl" style="border-color:var(--ink)">
+    <h2 id="recentCalls" class="text-xl px-6 py-4 border-b border-gray-200">Recent calls</h2>
+    {% if sessions %}
+    <ul class="divide-y divide-gray-200" role="list">
+      {% for session in sessions %}
+      <li class="px-6 py-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p class="font-semibold">{{ session.started_at|date:"M j, Y" }} at {{ session.started_at|time:"g:i A" }}</p>
+            <p class="text-sm text-gray-600">{% if session.duration %}{{ session.get_duration_display }}{% else %}Length not recorded{% endif %}{% if session.connection_quality %} &middot; Connection {{ session.connection_quality }}{% endif %}</p>
+          </div>
+          <p class="text-sm text-gray-600">
+            Video {% if session.video_enabled %}on{% else %}off{% endif %} &middot; Mic {% if session.audio_enabled %}on{% else %}off{% endif %}
+          </p>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-6 py-12 text-center">
+      <h3 class="text-lg mb-2">No calls yet</h3>
+      <p class="text-gray-600 mb-6">Start a video call with {{ partner.username }} and it will show up here.</p>
+      <button type="button" class="btn btn-solid" onclick="initiateVideoCallGlobal({{ room.match.id }}, '{{ partner.username|escapejs }}')">
+        <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Start a call
+      </button>
+    </div>
+    {% endif %}
+  </section>
+
+  <nav class="flex justify-between text-sm font-semibold" aria-label="Back">
+    <a class="underline" href="{% url 'matches:match_detail' room.match.id %}">&larr; Match details</a>
+    <a class="underline" href="{% url 'matches:my_matches' %}">All matches &rarr;</a>
+  </nav>
+</div>
+{% endblock %}

@@ -1132,3 +1132,39 @@ class TextChatApiTests(TestCase):
         self.assertEqual(r.json()['marked_read'], 2)
         self.assertEqual(self.client.get(url).json()['unread_count'], 0)
         self.assertFalse(self.room.messages.get(content='mine').is_read)
+
+
+class CallHistoryPageTests(TestCase):
+    def setUp(self):
+        from matches.models import Match
+        U = get_user_model()
+        self.a = U.objects.create_user('cha', 'cha@x.com', 'pw12345!')
+        self.b = U.objects.create_user('chb', 'chb@x.com', 'pw12345!')
+        self.o = U.objects.create_user('cho', 'cho@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = VideoRoom.objects.create(match=m)
+        self.url = reverse('chats:call_history', args=[self.room.room_id])
+        self.client.force_login(self.a)
+
+    def _session(self, minutes):
+        s = CallSession.objects.create(room=self.room, status='ended', duration=timedelta(minutes=minutes))
+        s.participants.add(self.a, self.b)
+        return s
+
+    def test_empty_state_has_no_invented_numbers(self):
+        r = self.client.get(self.url)
+        self.assertContains(r, 'No calls yet')
+        self.assertIsNone(r.context['total_time'])
+        self.assertIsNone(r.context['average_time'])
+
+    def test_totals_and_average_are_computed(self):
+        self._session(10); self._session(20)
+        r = self.client.get(self.url)
+        self.assertEqual(r.context['total_time'], '30m')
+        self.assertEqual(r.context['average_time'], '15m')
+
+    def test_outsider_is_redirected(self):
+        self.client.force_login(self.o)
+        self.assertEqual(self.client.get(self.url).status_code, 302)
