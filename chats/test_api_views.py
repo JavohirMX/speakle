@@ -339,3 +339,105 @@ class InvitationViewTests(ChatApiBase):
         self.assertIn('apia', r.content.decode())
         r2 = self.client_for(self.a).get(reverse('chats:get_pending_invitations'))
         self.assertNotIn('apia', r2.content.decode())
+
+
+from django.test import TransactionTestCase
+from channels.db import database_sync_to_async
+from .tests import _make_communicator
+
+
+class TextChatConsumerEditAndHistoryTests(TransactionTestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.a = User.objects.create_user('ws_a', 'wsa@x.com', 'pw12345!')
+        self.b = User.objects.create_user('ws_b', 'wsb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = ChatRoom.objects.create(match=m)
+
+    async def _connect(self, user):
+        from .consumers import TextChatConsumer
+        rid = str(self.room.room_id)
+        scope = {'path': f'/ws/text-chat/{rid}/', 'user': user, 'url_route': {'kwargs': {'room_id': rid}}}
+        c = _make_communicator(TextChatConsumer, scope)
+        ok, _ = await c.connect()
+        self.assertTrue(ok)
+        return c
+
+    async def _next(self, c, wanted, limit=8):
+        for _ in range(limit):
+            msg = await c.receive_json_from()
+            if msg.get('type') == wanted:
+                return msg
+        self.fail(f'no {wanted} frame')
+
+    async def test_edit_broadcasts_and_persists(self):
+        msg = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.a, content='old')
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'edit_message', 'message_id': msg.id, 'content': 'new'})
+        frame = await self._next(ca, 'message_edited')
+        self.assertEqual(frame['new_content'], 'new')
+        saved = await database_sync_to_async(ChatMessage.objects.get)(pk=msg.pk)
+        self.assertEqual(saved.content, 'new')
+        await ca.disconnect()
+
+    async def test_edit_rejects_long_content_and_other_peoples_messages(self):
+        msg = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.a, content='old')
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'edit_message', 'message_id': msg.id, 'content': 'x' * 1001})
+        self.assertIn('too long', (await self._next(ca, 'error'))['message'])
+        cb = await self._connect(self.b)
+        await cb.send_json_to({'type': 'edit_message', 'message_id': msg.id, 'content': 'hijack'})
+        await self._next(cb, 'error')
+        saved = await database_sync_to_async(ChatMessage.objects.get)(pk=msg.pk)
+        self.assertEqual(saved.content, 'old')
+        await ca.disconnect(); await cb.disconnect()
+
+    async def test_edit_after_block_is_refused(self):
+        from users.models import UserBlock
+        msg = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.a, content='old')
+        ca = await self._connect(self.a)
+        await database_sync_to_async(UserBlock.objects.create)(blocker=self.b, blocked=self.a)
+        await ca.send_json_to({'type': 'edit_message', 'message_id': msg.id, 'content': 'new'})
+        self.assertIn('no longer available', (await self._next(ca, 'error'))['message'])
+        saved = await database_sync_to_async(ChatMessage.objects.get)(pk=msg.pk)
+        self.assertEqual(saved.content, 'old')
+        await ca.disconnect()
+
+    async def test_load_messages_survives_bad_paging_values(self):
+        await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.b, content='hi')
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'load_messages', 'page': 'abc', 'page_size': 'zz'})
+        frame = await self._next(ca, 'message_history')
+        self.assertEqual([m['content'] for m in frame['messages']], ['hi'])
+        await ca.send_json_to({'type': 'load_messages', 'page': 1, 'page_size': 0})
+        frame = await self._next(ca, 'message_history')
+        self.assertEqual(len(frame['messages']), 1)
+        await ca.disconnect()
+
+    async def test_mark_read_ping_unknown_and_bad_json(self):
+        msg = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.b, content='hi')
+        mine = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.a, content='mine')
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'mark_messages_read', 'message_ids': [msg.id, mine.id]})
+        await ca.send_json_to({'type': 'ping', 'timestamp': 5})
+        self.assertEqual((await self._next(ca, 'pong'))['timestamp'], 5)
+        self.assertTrue((await database_sync_to_async(ChatMessage.objects.get)(pk=msg.pk)).is_read)
+        self.assertFalse((await database_sync_to_async(ChatMessage.objects.get)(pk=mine.pk)).is_read)
+        await ca.send_json_to({'type': 'nope'})
+        self.assertIn('Unknown', (await self._next(ca, 'error'))['message'])
+        await ca.send_to(text_data='not json')
+        self.assertIn('Invalid JSON', (await self._next(ca, 'error'))['message'])
+        await ca.disconnect()
+
+    async def test_outsider_is_refused(self):
+        from .consumers import TextChatConsumer
+        out = await database_sync_to_async(User.objects.create_user)('ws_c', 'wsc@x.com', 'pw12345!')
+        rid = str(self.room.room_id)
+        c = _make_communicator(TextChatConsumer, {'path': f'/ws/text-chat/{rid}/', 'user': out,
+                                                  'url_route': {'kwargs': {'room_id': rid}}})
+        await c.connect()
+        frame = await c.receive_json_from()
+        self.assertEqual(frame['type'], 'error')

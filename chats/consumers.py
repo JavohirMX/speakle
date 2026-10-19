@@ -1086,6 +1086,20 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                 'message': 'Invalid edit request'
             }))
             return
+
+        if len(new_content) > 1000:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Message too long (max 1000 characters)'
+            }))
+            return
+
+        if not await self.check_chat_room_access():
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'This conversation is no longer available.'
+            }))
+            return
         
         try:
             success = await self.edit_chat_message(message_id, new_content)
@@ -1152,9 +1166,12 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_load_messages(self, data):
         """Handle loading message history."""
-        page = data.get('page', 1)
-        page_size = data.get('page_size', 50)
-        
+        try:
+            page = max(int(data.get('page', 1)), 1)
+            page_size = min(max(int(data.get('page_size', 50)), 1), 100)
+        except (TypeError, ValueError):
+            page, page_size = 1, 50
+
         messages = await self.get_message_history(page, page_size)
         
         await self.send(text_data=json.dumps({
