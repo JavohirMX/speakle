@@ -673,3 +673,20 @@ class FindMatchesQueryCountTests(TestCase):
             p = mk(f'fm{i + 1}', ko, en)
             PotentialMatch.objects.create(user=me, potential_partner=p, user_teaches=en, user_learns=ko, compatibility_score=50)
         self.assertEqual(count(), few)
+
+
+class PotentialMatchesApiPrivacyTests(TestCase):
+    def test_does_not_expose_strangers_email(self):
+        U = get_user_model()
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        me = U.objects.create_user('pm_me', 'me@x.com', 'pw12345!', email_verified=True)
+        other = U.objects.create_user('pm_other', 'secret-stranger@x.com', 'pw12345!', email_verified=True)
+        UserLanguage.objects.create(user=me, language=en, language_type='native', proficiency='native')
+        UserLanguage.objects.create(user=me, language=ko, language_type='learning', proficiency='beginner')
+        PotentialMatch.objects.create(user=me, potential_partner=other, user_teaches=en, user_learns=ko, compatibility_score=50)
+        c = Client(); c.force_login(me)
+        r = c.get(reverse('matches:get_potential_matches'))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn('secret-stranger@x.com', r.content.decode())
+        self.assertEqual(r.json()['potential_matches'][0]['partner']['username'], 'pm_other')

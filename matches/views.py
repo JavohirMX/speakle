@@ -429,19 +429,21 @@ def get_potential_matches(request):
         }, status=400)
     
     # Get potential matches
-    potential_matches = PotentialMatch.objects.filter(user=request.user)[:20]
+    potential_matches = PotentialMatch.objects.filter(user=request.user).select_related(
+        'potential_partner', 'user_teaches', 'user_learns')[:20]
     
     # Get existing match requests to avoid duplicates
     sent_requests = MatchRequest.objects.filter(
         sender=request.user,
         status='pending'
     ).values_list('receiver_id', flat=True)
+    sent_requests = set(sent_requests)
     
     # Get confirmed matches to avoid showing them again
     confirmed_matches = Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
         status='active'
-    )
+    ).select_related('user1', 'user2')
     confirmed_partner_ids = [match.get_partner(request.user).id for match in confirmed_matches]
     
     matches_data = []
@@ -452,7 +454,6 @@ def get_potential_matches(request):
             'partner': {
                 'id': partner.id,
                 'username': partner.username,
-                'email': partner.email,
             },
             'user_teaches': potential_match.user_teaches.name if potential_match.user_teaches else None,
             'user_learns': potential_match.user_learns.name if potential_match.user_learns else None,
