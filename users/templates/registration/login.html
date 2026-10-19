@@ -3,129 +3,43 @@
 {% block title %}Sign In - Speakle{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <div class="text-center">
-            <h2 class="text-3xl font-bold text-gray-900">Welcome Back</h2>
-            <p class="mt-2 text-sm text-gray-600">Sign in to continue your language journey</p>
-        </div>
+<div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <h2 class="text-3xl font-bold">Welcome back</h2>
+        <p class="mt-2 text-sm text-gray-600">Sign in to pick up your conversations.</p>
     </div>
-
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div class="bg-white py-8 px-5 border border-gray-200 rounded-2xl sm:px-10">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="mb-4 p-4 rounded-md {% if message.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+            {% if form.errors %}
+                <div class="alert alert-error" role="alert" id="login-error">
+                    <span>That username and password don't match. Check for typos (passwords are case-sensitive), or <a class="underline" href="{% url 'users:password_reset' %}">reset your password</a>.</span>
+                </div>
             {% endif %}
-
-            <form class="space-y-6" method="post">
+            <form method="post" class="space-y-5" data-validate novalidate>
                 {% csrf_token %}
-                
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
                 <div>
-                    <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        Username
-                    </label>
-                    <div class="mt-1">
-                        <input id="{{ form.username.id_for_label }}" name="{{ form.username.name }}" type="text" required 
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                               value="{{ form.username.value|default:'' }}">
-                    </div>
-                    {% if form.username.errors %}
-                        {% for error in form.username.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
+                    <label for="id_username" class="block text-sm font-medium">Username</label>
+                    <input id="id_username" name="username" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false" {% if not form.errors %}autofocus{% endif %}
+                           class="mt-1 block w-full px-3 py-2" value="{{ form.username.value|default:'' }}" data-msg-required="Enter your username.">
                 </div>
-
                 <div>
-                    <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        Password
-                    </label>
-                    <div class="mt-1 relative">
-                        <input id="{{ form.password.id_for_label }}" name="{{ form.password.name }}" type="password" required 
-                               class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center" onclick="togglePassword('{{ form.password.id_for_label }}', this)">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </button>
+                    <label for="id_password" class="block text-sm font-medium">Password</label>
+                    <div class="relative">
+                        <input id="id_password" name="password" type="password" required autocomplete="current-password" {% if form.errors %}autofocus{% endif %}
+                               class="mt-1 block w-full px-3 py-2 pr-24" data-msg-required="Enter your password.">
+                        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-bold underline px-2" style="min-height:36px" data-toggle-password="id_password" aria-controls="id_password">Show</button>
                     </div>
-                    {% if form.password.errors %}
-                        {% for error in form.password.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
                 </div>
-
-                {% if form.non_field_errors %}
-                    <div class="text-red-600 text-sm">
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <input id="remember_me" name="remember_me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                        <label for="remember_me" class="ml-2 block text-sm text-gray-900">
-                            Remember me
-                        </label>
-                    </div>
-
-                    <div class="text-sm">
-                        <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
-                            Forgot password?
-                        </a>
-                    </div>
+                    <label class="flex items-center gap-2 text-sm"><input id="remember_me" name="remember_me" type="checkbox" class="h-4 w-4"> Remember me</label>
+                    <a href="{% url 'users:password_reset' %}" class="text-sm font-semibold underline">Forgot password?</a>
                 </div>
-
-                <div>
-                    <button type="submit" class="btn btn-solid w-full">
-                        Sign In
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-solid w-full" data-loading-text="Signing in...">Sign in</button>
             </form>
-
-            <div class="mt-6">
-                <div class="text-center">
-                    <p class="text-sm text-gray-600">
-                        Don't have an account?
-                        <a href="{% url 'users:register' %}" class="font-medium text-blue-600 hover:text-blue-500">
-                            Sign up here
-                        </a>
-                    </p>
-                </div>
-            </div>
+            <p class="mt-6 text-center text-sm text-gray-600">New here? <a href="{% url 'users:register' %}" class="font-semibold underline">Create an account</a></p>
         </div>
     </div>
 </div>
-
-<script>
-function togglePassword(fieldId, button) {
-    const passwordField = document.getElementById(fieldId);
-    const eyeIcon = button.querySelector('svg');
-    
-    if (passwordField.type === 'password') {
-        passwordField.type = 'text';
-        // Change to eye-slash icon (hidden) - simple diagonal line through eye
-        eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18" />
-        `;
-    } else {
-        passwordField.type = 'password';
-        // Change to eye icon (visible)
-        eyeIcon.innerHTML = `
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        `;
-    }
-}
-</script>
-{% endblock %} 
+{% include 'partials/form_validate.html' %}
+{% endblock %}

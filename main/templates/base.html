@@ -1100,14 +1100,14 @@
             <div class="hidden md:flex items-center space-x-2">
                 {% if user.is_authenticated %}
                     <!-- Navigation Items -->
-                    <a href="{% url 'matches:find_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'find_matches' %}active text-blue-600{% endif %}">
+                    <a href="{% url 'matches:find_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'find_matches' or request.resolver_match.url_name == 'send_request' %}active text-blue-600{% endif %}" {% if request.resolver_match.url_name == 'find_matches' %}aria-current="page"{% endif %}>
                         <span class="flex items-center space-x-2">
                             <svg class="ico"><use href="#i-search"/></svg>
                             <span>Find Partners</span>
                         </span>
                     </a>
                     
-                    <a href="{% url 'matches:my_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'my_matches' %}active text-blue-600{% endif %}">
+                    <a href="{% url 'matches:my_matches' %}" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 {% if request.resolver_match.url_name == 'my_matches' or request.resolver_match.url_name == 'match_detail' %}active text-blue-600{% endif %}" {% if request.resolver_match.url_name == 'my_matches' %}aria-current="page"{% endif %}>
                         <span class="flex items-center space-x-2">
                             <svg class="ico"><use href="#i-users"/></svg>
                             <span>My Matches</span>
@@ -1127,6 +1127,7 @@
                         <span class="flex items-center space-x-2">
                             <svg class="ico"><use href="#i-mail"/></svg>
                             <span>Requests</span>
+                            <span id="railRequestsBadge" class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
                         </span>
                     </a>
                     
@@ -1469,18 +1470,45 @@
     {% endif %}
 
     <!-- Main Content with proper spacing for fixed nav -->
+    {% if messages %}
+    <div class="toast-region" role="status" aria-live="polite">
+        {% for message in messages %}
+        <div class="toast {% if message.tags == 'error' %}toast-error{% elif message.tags == 'warning' %}toast-warn{% elif message.tags == 'info' %}toast-info{% else %}toast-ok{% endif %}">
+            <span class="toast-text">{{ message }}</span>
+            <button type="button" class="toast-x" aria-label="Dismiss message" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    <script>setTimeout(function(){document.querySelectorAll('.toast').forEach(function(t){t.style.opacity='0';setTimeout(function(){t.remove()},400)})},7000);</script>
+    {% endif %}
     <main id="main-content" class="min-h-screen">
+        {% if user.is_authenticated and not user.email_verified and user.email and request.resolver_match.url_name == 'find_matches' %}
+        <div class="verify-bar" id="verify-bar">
+            <span>Confirm your email to unlock Quick match. We sent a link to <strong>{{ user.email }}</strong>.</span>
+            <button type="button" id="verify-resend" class="verify-btn">Resend link</button>
+        </div>
+        <script>
+        document.getElementById('verify-resend').addEventListener('click', function () {
+            var b = this; b.disabled = true; b.textContent = 'Sending...';
+            fetch("{% url 'users:resend_verification' %}", {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+                .then(function (r) { return r.json(); }).then(function (d) { b.textContent = d.success ? 'Sent. Check your inbox' : (d.error || 'Try again in a minute'); if (!d.success) b.disabled = false; })
+                .catch(function () { b.textContent = 'Network error. Try again'; b.disabled = false; });
+        });
+        </script>
+        {% endif %}
         {% block content %}
         {% endblock %}
     </main>
 
     {% if user.is_authenticated %}
     <nav class="tabbar" aria-label="Main">
-        <a href="{% url 'matches:find_matches' %}" class="{% if request.resolver_match.url_name == 'find_matches' %}on{% endif %}"><svg class="ico"><use href="#i-search"/></svg>Find</a>
-        <a href="{% url 'matches:my_matches' %}" class="{% if request.resolver_match.url_name == 'my_matches' %}on{% endif %}"><svg class="ico"><use href="#i-users"/></svg>Matches</a>
-        <a href="{% url 'matches:quick_match' %}" class="fab" aria-label="Quick match"><span class="bub"><svg class="ico"><use href="#i-bolt"/></svg></span>Quick</a>
-        <a href="{% url 'chats:chat_list' %}" class="{% if request.resolver_match.app_name == 'chats' %}on{% endif %}"><svg class="ico"><use href="#i-message"/></svg>Chats</a>
-        <a href="{% url 'users:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}on{% endif %}"><svg class="ico"><use href="#i-user"/></svg>Me</a>
+        {% with u=request.resolver_match.url_name %}
+        <a href="{% url 'matches:find_matches' %}" class="{% if u == 'find_matches' or u == 'send_request' %}on{% endif %}" {% if u == 'find_matches' %}aria-current="page"{% endif %}><svg class="ico"><use href="#i-search"/></svg>Find</a>
+        <a href="{% url 'matches:my_matches' %}" class="{% if u == 'my_matches' or u == 'match_detail' or u == 'requests' %}on{% endif %}" {% if u == 'my_matches' %}aria-current="page"{% endif %}><svg class="ico"><use href="#i-users"/></svg>Matches<span class="tab-badge" id="tabMatchesBadge" hidden></span></a>
+        <a href="{% url 'matches:quick_match' %}" class="fab {% if 'quick' in u %}on{% endif %}" aria-label="Quick match"><span class="bub"><svg class="ico"><use href="#i-bolt"/></svg></span>Quick</a>
+        <a href="{% url 'chats:chat_list' %}" class="{% if request.resolver_match.app_name == 'chats' %}on{% endif %}" {% if u == 'chat_list' %}aria-current="page"{% endif %}><svg class="ico"><use href="#i-message"/></svg>Chats<span class="tab-badge" id="tabChatsBadge" hidden></span></a>
+        <a href="{% url 'users:profile' %}" class="{% if u == 'profile' or u == 'add_language' or u == 'edit_language' or u == 'delete_language' %}on{% endif %}" {% if u == 'profile' %}aria-current="page"{% endif %}><svg class="ico"><use href="#i-user"/></svg>Me</a>
+        {% endwith %}
     </nav>
     {% endif %}
     <!-- Enhanced Footer -->
@@ -1659,19 +1687,7 @@
         });
         
         // Enhanced active navigation highlighting
-        function highlightActiveNavItem() {
-            const currentPath = window.location.pathname;
-            const navItems = document.querySelectorAll('.nav-item');
-            
-            navItems.forEach(item => {
-                const href = item.getAttribute('href');
-                if (href && currentPath.includes(href) && href !== '/') {
-                    item.classList.add('active');
-                } else if (href === '/' && currentPath === '/') {
-                    item.classList.add('active');
-                }
-            });
-        }
+        function highlightActiveNavItem() { /* active state is rendered server-side */ }
         
         // Enhanced notification badge updates with animation
         function updatePendingCallsBadge() {
@@ -3353,5 +3369,24 @@
     </script>
 
     {% block extra_js %}{% endblock %}
+
+    {% if user.is_authenticated %}
+    <script>
+    (function () {
+        function put(el, n) { if (!el) return; if (n > 0) { el.textContent = n > 9 ? '9+' : n; el.hidden = false; el.style.display = 'flex'; } else { el.hidden = true; el.style.display = 'none'; } }
+        function sync() {
+            fetch('/matches/api/pending-requests/').then(function (r) { return r.json(); }).then(function (d) {
+                var n = (d.incoming_requests || d.incoming || []).length;
+                put(document.getElementById('railRequestsBadge'), n);
+                window.__incomingRequests = n; put(document.getElementById('tabMatchesBadge'), n);
+            }).catch(function () {});
+            fetch('/chats/api/total-unread-count/').then(function (r) { return r.json(); }).then(function (d) {
+                put(document.getElementById('tabChatsBadge'), d.unread_count || 0);
+            }).catch(function () {});
+        }
+        sync(); setInterval(sync, 30000);
+    })();
+    </script>
+    {% endif %}
 </body>
 </html> 

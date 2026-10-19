@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 
 def _community_stats():
@@ -19,5 +19,7 @@ def _community_stats():
 
 
 def home(request):
-    """Main landing page for Speakle."""
+    """Main landing page for Speakle. Signed-in users go straight to Find."""
+    if request.user.is_authenticated:
+        return redirect('matches:find_matches')
     return render(request, 'main/home.html', {'stats': _community_stats()})

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
@@ -47,11 +48,27 @@ def resend_verification_view(request):
     request.session['verification_sent_at'] = time.time()
     return JsonResponse({'success': True})
 
+def _safe_next(request):
+    target = request.POST.get('next') or request.GET.get('next') or ''
+    if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return target
+    return ''
+
+
+def check_username_view(request):
+    """Inline availability check for the sign-up form."""
+    name = (request.GET.get('username') or '').strip()
+    if len(name) < 3:
+        return JsonResponse({'available': None})
+    taken = get_user_model().objects.filter(username__iexact=name).exists()
+    return JsonResponse({'available': not taken})
+
+
 def register_view(request):
     """User registration view."""
     if request.user.is_authenticated:
-        return redirect('main:home')
-    
+        return redirect('matches:find_matches')
+
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
@@ -60,39 +77,30 @@ def register_view(request):
                 send_verification_email(request, user)
             except Exception:
                 logging.getLogger(__name__).exception('Could not send verification email')
-            username = form.cleaned_data.get('username')
-            native_lang = form.cleaned_data.get('native_language').name
-            target_lang = form.cleaned_data.get('target_language').name
-            messages.success(request, f'Welcome to Speakle, {username}! Your profile is set up with {native_lang} as your native language and {target_lang} as your learning target. You can now log in and add more languages to your profile.')
-            return redirect('users:login')
+            # Sign the new user straight in: no second form to fill.
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f'Welcome, {user.username}! We sent a link to {user.email}. Confirm it to unlock Quick match.')
+            return redirect('matches:find_matches')
     else:
         form = UserRegistrationForm()
-    
+
     return render(request, 'registration/register.html', {'form': form})
 
 def login_view(request):
     """User login view."""
     if request.user.is_authenticated:
-        return redirect('main:home')
-    
+        return redirect('matches:find_matches')
+
+    next_url = _safe_next(request)
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
-                return redirect('main:home')
-            else:
-                messages.error(request, 'Invalid username or password.')
-        else:
-            messages.error(request, 'Invalid username or password.')
+            login(request, form.get_user())
+            return redirect(next_url or 'matches:find_matches')
     else:
         form = AuthenticationForm()
-    
-    return render(request, 'registration/login.html', {'form': form})
+
+    return render(request, 'registration/login.html', {'form': form, 'next': next_url})
 
 def logout_view(request):
     """User logout view."""
