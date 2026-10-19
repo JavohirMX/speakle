@@ -523,3 +523,103 @@ class UserNotificationConsumerTests(TransactionTestCase):
         c = _make_communicator(UserNotificationConsumer, {'path': '/ws/notifications/', 'user': AnonymousUser()})
         ok, _ = await c.connect()
         self.assertFalse(ok)
+
+
+class VideoCallConsumerFlowTests(TransactionTestCase):
+    def setUp(self):
+        self.a = User.objects.create_user('vc_a', 'vca@x.com', 'pw12345!')
+        self.b = User.objects.create_user('vc_b', 'vcb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = VideoRoom.objects.create(match=m)
+
+    async def _connect(self, user):
+        from .consumers import VideoCallConsumer
+        rid = str(self.room.room_id)
+        c = _make_communicator(VideoCallConsumer, {'path': f'/ws/video-call/{rid}/', 'user': user,
+                                                   'url_route': {'kwargs': {'room_id': rid}}})
+        ok, _ = await c.connect()
+        self.assertTrue(ok)
+        return c
+
+    async def _next(self, c, wanted, limit=10):
+        for _ in range(limit):
+            msg = await c.receive_json_from()
+            if msg.get('type') == wanted:
+                return msg
+        self.fail(f'no {wanted} frame')
+
+    async def _no_frame(self, c, wanted):
+        while not await c.receive_nothing(timeout=0.2):
+            msg = await c.receive_json_from()
+            self.assertNotEqual(msg.get('type'), wanted)
+
+    async def test_offer_reaches_partner_but_not_sender(self):
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await ca.send_json_to({'type': 'offer', 'offer': {'sdp': 'x'}})
+        self.assertEqual((await self._next(cb, 'offer'))['offer'], {'sdp': 'x'})
+        await self._no_frame(ca, 'offer')
+        await ca.disconnect(); await cb.disconnect()
+
+    async def test_offer_without_payload_is_an_error(self):
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'offer'})
+        self.assertIn('No offer', (await self._next(ca, 'error'))['message'])
+        await ca.disconnect()
+
+    async def test_in_call_chat_broadcasts_and_validates(self):
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await ca.send_json_to({'type': 'chat_message', 'message': 'hello'})
+        frame = await self._next(cb, 'chat_message')
+        self.assertEqual((frame['message'], frame['sender_username']), ('hello', 'vc_a'))
+        await ca.send_json_to({'type': 'chat_message', 'message': '   '})
+        self.assertIn('Empty', (await self._next(ca, 'error'))['message'])
+        await ca.send_json_to({'type': 'chat_message', 'message': 'x' * 501})
+        self.assertIn('too long', (await self._next(ca, 'error'))['message'])
+        await ca.disconnect(); await cb.disconnect()
+
+    async def test_call_start_and_end_create_and_close_session(self):
+        from .models import CallSession
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await ca.send_json_to({'type': 'call_start', 'video_enabled': True, 'audio_enabled': False})
+        await self._next(cb, 'call_started')
+        sessions = await database_sync_to_async(lambda: list(CallSession.objects.values_list('status', 'audio_enabled')))()
+        self.assertEqual(sessions, [('active', False)])
+
+        await cb.send_json_to({'type': 'call_end', 'end_reason': 'normal'})
+        frame = await self._next(ca, 'call_ended_enhanced')
+        self.assertEqual(frame['end_reason'], 'normal')
+        self.assertIn('/summary/', frame['redirect_url'])
+        status = await database_sync_to_async(lambda: CallSession.objects.get().status)()
+        self.assertEqual(status, 'ended')
+        await ca.disconnect(); await cb.disconnect()
+
+    async def test_media_status_typing_and_misc_frames(self):
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await ca.send_json_to({'type': 'video_status', 'video_enabled': False})
+        self.assertEqual((await self._next(cb, 'video_status_change')).get('video_enabled'), False)
+        await ca.send_json_to({'type': 'audio_status', 'audio_enabled': False})
+        await self._next(cb, 'audio_status_change')
+        await ca.send_json_to({'type': 'typing_start'})
+        await self._next(cb, 'typing_start')
+        await ca.send_json_to({'type': 'typing_stop'})
+        await self._next(cb, 'typing_stop')
+        await ca.send_json_to({'type': 'test', 'x': 1})
+        self.assertEqual((await self._next(ca, 'test_response'))['echo']['x'], 1)
+        await ca.send_json_to({'type': 'nope'})
+        self.assertIn('Unknown', (await self._next(ca, 'error'))['message'])
+        await ca.send_to(text_data='{bad')
+        self.assertIn('Invalid JSON', (await self._next(ca, 'error'))['message'])
+        await ca.disconnect(); await cb.disconnect()
+
+    async def test_outsider_and_anonymous_are_refused(self):
+        from django.contrib.auth.models import AnonymousUser
+        from .consumers import VideoCallConsumer
+        out = await database_sync_to_async(User.objects.create_user)('vc_c', 'vcc@x.com', 'pw12345!')
+        rid = str(self.room.room_id)
+        for user in (out, AnonymousUser()):
+            c = _make_communicator(VideoCallConsumer, {'path': f'/ws/video-call/{rid}/', 'user': user,
+                                                       'url_route': {'kwargs': {'room_id': rid}}})
+            await c.connect()
+            await self._next(c, 'error')
