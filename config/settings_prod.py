@@ -147,3 +147,9 @@ LANGUAGE_CODE = config('LANGUAGE_CODE', default='en-us')
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB 
+
+# Email verification (needed for Quick match). Set the EMAIL_* variables above to a real SMTP
+# server in production, otherwise verification links only print to the container log.
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Speakle <noreply@localhost>')
+SITE_URL = config('SITE_URL', default='')  # e.g. https://speakle.example.com, used in emails
+QUICK_MATCH_REQUIRE_VERIFIED_EMAIL = config('QUICK_MATCH_REQUIRE_VERIFIED_EMAIL', default=True, cast=bool)

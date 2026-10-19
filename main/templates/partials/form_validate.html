@@ -1,0 +1,51 @@
+<script>
+/* Inline validation for forms marked [data-validate]. Messages sit under the field (NN/g: errors-forms-design-guidelines). */
+(function () {
+    function slot(input, kind) {
+        var host = input.closest('div.relative') || input.parentElement;
+        var box = host.parentElement.querySelector('[data-slot="' + kind + '"][data-for="' + input.id + '"]');
+        if (!box) { box = document.createElement('p'); box.dataset.slot = kind; box.dataset.for = input.id; box.className = 'field-' + kind; box.hidden = true; host.insertAdjacentElement('afterend', box); }
+        return box;
+    }
+    function show(input, kind, text) {
+        var e = slot(input, 'error'), o = slot(input, 'ok');
+        e.hidden = o.hidden = true; input.removeAttribute('aria-invalid');
+        if (kind === 'error') { e.textContent = text; e.hidden = false; input.setAttribute('aria-invalid', 'true'); e.id = input.id + '-msg'; input.setAttribute('aria-describedby', e.id); e.setAttribute('role', 'alert'); }
+        if (kind === 'ok') { o.textContent = text; o.hidden = false; }
+    }
+    window.SpeakleForm = { show: show };
+    function check(input) {
+        var v = (input.value || '').trim();
+        if (input.required && !v) { show(input, 'error', input.dataset.msgRequired || 'This field is required.'); return false; }
+        if (input.type === 'email' && v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { show(input, 'error', 'That email looks incomplete. It should look like name@example.com.'); return false; }
+        show(input, 'none'); return true;
+    }
+    document.querySelectorAll('form[data-validate]').forEach(function (form) {
+        var touched = new Set();
+        form.querySelectorAll('input, select').forEach(function (el) {
+            if (el.type === 'hidden' || el.type === 'checkbox') return;
+            el.addEventListener('blur', function () { touched.add(el); if (!el.dataset.custom) check(el); });
+            el.addEventListener('input', function () { if (touched.has(el) && el.getAttribute('aria-invalid') && !el.dataset.custom) check(el); });
+            el.addEventListener('change', function () { if (el.tagName === 'SELECT') { touched.add(el); if (!el.dataset.custom) check(el); } });
+        });
+        form.addEventListener('submit', function (ev) {
+            var first = null;
+            form.querySelectorAll('input, select').forEach(function (el) {
+                if (el.type === 'hidden' || el.type === 'checkbox' || el.type === 'file') return;
+                var ok = el.dataset.custom ? !el.getAttribute('aria-invalid') : check(el);
+                if (!ok && !first) first = el;
+            });
+            if (first) { ev.preventDefault(); first.focus(); first.scrollIntoView({block: 'center', behavior: 'smooth'}); return; }
+            var btn = form.querySelector('button[type=submit]');
+            if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = btn.dataset.loadingText || 'Working...'; }
+        });
+    });
+    document.querySelectorAll('[data-toggle-password]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var f = document.getElementById(b.dataset.togglePassword), show = f.type === 'password';
+            f.type = show ? 'text' : 'password'; b.textContent = show ? 'Hide' : 'Show';
+        });
+    });
+    window.addEventListener('pageshow', function () { document.querySelectorAll('form[data-validate] button[type=submit]').forEach(function (b) { b.disabled = false; if (b.dataset.label) b.textContent = b.dataset.label; }); });
+})();
+</script>

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
@@ -9,48 +10,97 @@ from django.contrib.auth import get_user_model
 from .forms import UserRegistrationForm, UserProfileForm, UserLanguageForm
 from .models import UserLanguage, UserBlock, UserReport
 
+import logging
+import time
+from django.contrib.auth import get_user_model as _get_user_model
+from .verification import send_verification_email, check_token
+
+RESEND_COOLDOWN_SECONDS = 60
+
+
+def verify_email_view(request, token):
+    user = check_token(token, _get_user_model())
+    if not user:
+        messages.error(request, 'That verification link is invalid or has expired. Request a new one from your profile.')
+        return redirect('main:home')
+    if not user.email_verified:
+        user.email_verified = True
+        user.save(update_fields=['email_verified'])
+    messages.success(request, 'Email verified. You can use Quick match now.')
+    return redirect('users:profile' if request.user.is_authenticated else 'users:login')
+
+
+@login_required
+@require_POST
+def resend_verification_view(request):
+    if request.user.email_verified:
+        return JsonResponse({'success': True, 'already_verified': True})
+    last = request.session.get('verification_sent_at', 0)
+    if time.time() - last < RESEND_COOLDOWN_SECONDS:
+        return JsonResponse({'success': False, 'error': 'Please wait a minute before asking again.'}, status=429)
+    try:
+        sent = send_verification_email(request, request.user)
+    except Exception:
+        logging.getLogger(__name__).exception('Could not send verification email')
+        return JsonResponse({'success': False, 'error': 'Could not send the email. Try again later.'}, status=500)
+    if not sent:
+        return JsonResponse({'success': False, 'error': 'Add an email address to your profile first.'}, status=400)
+    request.session['verification_sent_at'] = time.time()
+    return JsonResponse({'success': True})
+
+def _safe_next(request):
+    target = request.POST.get('next') or request.GET.get('next') or ''
+    if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return target
+    return ''
+
+
+def check_username_view(request):
+    """Inline availability check for the sign-up form."""
+    name = (request.GET.get('username') or '').strip()
+    if len(name) < 3:
+        return JsonResponse({'available': None})
+    taken = get_user_model().objects.filter(username__iexact=name).exists()
+    return JsonResponse({'available': not taken})
+
+
 def register_view(request):
     """User registration view."""
     if request.user.is_authenticated:
-        return redirect('main:home')
-    
+        return redirect('matches:find_matches')
+
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            username = form.cleaned_data.get('username')
-            native_lang = form.cleaned_data.get('native_language').name
-            target_lang = form.cleaned_data.get('target_language').name
-            messages.success(request, f'Welcome to Speakle, {username}! Your profile is set up with {native_lang} as your native language and {target_lang} as your learning target. You can now log in and add more languages to your profile.')
-            return redirect('users:login')
+            try:
+                send_verification_email(request, user)
+            except Exception:
+                logging.getLogger(__name__).exception('Could not send verification email')
+            # Sign the new user straight in: no second form to fill.
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f'Welcome, {user.username}! We sent a link to {user.email}. Confirm it to unlock Quick match.')
+            return redirect('matches:find_matches')
     else:
         form = UserRegistrationForm()
-    
+
     return render(request, 'registration/register.html', {'form': form})
 
 def login_view(request):
     """User login view."""
     if request.user.is_authenticated:
-        return redirect('main:home')
-    
+        return redirect('matches:find_matches')
+
+    next_url = _safe_next(request)
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
-                return redirect('main:home')
-            else:
-                messages.error(request, 'Invalid username or password.')
-        else:
-            messages.error(request, 'Invalid username or password.')
+            login(request, form.get_user())
+            return redirect(next_url or 'matches:find_matches')
     else:
         form = AuthenticationForm()
-    
-    return render(request, 'registration/login.html', {'form': form})
+
+    return render(request, 'registration/login.html', {'form': form, 'next': next_url})
 
 def logout_view(request):
     """User logout view."""
@@ -135,7 +185,7 @@ def block_user_view(request, user_id):
         return JsonResponse({'success': False, 'error': 'You cannot block yourself.'}, status=400)
     UserBlock.objects.get_or_create(blocker=request.user, blocked=target)
     pair = Q(user1=request.user, user2=target) | Q(user1=target, user2=request.user)
-    Match.objects.filter(pair, status__in=['active', 'pending', 'accepted']).update(
+    Match.objects.filter(pair, status__in=['active', 'pending', 'accepted', 'trial']).update(
         status='ended', ended_at=timezone.now(), ended_by=request.user,
         end_reason='Blocked', updated_at=timezone.now())
     MatchRequest.objects.filter(

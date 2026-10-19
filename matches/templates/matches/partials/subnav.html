@@ -1,0 +1,5 @@
+<nav class="seg" aria-label="Matches sections">
+  <a href="{% url 'matches:my_matches' %}" {% if request.resolver_match.url_name == 'my_matches' %}class="on" aria-current="page"{% endif %}>Matches</a>
+  <a href="{% url 'matches:requests' %}" {% if request.resolver_match.url_name == 'requests' %}class="on" aria-current="page"{% endif %}>Requests <span class="seg-n" id="segReq" hidden></span></a>
+</nav>
+<script>fetch('/matches/api/pending-requests/').then(function(r){return r.json()}).then(function(d){var n=(d.incoming_requests||[]).length,e=document.getElementById('segReq');if(n&&e){e.textContent=n;e.hidden=false}}).catch(function(){});</script>

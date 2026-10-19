@@ -5,7 +5,8 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
     <!-- Enhanced Header Section -->
-    <div class="relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700">
+    {% include 'matches/partials/subnav.html' %}
+    <div class="speakle-hero relative overflow-hidden">
         <div class="absolute inset-0 bg-black/10"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-purple-600/90 to-blue-600/90"></div>
         
@@ -31,27 +32,15 @@
 
                 <!-- Enhanced Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-fade-in" style="animation-delay: 0.6s;">
-                    <a href="{% url 'matches:find_matches' %}" 
-                        class="group relative bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white/30 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
-                        <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl">🔍</span>
-                            <span>Find More Partners</span>
-                        </span>
-                    </a>
-                    
-                    <a href="{% url 'matches:requests' %}" 
-                        class="group relative bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
-                        <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl">📩</span>
-                            <span>View Requests</span>
-                        </span>
-                        <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <a href="{% url 'matches:quick_match' %}" 
+                        class="group relative bg-white text-purple-700 px-8 py-4 rounded-2xl hover:bg-gray-50 transition-all duration-300 font-semibold text-lg shadow-xl focus-ring w-full sm:w-auto">
+                        <span class="flex items-center justify-center space-x-3"><span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg></span><span>Quick match</span></span>
                     </a>
                     
                     <button onclick="refreshMatches()" 
                         class="group relative bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-2xl hover:from-orange-600 hover:to-red-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
                         <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl group-hover:animate-spin transition-transform duration-500">🔄</span>
+                            <span class="text-2xl group-hover:animate-spin transition-transform duration-500"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                             <span>Refresh</span>
                         </span>
                         <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -77,7 +66,7 @@
                     <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 w-full lg:w-auto">
                         <div class="flex items-center space-x-3">
                             <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                                <span class="text-white text-xl">🤝</span>
+                                <span class="text-white text-xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Your Matches</h3>
@@ -114,7 +103,7 @@
                     <div class="absolute inset-0 border-4 border-purple-200 rounded-full animate-spin"></div>
                     <div class="absolute inset-2 border-4 border-purple-500 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-2xl">🤝</span>
+                        <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
                     </div>
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">Loading Your Matches</h3>
@@ -146,7 +135,7 @@
                                             </div>
                                         {% endif %}
                                         <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-3 border-white shadow-md flex items-center justify-center">
-                                            <span class="text-white text-sm">✓</span>
+                                            <span class="text-white text-sm"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span>
                                         </div>
                                     </div>
                                     <div class="flex-1">
@@ -227,7 +216,7 @@
                                     <div class="mb-6 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
                                         <div class="flex items-start space-x-3">
                                             <div class="w-8 h-8 bg-indigo-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 mt-0.5">
-                                                <span class="text-white text-sm">💭</span>
+                                                <span class="text-white text-sm"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
                                             </div>
                                             <div>
                                                 <div class="text-sm text-indigo-700 font-medium mb-1">About</div>
@@ -244,7 +233,7 @@
                                     <div class="mb-6 p-4 bg-pink-50 rounded-2xl border border-pink-100">
                                         <div class="flex items-start space-x-3">
                                             <div class="w-8 h-8 bg-pink-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 mt-0.5">
-                                                <span class="text-white text-sm">🎨</span>
+                                                <span class="text-white text-sm"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></span>
                                             </div>
                                             <div>
                                                 <div class="text-sm text-pink-700 font-medium mb-1">Interests</div>
@@ -260,7 +249,7 @@
                                     <button onclick="event.stopPropagation(); initiateVideoCall({{ data.match.id }}, '{{ data.partner.username }}')"
                                             class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 focus-ring">
                                         <span class="flex items-center justify-center space-x-2">
-                                            <span class="text-lg">📹</span>
+                                            <span class="text-lg"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                                             <span>Start Video Call</span>
                                         </span>
                                     </button>
@@ -270,13 +259,13 @@
                                         <a href="{% url 'chats:create_chat_room' data.match.id %}" onclick="event.stopPropagation();"
                                                 class="bg-blue-500 text-white px-4 py-3 rounded-2xl hover:bg-blue-600 transition-all duration-300 font-medium shadow-md hover:shadow-lg focus-ring block text-center">
                                             <span class="flex items-center justify-center space-x-2">
-                                                <span class="text-sm">💬</span>
+                                                <span class="text-sm"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
                                                 <span class="text-sm">Chat</span>
                                             </span>
                                         </a>
                                         <div class="bg-purple-500 text-white px-4 py-3 rounded-2xl hover:bg-purple-600 transition-all duration-300 font-medium shadow-md hover:shadow-lg text-center">
                                             <span class="flex items-center justify-center space-x-2">
-                                                <span class="text-sm">👤</span>
+                                                <span class="text-sm"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></span>
                                                 <span class="text-sm">Profile</span>
                                             </span>
                                         </div>
@@ -294,25 +283,25 @@
                         <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full opacity-20"></div>
                         <div class="absolute inset-4 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full opacity-40"></div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="text-6xl">🤝</span>
+                            <span class="text-6xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
                         </div>
                     </div>
                     <h3 class="text-3xl font-bold text-gray-900 mb-4">No matches yet</h3>
                     <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
-                        You haven't matched with anyone yet. Start by finding language partners and sending match requests!
+                        No one yet. Send a few requests from Find, or try Quick match for a five-minute call with someone new.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
                         <a href="{% url 'matches:find_matches' %}" 
                            class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
                             <span class="flex items-center space-x-2">
-                                <span>🔍</span>
+                                <span><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span>
                                 <span>Find Partners</span>
                             </span>
                         </a>
                         <a href="{% url 'matches:requests' %}" 
                            class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl hover:scale-105 focus-ring">
                             <span class="flex items-center space-x-2">
-                                <span>📩</span>
+                                <span><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
                                 <span>Check Requests</span>
                             </span>
                         </a>
@@ -331,7 +320,7 @@ function refreshMatches() {
     // Enhanced button loading state
     btn.innerHTML = `
         <span class="flex items-center justify-center space-x-3">
-            <span class="animate-spin text-2xl">🔄</span>
+            <span class="animate-spin text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
             <span>Refreshing...</span>
         </span>
     `;
@@ -346,7 +335,7 @@ function refreshMatches() {
         if (data.success) {
             // Show success notification
             if (typeof showNotificationToast === 'function') {
-                showNotificationToast('Success', 'Matches refreshed successfully! 🎉', '✅');
+                showNotificationToast('Success', 'Matches refreshed successfully!', '');
             }
             // Reload the page to refresh match data
             setTimeout(() => {
@@ -359,7 +348,7 @@ function refreshMatches() {
     .catch(error => {
 
         if (typeof showNotificationToast === 'function') {
-            showNotificationToast('Error', 'Failed to refresh matches. Please try again.', '❌');
+            showNotificationToast('Error', 'Failed to refresh matches. Please try again.', '');
         } else {
             alert('Failed to refresh matches');
         }
@@ -376,10 +365,10 @@ function refreshMatches() {
 function showNotification(type, message) {
     if (typeof showNotificationToast === 'function') {
         const icons = {
-            success: '✅',
-            error: '❌',
-            info: 'ℹ️',
-            warning: '⚠️'
+            success: '',
+            error: '',
+            info: '',
+            warning: ''
         };
         const titles = {
             success: 'Success',
@@ -387,7 +376,7 @@ function showNotification(type, message) {
             info: 'Info',
             warning: 'Warning'
         };
-        showNotificationToast(titles[type] || 'Notification', message, icons[type] || '📢');
+        showNotificationToast(titles[type] || 'Notification', message, icons[type] || '');
     } else {
         alert(message);
     }

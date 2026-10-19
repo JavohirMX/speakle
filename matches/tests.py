@@ -443,3 +443,114 @@ class MatchFeedbackTests(TestCase):
         r = c.get(reverse('matches:match_detail', args=[self.m.id]))
         self.assertContains(r, 'feedback-panel')
         self.assertNotContains(r, 'SECRETCOMMENT')
+
+
+class QuickMatchTests(TestCase):
+    def setUp(self):
+        from . import quick
+        self.quick = quick
+        U = get_user_model()
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.fr = Language.objects.create(name='French', code='fr')
+
+        def mk(name, teach, learn):
+            u = U.objects.create_user(name, f'{name}@x.com', 'pw12345!', email_verified=True)
+            UserLanguage.objects.create(user=u, language=teach, language_type='native', proficiency='native')
+            UserLanguage.objects.create(user=u, language=learn, language_type='learning', proficiency='beginner')
+            return u
+        self.mk = mk
+        self.a = mk('qa', self.en, self.ko)
+        self.b = mk('qb', self.ko, self.en)
+
+    def test_pairs_mirrored_users(self):
+        self.assertIsNone(self.quick.join_queue(self.a))
+        m = self.quick.join_queue(self.b)
+        self.assertEqual(m.status, 'trial')
+        self.assertEqual({m.user1, m.user2}, {self.a, self.b})
+        self.assertEqual(self.quick.poll(self.a), m)
+        self.assertIsNone(self.quick.poll(self.a))  # consumed
+
+    def test_no_pair_when_languages_do_not_mirror(self):
+        c = self.mk('qc', self.fr, self.en)
+        self.assertIsNone(self.quick.join_queue(self.a))
+        self.assertIsNone(self.quick.join_queue(c))
+        self.assertEqual(Match.objects.count(), 0)
+
+    def test_never_pairs_blocked_users(self):
+        from users.models import UserBlock
+        UserBlock.objects.create(blocker=self.a, blocked=self.b)
+        self.quick.join_queue(self.a)
+        self.assertIsNone(self.quick.join_queue(self.b))
+        self.assertEqual(Match.objects.count(), 0)
+
+    def test_never_pairs_existing_partners(self):
+        Match.objects.create(user1=self.a, user2=self.b, user1_teaches=self.en, user1_learns=self.ko, status='ended')
+        self.quick.join_queue(self.a)
+        self.assertIsNone(self.quick.join_queue(self.b))
+
+    def test_decide_requires_timer_then_both_keep(self):
+        from datetime import timedelta
+        self.quick.join_queue(self.a)
+        m = self.quick.join_queue(self.b)
+        with self.assertRaises(self.quick.QuickMatchError):
+            self.quick.decide(m, self.a, True)
+        Match.objects.filter(pk=m.pk).update(trial_ends_at=timezone.now() - timedelta(seconds=1))
+        m = self.quick.decide(m, self.a, True)
+        self.assertEqual(m.status, 'trial')
+        m = self.quick.decide(m, self.b, True)
+        self.assertEqual(m.status, 'active')
+
+    def test_skip_ends_match(self):
+        from datetime import timedelta
+        self.quick.join_queue(self.a)
+        m = self.quick.join_queue(self.b)
+        Match.objects.filter(pk=m.pk).update(trial_ends_at=timezone.now() - timedelta(seconds=1))
+        m = self.quick.decide(m, self.b, False)
+        self.assertEqual(m.status, 'ended')
+
+    def test_http_flow_and_access(self):
+        ca, cb = Client(), Client()
+        ca.force_login(self.a); cb.force_login(self.b)
+        r = ca.post(reverse('matches:quick_match_join'))
+        self.assertEqual(r.json()['status'], 'waiting')
+        r = cb.post(reverse('matches:quick_match_join'))
+        self.assertEqual(r.json()['status'], 'matched')
+        r = ca.get(reverse('matches:quick_match_status'))
+        self.assertEqual(r.json()['status'], 'matched')
+        mid = r.json()['match_id']
+        c3 = Client(); c3.force_login(self.mk('qz', self.en, self.ko))
+        self.assertEqual(c3.post(reverse('matches:quick_match_decide', args=[mid]), {'choice': 'keep'}).status_code, 403)
+        self.assertEqual(ca.get(reverse('matches:quick_match_call', args=[mid])).status_code, 200)
+        self.assertEqual(ca.get(reverse('matches:quick_match')).status_code, 200)
+
+    def test_user_without_languages_gets_clear_error(self):
+        u = get_user_model().objects.create_user('nolang', 'n@x.com', 'pw12345!', email_verified=True)
+        c = Client(); c.force_login(u)
+        r = c.post(reverse('matches:quick_match_join'))
+        self.assertEqual(r.status_code, 400)
+
+    def test_block_during_trial_ends_it(self):
+        self.quick.join_queue(self.a)
+        m = self.quick.join_queue(self.b)
+        c = Client(); c.force_login(self.a)
+        c.post(reverse('users:block_user', args=[self.b.id]))
+        m.refresh_from_db()
+        self.assertEqual(m.status, 'ended')
+
+
+class QuickMatchEmailGateTests(TestCase):
+    def test_unverified_user_cannot_join(self):
+        from . import quick
+        u = get_user_model().objects.create_user('uv', 'uv@x.com', 'pw12345!')
+        c = Client(); c.force_login(u)
+        r = c.post(reverse('matches:quick_match_join'))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('Verify your email', r.json()['error'])
+        self.assertContains(c.get(reverse('matches:quick_match')), 'Verify your email')
+
+    def test_gate_can_be_disabled(self):
+        from . import quick
+        u = get_user_model().objects.create_user('uv2', 'uv2@x.com', 'pw12345!')
+        with self.settings(QUICK_MATCH_REQUIRE_VERIFIED_EMAIL=False):
+            self.assertTrue(quick.can_quick_match(u))

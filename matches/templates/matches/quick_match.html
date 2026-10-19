@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Quick match - Speakle{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
+    <p class="text-sm font-semibold text-coral-600 flex items-center gap-2"><svg class="ico"><use href="#i-bolt"/></svg> Quick match</p>
+    <h1 class="mt-3 text-4xl sm:text-5xl font-semibold leading-tight text-gray-900">Five minutes with someone new.</h1>
+    <p class="mt-4 text-lg text-gray-600">We pair you with someone who speaks what you are learning and is learning what you speak. After the call you both choose whether to keep in touch.</p>
+
+    {% if not can_use %}
+    <div class="mt-8 bg-coral-50 border border-coral-200 rounded-2xl p-5" role="alert">
+        <p class="font-semibold text-gray-900">Verify your email to use quick match</p>
+        <p class="mt-1 text-sm text-gray-700">It keeps spam accounts out. {% if has_email %}We sent a link to {{ request.user.email }}.{% else %}Add an email address in your profile first.{% endif %}</p>
+        {% if has_email %}<button id="qm-resend" type="button" class="btn btn-solid mt-4">Resend link</button>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if pair and can_use %}
+    <div class="mt-8 bg-white border border-gray-200 rounded-2xl p-6">
+        <p class="text-sm text-gray-600">Your pairing</p>
+        <p class="mt-1 font-display text-2xl font-semibold text-gray-900">You teach {{ pair.0.name }}, you learn {{ pair.1.name }}</p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <button id="qm-start" type="button" class="btn btn-coral px-6">Find a partner now <svg class="ico"><use href="#i-arrow"/></svg></button>
+            <button id="qm-cancel" type="button" class="btn btn-outline px-6 hidden">Cancel search</button>
+        </div>
+        <p id="qm-msg" class="mt-4 text-gray-700 min-h-[1.5rem]" role="status" aria-live="polite"></p>
+    </div>
+    {% elif can_use %}
+    <div class="mt-8 bg-white border border-gray-200 rounded-2xl p-6">
+        <p class="font-semibold text-gray-900">Add your languages first</p>
+        <p class="mt-1 text-gray-600">Quick match needs one language you can teach and one you are learning.</p>
+        <a href="{% url 'users:profile' %}" class="btn btn-solid mt-4">Go to profile</a>
+    </div>
+    {% endif %}
+    <p id="qm-msg-global" class="sr-only" role="status"></p>
+
+    <ul class="mt-10 grid sm:grid-cols-3 gap-6 text-sm text-gray-600">
+        <li><span class="font-semibold text-gray-900 block">Mirrored languages</span>Both of you teach and learn.</li>
+        <li><span class="font-semibold text-gray-900 block">Never blocked users</span>Anyone either side blocked is skipped.</li>
+        <li><span class="font-semibold text-gray-900 block">You decide after</span>Keep or skip. Nothing is automatic.</li>
+    </ul>
+</div>
+<script>
+(function () {
+    var rs = document.getElementById('qm-resend');
+    if (rs) rs.addEventListener('click', function () {
+        fetch("{% url 'users:resend_verification' %}", {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+            .then(r => r.json()).then(function (d) {
+                rs.textContent = d.success ? 'Link sent. Check your inbox.' : (d.error || 'Could not send.');
+            });
+    });
+})();
+(function () {
+    var start = document.getElementById('qm-start');
+    if (!start) return;
+    var cancel = document.getElementById('qm-cancel'), msg = document.getElementById('qm-msg'), timer = null;
+    var H = {'X-CSRFToken': '{{ csrf_token }}'};
+    function go(d) { clearInterval(timer); location.href = d.url; }
+    function poll() {
+        fetch("{% url 'matches:quick_match_status' %}").then(r => r.json()).then(function (d) {
+            if (d.status === 'matched') go(d);
+            else if (d.status === 'idle') { stop(); msg.textContent = 'Search ended. Try again.'; }
+        });
+    }
+    function stop() { clearInterval(timer); start.classList.remove('hidden'); cancel.classList.add('hidden'); }
+    start.addEventListener('click', function () {
+        fetch("{% url 'matches:quick_match_join' %}", {method: 'POST', headers: H}).then(r => r.json()).then(function (d) {
+            if (!d.success) { msg.textContent = d.error || 'Could not start.'; return; }
+            if (d.status === 'matched') return go(d);
+            msg.textContent = 'Looking for a partner. Keep this page open.';
+            start.classList.add('hidden'); cancel.classList.remove('hidden');
+            timer = setInterval(poll, 3000);
+        });
+    });
+    cancel.addEventListener('click', function () {
+        fetch("{% url 'matches:quick_match_leave' %}", {method: 'POST', headers: H}).then(function () {
+            stop(); msg.textContent = 'Stopped.';
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -60,3 +60,79 @@ class MatchDetailSafetyPanelTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'id="safety-panel"')
         self.assertContains(r, f'var userId = {b.id};')
+
+
+from django.contrib.auth import get_user_model
+
+
+class EmailVerificationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user('ev', 'ev@x.com', 'pw12345!')
+
+    def test_valid_link_verifies(self):
+        from django.urls import reverse
+        from .verification import make_token
+        r = self.client.get(reverse('users:verify_email', args=[make_token(self.user)]))
+        self.assertEqual(r.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.email_verified)
+
+    def test_bad_token_does_not_verify(self):
+        from django.urls import reverse
+        self.client.get(reverse('users:verify_email', args=['garbage']))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.email_verified)
+
+    def test_token_dies_when_email_changes(self):
+        from django.urls import reverse
+        from .verification import make_token
+        token = make_token(self.user)
+        self.user.email = 'new@x.com'
+        self.user.save()
+        self.client.get(reverse('users:verify_email', args=[token]))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.email_verified)
+
+    def test_resend_sends_mail_and_is_throttled(self):
+        from django.core import mail
+        from django.urls import reverse
+        self.client.force_login(self.user)
+        r = self.client.post(reverse('users:resend_verification'))
+        self.assertTrue(r.json()['success'])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('verify-email/', mail.outbox[0].body)
+        r = self.client.post(reverse('users:resend_verification'))
+        self.assertEqual(r.status_code, 429)
+
+    def test_profile_email_change_resets_verified(self):
+        from .forms import UserProfileForm
+        self.user.email_verified = True
+        self.user.save()
+        form = UserProfileForm({'first_name': '', 'last_name': '', 'email': 'other@x.com', 'bio': '', 'interests': ''}, instance=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.email_verified)
+
+
+class UxFlowTests(TestCase):
+    """Sign-up and sign-in flow behaviour (NN/g efficiency and error recovery)."""
+
+    def test_username_check(self):
+        from django.contrib.auth import get_user_model
+        get_user_model().objects.create_user('taken', 'a@x.com', 'pw12345!x')
+        self.assertEqual(self.client.get('/users/check-username/?username=taken').json()['available'], False)
+        self.assertEqual(self.client.get('/users/check-username/?username=freeone').json()['available'], True)
+        self.assertIsNone(self.client.get('/users/check-username/?username=ab').json()['available'])
+
+    def test_login_follows_safe_next_only(self):
+        from django.contrib.auth import get_user_model
+        get_user_model().objects.create_user('nx', 'n@x.com', 'pw12345!x')
+        r = self.client.post('/users/login/', {'username': 'nx', 'password': 'pw12345!x', 'next': '/matches/requests/'})
+        self.assertEqual(r.url, '/matches/requests/')
+        self.client.logout()
+        r = self.client.post('/users/login/', {'username': 'nx', 'password': 'pw12345!x', 'next': 'https://evil.example/'})
+        self.assertEqual(r.url, '/matches/')
+
+    def test_password_reset_page_exists(self):
+        self.assertEqual(self.client.get('/users/password-reset/').status_code, 200)

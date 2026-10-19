@@ -562,16 +562,16 @@
                         </div>
                     {% else %}
                         <div class="last-message no-messages">
-                            No messages yet - start the conversation! 💬
+                            No messages yet - start the conversation! <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg>
                         </div>
                     {% endif %}
                     
                     <div class="chat-meta">
                         <span class="last-activity">
                             {% if chat_data.last_message %}
-                                💬 {{ chat_data.last_message.timestamp|timesince }} ago
+                                <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg> {{ chat_data.last_message.timestamp|timesince }} ago
                             {% else %}
-                                ✨ Created {{ chat_data.room.created_at|timesince }} ago
+                                <svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg> Created {{ chat_data.room.created_at|timesince }} ago
                             {% endif %}
                         </span>
                         
@@ -582,22 +582,22 @@
                     
                     <div class="chat-actions" onclick="event.stopPropagation();">
                         <a href="{% url 'chats:text_chat' chat_data.room.room_id %}" class="action-btn btn-chat">
-                            💬 Open Chat
+                            <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg> Open Chat
                         </a>
                         <button onclick="initiateVideoCall({{ chat_data.match.id }}, '{{ chat_data.partner.username }}')" class="action-btn btn-video">
-                            📹 Video Call
+                            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Video Call
                         </button>
                     </div>
                 </div>
             {% endfor %}
         {% else %}
             <div class="empty-state">
-                <div class="icon">💬</div>
+                <div class="icon"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></div>
                 <h3>No conversations yet</h3>
                 <p>Once you have active matches, you'll be able to start conversations here.<br>
                    Connect with language partners and begin your exchange!</p>
                 <a href="{% url 'matches:my_matches' %}" class="action-btn btn-chat" style="display: inline-block; margin-top: 16px;">
-                    🤝 View Your Matches
+                    <svg class="ico" aria-hidden="true"><use href="#i-users"/></svg> View Your Matches
                 </a>
             </div>
         {% endif %}

@@ -66,7 +66,7 @@
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="text-center mb-8">
-            <div class="text-6xl mb-4">🎉</div>
+            <div class="text-6xl mb-4"></div>
             <h1 class="text-4xl font-bold text-gray-900 mb-2">Call Complete!</h1>
             <p class="text-xl text-gray-600">Great conversation with {{ partner.username }}</p>
         </div>
@@ -104,9 +104,9 @@
                             <span class="text-gray-600">Video Quality:</span>
                             <span class="font-semibold">
                                 {% if session.video_enabled %}
-                                    📹 Enabled
+                                    <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Enabled
                                 {% else %}
-                                    📹 Disabled
+                                    <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Disabled
                                 {% endif %}
                             </span>
                         </div>
@@ -115,9 +115,9 @@
                             <span class="text-gray-600">Audio Quality:</span>
                             <span class="font-semibold">
                                 {% if session.audio_enabled %}
-                                    🎤 Enabled
+                                    <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg> Enabled
                                 {% else %}
-                                    🎤 Disabled
+                                    <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg> Disabled
                                 {% endif %}
                             </span>
                         </div>
@@ -192,9 +192,9 @@
             <div class="bg-white rounded-lg shadow stat-card p-6 text-center">
                 <div class="text-3xl font-bold text-green-600">
                     {% if session.was_successful %}
-                        ✅
+                        <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>
                     {% else %}
-                        ⚠️
+                        <svg class="ico" aria-hidden="true"><use href="#i-flag"/></svg>
                     {% endif %}
                 </div>
                 <p class="text-sm text-gray-600 mt-1">Call Status</p>
@@ -220,7 +220,7 @@
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center space-x-3">
                         <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span class="text-blue-600 text-sm">📞</span>
+                            <span class="text-blue-600 text-sm"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                         </div>
                         <div>
                             <p class="font-medium text-sm">{{ call.started_at|date:"M d, Y" }}</p>
@@ -243,19 +243,19 @@
         <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button onclick="startNewCall()" 
                     class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition flex items-center space-x-2">
-                <span>🎥</span>
+                <span><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
                 <span>Start Another Call</span>
             </button>
             
             <a href="{% url 'chats:call_history' room.room_id %}" 
                class="bg-gray-100 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-200 transition flex items-center space-x-2">
-                <span>📊</span>
+                <span><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg></span>
                 <span>View Full History</span>
             </a>
             
             <a href="{% url 'matches:match_detail' match.id %}" 
                class="bg-green-100 text-green-700 px-8 py-3 rounded-lg hover:bg-green-200 transition flex items-center space-x-2">
-                <span>👥</span>
+                <span><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
                 <span>Back to Match</span>
             </a>
         </div>
@@ -268,7 +268,7 @@
             <div class="flex justify-center mb-4">
                 <div class="flex space-x-2" id="ratingStars">
                     {% for i in "12345" %}
-                    <span class="rating-star" data-rating="{{ i }}">⭐</span>
+                    <span class="rating-star" data-rating="{{ i }}"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></span>
                     {% endfor %}
                 </div>
             </div>
@@ -353,7 +353,7 @@ function submitFeedback() {
         if (data.success) {
             // Show success message
             if (typeof showNotificationToast === 'function') {
-                showNotificationToast('Success', 'Thank you for your feedback!', '✅');
+                showNotificationToast('Success', 'Thank you for your feedback!', '');
             } else {
                 alert('Thank you for your feedback!');
             }

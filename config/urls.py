@@ -26,7 +26,12 @@ from django.views.decorators.csrf import csrf_exempt
 def health_check(request):
     return JsonResponse({'status': 'healthy'})
 
+# Root-level SEO files (sitemap_xml is reversed without a namespace in robots.txt)
+from main import seo
+
 urlpatterns = [
+    path('robots.txt', seo.robots_txt),
+    path('sitemap.xml', seo.sitemap_xml, name='sitemap_xml'),
     path('admin/', admin.site.urls),
     path('health/', health_check, name='health_check'),
     path('', include('main.urls')),
@@ -37,5 +42,10 @@ urlpatterns = [
 
 # Serve media files during development
 if settings.DEBUG:
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+handler404 = 'main.views.error_404'
+handler500 = 'main.views.error_500'

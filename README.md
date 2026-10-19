@@ -1105,3 +1105,11 @@ Special thanks to:
 [⬆ Back to Top](#-speakle---global-language-exchange-platform)
 
 </div> 
+## Rebuilding CSS
+
+Tailwind is compiled ahead of time into `static/css/tailwind.css` (no CDN at runtime). After adding new utility classes to templates, rebuild with:
+
+    npm i -D tailwindcss@3
+    npx tailwindcss -c tailwind.config.js -i static/css/tailwind.src.css -o static/css/tailwind.css --minify
+
+Set `SITE_URL` (for example `https://speakle.example`) so canonical URLs, the sitemap and share images use your public origin.
