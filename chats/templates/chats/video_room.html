@@ -708,8 +708,24 @@
         font-weight: 600;
     }
 </style>
+<style>
+.ico { width: 1.4em; height: 1.4em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
+.controls-bar { gap: .6rem !important; background: #1a1510 !important; border: 3px solid #fff9ec !important; border-radius: 22px !important; padding: .55rem .7rem !important; box-shadow: 4px 4px 0 #ffc61a !important; backdrop-filter: none !important; flex-wrap: nowrap; }
+.control-btn { width: auto !important; min-width: 64px; height: 64px !important; border-radius: 14px !important; flex-direction: column; gap: .15rem; padding: .3rem .55rem; background: #fff9ec !important; color: #1a1510 !important; border: 2px solid #1a1510 !important; box-shadow: none !important; font-size: 12px !important; font-weight: 700; }
+.control-btn .cb-label { font-size: .7rem; line-height: 1; white-space: nowrap; }
+.control-btn.active { background: #55d99a !important; } .control-btn.inactive { background: #ff6b4a !important; } .control-btn.call-start { background: #ffc61a !important; } .control-btn.call-end { background: #d63a1a !important; color: #fff !important; }
+.control-btn:focus-visible { outline: 3px solid #ffc61a; outline-offset: 2px; }
+.video-placeholder { background: #2a2118 !important; }
+.media-error { max-width: 26rem; margin: 1rem auto 0; background: #fff9ec; color: #1a1510; border: 3px solid #1a1510; border-radius: 16px; box-shadow: 4px 4px 0 #ffc61a; padding: 1rem 1.2rem; text-align: left; }
+.media-error h3 { font-weight: 800; font-size: 1.15rem; margin-bottom: .3rem; } .media-error .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
+.media-error .b { padding: .55rem 1rem; border: 2px solid #1a1510; border-radius: 12px; font-weight: 700; background: #ffc61a; text-decoration: none; color: #1a1510; min-height: 44px; display: inline-flex; align-items: center; }
+.media-error .b.o { background: #fff; }
+@media (max-width: 640px) { .controls-bar { gap: .3rem !important; padding: .4rem !important; max-width: 96vw; } .control-btn { min-width: 0; flex: 1; height: 58px !important; padding: .25rem .2rem; } .control-btn .cb-label { font-size: .6rem; } }
+</style>
 </head>
 <body>
+{% include 'partials/icons.html' %}
 <div class="min-h-screen bg-gray-900 relative">
     <!-- Video Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 video-grid">
@@ -719,7 +735,7 @@
                 <div class="text-center">
                     <div class="text-6xl mb-4"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></div>
                     <div class="text-xl font-semibold">{{ partner.username }}</div>
-                    <div class="text-sm opacity-75 mt-2">Waiting to connect...</div>
+                    <div class="text-sm opacity-75 mt-2" role="status">Waiting for {{ partner.username }} to join. Keep this tab open.</div>
                 </div>
             </div>
             <video id="remoteVideo" class="video-element" autoplay playsinline style="display: none;"></video>
@@ -758,27 +774,27 @@
     </div>
 
     <!-- Enhanced Controls Bar -->
-    <div class="controls-bar" id="controlsBar">
-        <button id="toggleVideo" class="control-btn active" title="Toggle Video" data-tooltip="Video On">
-            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg>
+    <div class="controls-bar" id="controlsBar" role="toolbar" aria-label="Call controls">
+        <button id="toggleVideo" class="control-btn active" type="button" aria-label="Camera"  data-on="Camera" data-off="Camera off">
+            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg><span class="cb-label">Camera</span>
         </button>
-        <button id="toggleAudio" class="control-btn active" title="Toggle Audio" data-tooltip="Audio On">
-            <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg>
+        <button id="toggleAudio" class="control-btn active" type="button" aria-label="Mic"  data-on="Mic" data-off="Mic off">
+            <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg><span class="cb-label">Mic</span>
         </button>
-        <button id="toggleChat" class="control-btn neutral" title="Toggle Chat" data-tooltip="Open Chat">
-            <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg>
+        <button id="toggleChat" class="control-btn neutral" type="button" aria-label="Chat"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg><span class="cb-label">Chat</span>
         </button>
-        <button id="startCall" class="control-btn call-start" title="Start Call" data-tooltip="Start Video Call">
-            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg>
+        <button id="shareScreen" class="control-btn neutral" type="button" aria-label="Share"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-screen"/></svg><span class="cb-label">Share</span>
         </button>
-        <button id="endCall" class="control-btn call-end" title="End Call" style="display: none;" data-tooltip="End Call">
-            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg>
+        <button id="toggleFullscreen" class="control-btn neutral" type="button" aria-label="Full screen"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-maximize"/></svg><span class="cb-label">Expand</span>
         </button>
-        <button id="shareScreen" class="control-btn neutral" title="Share Screen" data-tooltip="Share Screen">
-            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg>
+        <button id="startCall" class="control-btn call-start" type="button" aria-label="Start call"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg><span class="cb-label">Start call</span>
         </button>
-        <button id="toggleFullscreen" class="control-btn neutral" title="Fullscreen" data-tooltip="Fullscreen">
-            <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg>
+        <button id="endCall" class="control-btn call-end" type="button" aria-label="Leave" style="display: none;" >
+            <svg class="ico" aria-hidden="true"><use href="#i-phone-off"/></svg><span class="cb-label">Leave</span>
         </button>
     </div>
 
@@ -1135,15 +1151,24 @@ class VideoChat {
         } catch (error) {
 
             this.loadingStatus.textContent = 'Error accessing camera/microphone';
-            this.updateStatus('Error accessing camera/microphone', 'disconnected');
-            
-            // Show error details and retry option
-            setTimeout(() => {
-                this.loadingOverlay.style.display = 'none';
-                this.addChatMessage(`Camera/Microphone Error: ${error.message}`, 'system');
-                this.addChatMessage('Please check your camera/microphone permissions and refresh the page', 'system');
-            }, 2000);
+            this.updateStatus('Camera or microphone unavailable', 'disconnected');
+            this.showMediaError(error);
         }
+    }
+
+    showMediaError(error) {
+        const name = (error && error.name) || '';
+        let title = 'We could not start your camera', body = 'Check that a camera and microphone are connected, then try again.';
+        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') { title = 'Camera and microphone are blocked'; body = 'Click the lock icon next to the web address, set Camera and Microphone to Allow, then press Try again.'; }
+        else if (name === 'NotFoundError') { title = 'No camera or microphone found'; body = 'Plug one in or switch device, then press Try again. You can still use text chat meanwhile.'; }
+        else if (name === 'NotReadableError') { title = 'Your camera is busy'; body = 'Another app or tab is using it. Close that, then press Try again.'; }
+        const ov = this.loadingOverlay; ov.style.display = 'flex'; ov.style.alignItems = 'center'; ov.style.justifyContent = 'center'; Array.from(ov.children).forEach(c => { if (!c.classList.contains('media-error')) c.style.display = 'none'; });
+        const old = ov.querySelector('.media-error'); if (old) old.remove();
+        const box = document.createElement('div'); box.className = 'media-error'; box.setAttribute('role', 'alert');
+        box.innerHTML = '<h3></h3><p></p><div class="row"><button type="button" class="b" id="mediaRetry">Try again</button><a class="b o" href="javascript:history.back()">Leave call</a></div>';
+        box.querySelector('h3').textContent = title; box.querySelector('p').textContent = body;
+        ov.appendChild(box);
+        box.querySelector('#mediaRetry').addEventListener('click', () => { box.remove(); Array.from(ov.children).forEach(c => { c.style.display = ''; }); this.initializeLocalVideo(); });
     }
     
     updateLocalVideoInfo() {
@@ -2608,6 +2633,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     new VideoChat(roomId, userId);
 });
+</script>
+<script>
+(function () {
+  function sync(btn) {
+    var on = btn.classList.contains('active'), l = btn.querySelector('.cb-label');
+    if (btn.dataset.on) { l.textContent = on ? btn.dataset.on : btn.dataset.off; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.setAttribute('aria-label', l.textContent + (on ? ', on. Press to turn off' : '. Press to turn on')); }
+  }
+  document.querySelectorAll('.control-btn[data-on]').forEach(function (b) { sync(b); new MutationObserver(function () { sync(b); }).observe(b, {attributes: true, attributeFilter: ['class']}); });
+})();
 </script>
 </body>
 </html>
