@@ -4,16 +4,32 @@
 <div class="max-w-xl mx-auto px-4 py-16 text-center">
     <h1 class="text-3xl font-bold text-gray-900 mb-3">Quick match</h1>
     <p class="text-gray-600 mb-8">Get paired with someone who speaks what you are learning and is learning what you speak. You get a 5 minute call, then you both choose whether to keep in touch.</p>
-    {% if pair %}
+    {% if not can_use %}
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6 text-left">
+        <p class="font-semibold text-gray-900 mb-1">Verify your email to use Quick match</p>
+        <p class="text-sm text-gray-700 mb-3">It keeps spam accounts out. {% if has_email %}We sent a link to {{ request.user.email }}.{% else %}Add an email address in your profile first.{% endif %}</p>
+        {% if has_email %}<button id="qm-resend" class="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-black">Resend link</button>{% endif %}
+    </div>
+    {% endif %}
+    {% if pair and can_use %}
     <p class="text-gray-800 mb-6">You teach <strong>{{ pair.0.name }}</strong> and learn <strong>{{ pair.1.name }}</strong>.</p>
     <button id="qm-start" class="px-6 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-black focus-ring">Find a partner now</button>
     <button id="qm-cancel" class="hidden px-6 py-3 rounded-xl border border-gray-300 text-gray-800 font-semibold hover:bg-gray-50 focus-ring">Cancel</button>
-    {% else %}
+    {% elif can_use %}
     <p class="text-gray-800">Add a language you can teach and one you are learning to your profile to use quick match.</p>
     {% endif %}
     <p id="qm-msg" class="mt-6 text-gray-700" role="status"></p>
 </div>
 <script>
+(function () {
+    var rs = document.getElementById('qm-resend');
+    if (rs) rs.addEventListener('click', function () {
+        fetch("{% url 'users:resend_verification' %}", {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+            .then(r => r.json()).then(function (d) {
+                document.getElementById('qm-msg').textContent = d.success ? 'Link sent. Check your inbox.' : (d.error || 'Could not send.');
+            });
+    });
+})();
 (function () {
     var start = document.getElementById('qm-start');
     if (!start) return;

@@ -45,6 +45,7 @@ class User(AbstractUser):
     """
     Custom user model that extends the AbstractUser model.
     """
+    email_verified = models.BooleanField(default=False)
     bio = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     interests = models.TextField(blank=True)

@@ -2,6 +2,7 @@
 a timed first call, then let both choose keep-in-touch or skip."""
 from datetime import timedelta
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -27,8 +28,12 @@ def default_language_pair(user):
 
 
 def can_quick_match(user):
-    """Single hook for gating (e.g. email verification) in one place."""
-    return user.is_authenticated
+    """Single hook for gating. Requires a verified email unless disabled in settings."""
+    if not user.is_authenticated:
+        return False
+    if getattr(settings, 'QUICK_MATCH_REQUIRE_VERIFIED_EMAIL', True):
+        return bool(getattr(user, 'email_verified', False))
+    return True
 
 
 def _already_connected(a, b):
@@ -41,7 +46,7 @@ def _already_connected(a, b):
 def join_queue(user):
     """Join the queue, or pair immediately. Returns (match_or_None)."""
     if not can_quick_match(user):
-        raise QuickMatchError('Quick match is not available for your account.')
+        raise QuickMatchError('Verify your email first. Check your inbox or resend the link from your profile.')
     pair = default_language_pair(user)
     if not pair:
         raise QuickMatchError('Add a language you can teach and one you are learning to your profile first.')

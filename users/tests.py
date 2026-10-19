@@ -60,3 +60,56 @@ class MatchDetailSafetyPanelTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'id="safety-panel"')
         self.assertContains(r, f'var userId = {b.id};')
+
+
+from django.contrib.auth import get_user_model
+
+
+class EmailVerificationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user('ev', 'ev@x.com', 'pw12345!')
+
+    def test_valid_link_verifies(self):
+        from django.urls import reverse
+        from .verification import make_token
+        r = self.client.get(reverse('users:verify_email', args=[make_token(self.user)]))
+        self.assertEqual(r.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.email_verified)
+
+    def test_bad_token_does_not_verify(self):
+        from django.urls import reverse
+        self.client.get(reverse('users:verify_email', args=['garbage']))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.email_verified)
+
+    def test_token_dies_when_email_changes(self):
+        from django.urls import reverse
+        from .verification import make_token
+        token = make_token(self.user)
+        self.user.email = 'new@x.com'
+        self.user.save()
+        self.client.get(reverse('users:verify_email', args=[token]))
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.email_verified)
+
+    def test_resend_sends_mail_and_is_throttled(self):
+        from django.core import mail
+        from django.urls import reverse
+        self.client.force_login(self.user)
+        r = self.client.post(reverse('users:resend_verification'))
+        self.assertTrue(r.json()['success'])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('verify-email/', mail.outbox[0].body)
+        r = self.client.post(reverse('users:resend_verification'))
+        self.assertEqual(r.status_code, 429)
+
+    def test_profile_email_change_resets_verified(self):
+        from .forms import UserProfileForm
+        self.user.email_verified = True
+        self.user.save()
+        form = UserProfileForm({'first_name': '', 'last_name': '', 'email': 'other@x.com', 'bio': '', 'interests': ''}, instance=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.email_verified)

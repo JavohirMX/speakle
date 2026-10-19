@@ -395,7 +395,7 @@ class QuickMatchTests(TestCase):
         self.fr = Language.objects.create(name='French', code='fr')
 
         def mk(name, teach, learn):
-            u = U.objects.create_user(name, f'{name}@x.com', 'pw12345!')
+            u = U.objects.create_user(name, f'{name}@x.com', 'pw12345!', email_verified=True)
             UserLanguage.objects.create(user=u, language=teach, language_type='native', proficiency='native')
             UserLanguage.objects.create(user=u, language=learn, language_type='learning', proficiency='beginner')
             return u
@@ -465,7 +465,7 @@ class QuickMatchTests(TestCase):
         self.assertEqual(ca.get(reverse('matches:quick_match')).status_code, 200)
 
     def test_user_without_languages_gets_clear_error(self):
-        u = get_user_model().objects.create_user('nolang', 'n@x.com', 'pw12345!')
+        u = get_user_model().objects.create_user('nolang', 'n@x.com', 'pw12345!', email_verified=True)
         c = Client(); c.force_login(u)
         r = c.post(reverse('matches:quick_match_join'))
         self.assertEqual(r.status_code, 400)
@@ -477,3 +477,20 @@ class QuickMatchTests(TestCase):
         c.post(reverse('users:block_user', args=[self.b.id]))
         m.refresh_from_db()
         self.assertEqual(m.status, 'ended')
+
+
+class QuickMatchEmailGateTests(TestCase):
+    def test_unverified_user_cannot_join(self):
+        from . import quick
+        u = get_user_model().objects.create_user('uv', 'uv@x.com', 'pw12345!')
+        c = Client(); c.force_login(u)
+        r = c.post(reverse('matches:quick_match_join'))
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('Verify your email', r.json()['error'])
+        self.assertContains(c.get(reverse('matches:quick_match')), 'Verify your email')
+
+    def test_gate_can_be_disabled(self):
+        from . import quick
+        u = get_user_model().objects.create_user('uv2', 'uv2@x.com', 'pw12345!')
+        with self.settings(QUICK_MATCH_REQUIRE_VERIFIED_EMAIL=False):
+            self.assertTrue(quick.can_quick_match(u))

@@ -542,7 +542,11 @@ def _quick_payload(match):
 @login_required
 def quick_match_page(request):
     pair = quick.default_language_pair(request.user)
-    return render(request, 'matches/quick_match.html', {'pair': pair})
+    return render(request, 'matches/quick_match.html', {
+        'pair': pair,
+        'can_use': quick.can_quick_match(request.user),
+        'has_email': bool(request.user.email),
+    })
 
 
 @login_required

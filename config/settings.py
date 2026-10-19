@@ -163,3 +163,8 @@ CHANNEL_LAYERS = {
 #         },
 #     },
 # }
+
+
+# Verification emails print to the console in development.
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'Speakle <noreply@localhost>'

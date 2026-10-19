@@ -9,6 +9,44 @@ from django.contrib.auth import get_user_model
 from .forms import UserRegistrationForm, UserProfileForm, UserLanguageForm
 from .models import UserLanguage, UserBlock, UserReport
 
+import logging
+import time
+from django.contrib.auth import get_user_model as _get_user_model
+from .verification import send_verification_email, check_token
+
+RESEND_COOLDOWN_SECONDS = 60
+
+
+def verify_email_view(request, token):
+    user = check_token(token, _get_user_model())
+    if not user:
+        messages.error(request, 'That verification link is invalid or has expired. Request a new one from your profile.')
+        return redirect('main:home')
+    if not user.email_verified:
+        user.email_verified = True
+        user.save(update_fields=['email_verified'])
+    messages.success(request, 'Email verified. You can use Quick match now.')
+    return redirect('users:profile' if request.user.is_authenticated else 'users:login')
+
+
+@login_required
+@require_POST
+def resend_verification_view(request):
+    if request.user.email_verified:
+        return JsonResponse({'success': True, 'already_verified': True})
+    last = request.session.get('verification_sent_at', 0)
+    if time.time() - last < RESEND_COOLDOWN_SECONDS:
+        return JsonResponse({'success': False, 'error': 'Please wait a minute before asking again.'}, status=429)
+    try:
+        sent = send_verification_email(request, request.user)
+    except Exception:
+        logging.getLogger(__name__).exception('Could not send verification email')
+        return JsonResponse({'success': False, 'error': 'Could not send the email. Try again later.'}, status=500)
+    if not sent:
+        return JsonResponse({'success': False, 'error': 'Add an email address to your profile first.'}, status=400)
+    request.session['verification_sent_at'] = time.time()
+    return JsonResponse({'success': True})
+
 def register_view(request):
     """User registration view."""
     if request.user.is_authenticated:
@@ -18,6 +56,10 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            try:
+                send_verification_email(request, user)
+            except Exception:
+                logging.getLogger(__name__).exception('Could not send verification email')
             username = form.cleaned_data.get('username')
             native_lang = form.cleaned_data.get('native_language').name
             target_lang = form.cleaned_data.get('target_language').name

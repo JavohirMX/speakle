@@ -107,6 +107,15 @@ class UserProfileForm(forms.ModelForm):
             'interests': forms.Textarea(attrs={'rows': 3}),
         }
     
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # A changed address is unverified until the new one is confirmed.
+        if 'email' in self.changed_data:
+            user.email_verified = False
+        if commit:
+            user.save()
+        return user
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Add CSS classes for styling
