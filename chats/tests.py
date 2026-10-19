@@ -1033,3 +1033,25 @@ class ChatsIntegrationTest(TestCase):
         self.assertEqual(messages.count(), 2)
         self.assertEqual(messages.first().content, "Can you hear me?")
         self.assertEqual(messages.last().content, "Yes, clearly!")
+
+
+class ChatListPageTests(TestCase):
+    def test_chat_list_shows_partner_languages_and_unread(self):
+        from matches.models import Match
+        from users.models import Language
+        from .models import ChatRoom, ChatMessage
+        U = get_user_model()
+        a = U.objects.create_user('cla', 'cla@x.com', 'pw12345!')
+        b = U.objects.create_user('clb', 'clb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = ChatRoom.objects.create(match=m)
+        ChatMessage.objects.create(room=room, sender=b, content='annyeong')
+        c = Client(); c.force_login(a)
+        r = c.get(reverse('chats:chat_list'))
+        self.assertContains(r, 'you teach English')
+        self.assertContains(r, 'you learn Korean')
+        self.assertContains(r, 'annyeong')
+        self.assertContains(r, reverse('chats:text_chat', args=[room.room_id]))
+        self.assertEqual(r.context['total_unread'], 1)

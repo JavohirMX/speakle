@@ -1004,6 +1004,8 @@ def chat_list(request):
                 'unread_count': unread_count,
                 'last_message': last_message,
                 'last_activity': room.last_activity,
+                'user_teaches': match.get_user_teaches(request.user),
+                'user_learns': match.get_user_learns(request.user),
             })
         except ChatRoom.DoesNotExist:
             # Create chat room for matches that don't have one yet
@@ -1017,6 +1019,8 @@ def chat_list(request):
                 'unread_count': 0,
                 'last_message': None,
                 'last_activity': room.last_activity,
+                'user_teaches': match.get_user_teaches(request.user),
+                'user_learns': match.get_user_learns(request.user),
             })
     
     # Sort by last activity (most recent first)
