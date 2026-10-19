@@ -602,6 +602,15 @@ class VideoCallConsumerFlowTests(TransactionTestCase):
         self.assertEqual(frame['type'], 'error')
         self.assertIn('denied', frame['message'])
 
+    async def test_blocked_user_in_call_cannot_send_typing(self):
+        from users.models import UserBlock
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await database_sync_to_async(UserBlock.objects.create)(blocker=self.b, blocked=self.a)
+        await ca.send_json_to({'type': 'typing_start'})
+        self.assertIn('no longer available', (await self._next(ca, 'error'))['message'])
+        await self._no_frame(cb, 'typing_start')
+        await cb.disconnect()
+
     async def test_offer_without_payload_is_an_error(self):
         ca = await self._connect(self.a)
         await ca.send_json_to({'type': 'offer'})

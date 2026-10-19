@@ -101,7 +101,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
             # Re-check access on the low-volume frames (not on every ICE candidate), so a
             # block made during a call stops chat, offers and call control.
-            if message_type in ('offer', 'chat_message', 'call_start', 'peer_ready'):
+            if message_type in ('offer', 'chat_message', 'call_start', 'peer_ready', 'typing_start'):
                 if not await self.check_room_access():
                     await self.send(text_data=json.dumps({
                         'type': 'error',
