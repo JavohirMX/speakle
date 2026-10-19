@@ -195,6 +195,11 @@ class MatchingService:
             match_request = MatchRequest.objects.select_for_update().get(pk=match_request.pk)
             if match_request.status != 'pending':
                 return None
+            if accept and not match_request.sender.is_active:
+                match_request.status = 'cancelled'
+                match_request.responded_at = timezone.now()
+                match_request.save()
+                return None
             match_request.status = 'accepted' if accept else 'declined'
             match_request.responded_at = timezone.now()
             match_request.save()

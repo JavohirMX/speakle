@@ -187,3 +187,13 @@ class DeactivatedUsersHiddenTests(TestCase):
         req, created = MatchingService.send_match_request(self.me, self.other, self.en, self.ko)
         self.assertEqual((req, created), (None, False))
         self.assertFalse(MatchRequest.objects.filter(sender=self.me).exists())
+
+    def test_accepting_a_request_from_a_deactivated_sender_makes_no_match(self):
+        from .services import MatchingService
+        req = MatchRequest.objects.create(sender=self.other, receiver=self.me, sender_teaches=self.ko,
+                                          sender_learns=self.en, status='pending')
+        get_user_model().objects.filter(pk=self.other.pk).update(is_active=False)
+        self.assertIsNone(MatchingService.respond_to_match_request(req, accept=True))
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'cancelled')
+        self.assertFalse(Match.objects.exists())
