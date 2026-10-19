@@ -131,11 +131,8 @@ def respond_to_request(request, request_id):
         
         return redirect('matches:requests')
     
-    context = {
-        'match_request': match_request,
-    }
-    
-    return render(request, 'matches/respond_request.html', context)
+    # There is no standalone confirmation page; accept/decline lives on the requests page.
+    return redirect('matches:requests')
 
 @login_required
 def my_matches(request):

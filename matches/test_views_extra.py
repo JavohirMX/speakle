@@ -1,0 +1,115 @@
+from django.contrib.auth import get_user_model
+from django.test import TestCase, Client
+from django.urls import reverse
+
+from users.models import Language, UserLanguage
+from .models import Match, MatchRequest
+
+User = get_user_model()
+
+
+class MatchViewExtraBase(TestCase):
+    def setUp(self):
+        self.a = User.objects.create_user('mva', 'mva@x.com', 'pw12345!')
+        self.b = User.objects.create_user('mvb', 'mvb@x.com', 'pw12345!')
+        self.c = User.objects.create_user('mvc', 'mvc@x.com', 'pw12345!')
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+
+    def login(self, user):
+        c = Client()
+        c.force_login(user)
+        return c
+
+    def pending_request(self):
+        return MatchRequest.objects.create(
+            sender=self.a, receiver=self.b, sender_teaches=self.en, sender_learns=self.ko,
+            message='hi',
+        )
+
+
+class RespondToRequestWebTests(MatchViewExtraBase):
+    def test_accept_creates_active_match_and_redirects(self):
+        req = self.pending_request()
+        r = self.login(self.b).post(reverse('matches:respond_request', args=[req.id]), {'action': 'accept'})
+        self.assertRedirects(r, reverse('matches:my_matches'), fetch_redirect_response=False)
+        self.assertTrue(Match.objects.filter(user1=self.a, user2=self.b, status='active').exists())
+
+    def test_decline_does_not_create_match(self):
+        req = self.pending_request()
+        r = self.login(self.b).post(reverse('matches:respond_request', args=[req.id]), {'action': 'decline'})
+        self.assertRedirects(r, reverse('matches:requests'), fetch_redirect_response=False)
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'declined')
+        self.assertFalse(Match.objects.exists())
+
+    def test_unknown_action_changes_nothing(self):
+        req = self.pending_request()
+        self.login(self.b).post(reverse('matches:respond_request', args=[req.id]), {'action': 'zzz'})
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'pending')
+
+    def test_sender_and_strangers_cannot_respond(self):
+        req = self.pending_request()
+        url = reverse('matches:respond_request', args=[req.id])
+        self.assertEqual(self.login(self.a).post(url, {'action': 'accept'}).status_code, 404)
+        self.assertEqual(self.login(self.c).post(url, {'action': 'accept'}).status_code, 404)
+        self.assertFalse(Match.objects.exists())
+
+    def test_get_redirects_to_requests_page_instead_of_missing_template(self):
+        req = self.pending_request()
+        r = self.login(self.b).get(reverse('matches:respond_request', args=[req.id]))
+        self.assertRedirects(r, reverse('matches:requests'), fetch_redirect_response=False)
+
+    def test_double_accept_is_idempotent(self):
+        req = self.pending_request()
+        c = self.login(self.b)
+        url = reverse('matches:respond_request', args=[req.id])
+        c.post(url, {'action': 'accept'})
+        c.post(url, {'action': 'accept'})
+        self.assertEqual(Match.objects.count(), 1)
+
+    def test_api_invalid_action_is_400(self):
+        req = self.pending_request()
+        r = self.login(self.b).post(reverse('matches:respond_request_api', args=[req.id]), {'action': 'zzz'})
+        self.assertEqual(r.status_code, 400)
+
+
+class MatchDetailAndStatsApiTests(MatchViewExtraBase):
+    def setUp(self):
+        super().setUp()
+        self.match = Match.objects.create(
+            user1=self.a, user2=self.b, user1_teaches=self.en, user1_learns=self.ko, status='active'
+        )
+
+    def test_detail_api_for_participant_and_outsider(self):
+        url = reverse('matches:get_match_detail', args=[self.match.id])
+        r = self.login(self.a).get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['match']['id'], self.match.id)
+        self.assertEqual(self.login(self.c).get(url).status_code, 403)
+
+    def test_statistics_api_counts_calls(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from chats.models import VideoRoom, CallSession
+        room = VideoRoom.objects.create(match=self.match)
+        s = CallSession.objects.create(room=room, status='ended')
+        CallSession.objects.filter(pk=s.pk).update(ended_at=timezone.now() + timedelta(minutes=3))
+        r = self.login(self.a).get(reverse('matches:get_match_statistics', args=[self.match.id]))
+        self.assertEqual(r.status_code, 200)
+        stats = r.json()['statistics']
+        self.assertEqual(stats['total_calls'], 1)
+        self.assertGreaterEqual(stats['total_call_duration'], 2.9)
+
+    def test_statistics_api_denies_outsider(self):
+        r = self.login(self.c).get(reverse('matches:get_match_statistics', args=[self.match.id]))
+        self.assertEqual(r.status_code, 403)
+
+
+class EditLanguageTests(MatchViewExtraBase):
+    def test_edit_own_language_and_not_others(self):
+        ul = UserLanguage.objects.create(user=self.a, language=self.en, language_type='native', proficiency='native')
+        url = reverse('users:edit_language', args=[ul.id])
+        self.assertEqual(self.login(self.b).get(url).status_code, 404)
+        self.assertEqual(self.login(self.a).get(url).status_code, 200)
