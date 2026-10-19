@@ -1380,3 +1380,78 @@ class BlockEndsRoomAccessTests(TestCase):
     def test_blocker_is_also_cut_off(self):
         self.UserBlock.objects.create(blocker=self.a, blocked=self.b)
         self.assertEqual(self._send(self.a).status_code, 403)
+
+
+class CleanupCommandTests(TestCase):
+    def setUp(self):
+        from io import StringIO
+        self.out = StringIO()
+        self.u1 = User.objects.create_user('cc1', 'cc1@x.com', 'pw12345!')
+        self.u2 = User.objects.create_user('cc2', 'cc2@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.match = Match.objects.create(
+            user1=self.u1, user2=self.u2, user1_teaches=en, user1_learns=ko, status='active'
+        )
+        self.room = VideoRoom.objects.create(match=self.match)
+
+    def _invite(self, status, created_days_ago=0, expires_in_minutes=10):
+        inv = CallInvitation.objects.create(
+            room=self.room, caller=self.u1, receiver=self.u2, status=status,
+            expires_at=timezone.now() + timedelta(minutes=expires_in_minutes),
+        )
+        CallInvitation.objects.filter(pk=inv.pk).update(
+            created_at=timezone.now() - timedelta(days=created_days_ago)
+        )
+        return inv
+
+    def test_invitations_cleanup_marks_expired_pending_and_deletes_old_finished(self):
+        from django.core.management import call_command
+        expired_pending = self._invite('pending', expires_in_minutes=-5)
+        live_pending = self._invite('pending', expires_in_minutes=10)
+        old_declined = self._invite('declined', created_days_ago=30)
+        recent_declined = self._invite('declined', created_days_ago=1)
+
+        call_command('cleanup_expired_invitations', stdout=self.out)
+
+        expired_pending.refresh_from_db()
+        live_pending.refresh_from_db()
+        self.assertEqual(expired_pending.status, 'expired')
+        self.assertEqual(live_pending.status, 'pending')
+        self.assertFalse(CallInvitation.objects.filter(pk=old_declined.pk).exists())
+        self.assertTrue(CallInvitation.objects.filter(pk=recent_declined.pk).exists())
+
+    def test_invitations_cleanup_dry_run_changes_nothing(self):
+        from django.core.management import call_command
+        expired_pending = self._invite('pending', expires_in_minutes=-5)
+        old_declined = self._invite('declined', created_days_ago=30)
+
+        call_command('cleanup_expired_invitations', '--dry-run', stdout=self.out)
+
+        expired_pending.refresh_from_db()
+        self.assertEqual(expired_pending.status, 'pending')
+        self.assertTrue(CallInvitation.objects.filter(pk=old_declined.pk).exists())
+        self.assertIn('DRY RUN', self.out.getvalue())
+
+    def test_offline_cleanup_only_touches_stale_online_users(self):
+        from django.core.management import call_command
+        stale = UserPresence.objects.create(user=self.u1, is_online=True)
+        fresh = UserPresence.objects.create(user=self.u2, is_online=True)
+        UserPresence.objects.filter(pk=stale.pk).update(last_seen=timezone.now() - timedelta(minutes=30))
+
+        call_command('cleanup_offline_users', stdout=self.out)
+
+        stale.refresh_from_db()
+        fresh.refresh_from_db()
+        self.assertFalse(stale.is_online)
+        self.assertTrue(fresh.is_online)
+
+    def test_offline_cleanup_dry_run_changes_nothing(self):
+        from django.core.management import call_command
+        stale = UserPresence.objects.create(user=self.u1, is_online=True)
+        UserPresence.objects.filter(pk=stale.pk).update(last_seen=timezone.now() - timedelta(minutes=30))
+
+        call_command('cleanup_offline_users', '--dry-run', stdout=self.out)
+
+        stale.refresh_from_db()
+        self.assertTrue(stale.is_online)
