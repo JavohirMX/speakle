@@ -1252,3 +1252,46 @@ class TextChatConsumerReplyTests(TransactionTestCase):
         msg = await self._next(ca, 'new_message')
         self.assertIsNone(msg['reply_to'])
         await ca.disconnect()
+
+
+class OutsiderAccessSweepTests(TestCase):
+    """A signed-in user who is not in the match must get nothing from any room-scoped URL."""
+
+    def setUp(self):
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.a = User.objects.create_user('sw_a', 'sw_a@x.com', 'pw12345!')
+        self.b = User.objects.create_user('sw_b', 'sw_b@x.com', 'pw12345!')
+        self.out = User.objects.create_user('sw_out', 'sw_out@x.com', 'pw12345!')
+        for u in (self.a, self.b, self.out):
+            UserLanguage.objects.create(user=u, language=en, language_type='native', proficiency='native')
+            UserLanguage.objects.create(user=u, language=ko, language_type='learning', proficiency='beginner')
+        self.match = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = VideoRoom.objects.create(match=self.match)
+        self.client = Client()
+        self.client.force_login(self.out)
+
+    def test_outsider_gets_no_room_data(self):
+        urls = [
+            reverse('chats:video_room', args=[self.room.room_id]),
+            reverse('chats:room_status', args=[self.room.room_id]),
+            reverse('chats:get_recent_messages', args=[self.room.room_id]),
+            reverse('chats:get_call_statistics', args=[self.room.room_id]),
+            reverse('chats:call_history', args=[self.room.room_id]),
+            reverse('chats:get_video_room_url', args=[self.match.id]),
+            reverse('chats:check_partner_availability', args=[self.match.id]),
+        ]
+        for url in urls:
+            r = self.client.get(url)
+            body = r.content.decode()
+            self.assertNotIn('sw_a@x.com', body, url)
+            self.assertNotEqual(r.status_code, 200, f'{url} returned 200 to an outsider')
+
+    def test_outsider_cannot_create_rooms_or_invites(self):
+        for url in (reverse('chats:create_video_room', args=[self.match.id]),
+                    reverse('chats:send_call_invitation', args=[self.match.id]),
+                    reverse('chats:create_chat_room', args=[self.match.id])):
+            before = (VideoRoom.objects.count(), CallInvitation.objects.count())
+            r = self.client.post(url)
+            self.assertNotEqual(r.status_code, 200, url)
+            self.assertEqual(before, (VideoRoom.objects.count(), CallInvitation.objects.count()), url)
