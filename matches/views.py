@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from .prompts import conversation_prompts, swap_tip
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -176,6 +177,8 @@ def match_detail(request, match_id):
         'partner': partner,
         'user_teaches': user_teaches,
         'user_learns': user_learns,
+        'conversation_prompts': conversation_prompts(),
+        'swap_tip': swap_tip(),
     }
     
     return render(request, 'matches/match_detail.html', context)

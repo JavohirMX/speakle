@@ -298,6 +298,19 @@
             <div class="p-8 lg:p-12">
                 <!-- Overview Tab -->
                 <div id="overview-content" class="tab-content space-y-8">
+                    <!-- Conversation starters -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6" id="conversation-prompts">
+                        <h2 class="text-xl font-bold text-gray-900 mb-1">💬 Not sure what to talk about?</h2>
+                        <p class="text-sm text-gray-600 mb-4">{{ swap_tip }}</p>
+                        <ul class="space-y-2">
+                            {% for p in conversation_prompts %}
+                            <li class="flex items-start gap-3 text-gray-800">
+                                <span class="text-xs uppercase tracking-wide font-semibold text-amber-700 w-20 shrink-0 pt-1">{{ p.level }}</span>
+                                <span>{{ p.text }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                     <!-- Partner's Languages -->
                     <div class="animate-fade-in">
                         <div class="flex items-center space-x-3 mb-6">
