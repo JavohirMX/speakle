@@ -77,6 +77,10 @@ def send_call_invitation(request, match_id):
     if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
+    invite_message = request.POST.get('message', '')
+    if len(invite_message) > 500:
+        return JsonResponse({'error': 'Message too long (max 500 characters)'}, status=400)
+
     # Get partner
     partner = match.get_partner(request.user)
     
@@ -110,7 +114,7 @@ def send_call_invitation(request, match_id):
         room=video_room,
         caller=request.user,
         receiver=partner,
-        message=request.POST.get('message', ''),
+        message=invite_message,
     )
     
     # Invalidate pending invitations cache for the receiver

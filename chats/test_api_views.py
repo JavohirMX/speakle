@@ -249,3 +249,93 @@ class SendAndEditMessageTests(ChatApiBase):
         self.assertEqual(r.json()['marked_read'], 1)
         mine.refresh_from_db()
         self.assertFalse(mine.is_read)
+
+
+class InvitationViewTests(ChatApiBase):
+    def setUp(self):
+        super().setUp()
+        from django.core.cache import cache
+        from .models import UserPresence
+        cache.clear()
+        UserPresence.objects.create(user=self.b, is_online=True)
+
+    def send(self, user=None, **data):
+        with patch('chats.views.send_user_notification'):
+            return self.client_for(user or self.a).post(
+                reverse('chats:send_call_invitation', args=[self.match.id]), data
+            )
+
+    def test_send_creates_pending_invitation(self):
+        from .models import CallInvitation
+        r = self.send(message='hi')
+        self.assertEqual(r.status_code, 200)
+        inv = CallInvitation.objects.get()
+        self.assertEqual((inv.caller, inv.receiver, inv.status), (self.a, self.b, 'pending'))
+
+    def test_send_rejects_second_pending_offline_partner_outsider_and_long_message(self):
+        from .models import CallInvitation, UserPresence
+        self.assertEqual(self.send().status_code, 200)
+        self.assertEqual(self.send().status_code, 400)  # already pending
+        CallInvitation.objects.all().delete()
+        self.assertEqual(self.send(message='x' * 501).status_code, 400)
+        self.assertEqual(self.send(self.outsider).status_code, 403)
+        UserPresence.objects.filter(user=self.b).update(is_online=False)
+        self.assertEqual(self.send().status_code, 400)  # partner offline
+        self.assertEqual(CallInvitation.objects.count(), 0)
+
+    def test_send_denied_when_blocked(self):
+        from users.models import UserBlock
+        UserBlock.objects.create(blocker=self.b, blocked=self.a)
+        self.assertEqual(self.send().status_code, 403)
+
+    def _respond(self, inv, user, response):
+        with patch('chats.views.send_user_notification'):
+            return self.client_for(user).post(
+                reverse('chats:respond_to_invitation', args=[inv.id]), {'response': response}
+            )
+
+    def test_accept_decline_and_invalid(self):
+        from .models import CallInvitation
+        self.send()
+        inv = CallInvitation.objects.get()
+        self.assertEqual(self._respond(inv, self.b, 'maybe').status_code, 400)
+        self.assertEqual(self._respond(inv, self.a, 'accept').status_code, 404)  # caller cannot respond
+        r = self._respond(inv, self.b, 'accept')
+        self.assertEqual(r.json()['action'], 'accepted')
+        inv.refresh_from_db()
+        self.assertEqual(inv.status, 'accepted')
+        self.assertEqual(self._respond(inv, self.b, 'decline').status_code, 400)  # already answered
+
+    def test_decline(self):
+        from .models import CallInvitation
+        self.send()
+        inv = CallInvitation.objects.get()
+        self.assertEqual(self._respond(inv, self.b, 'decline').json()['action'], 'declined')
+
+    def test_expired_invitation_cannot_be_accepted(self):
+        from .models import CallInvitation
+        self.send()
+        inv = CallInvitation.objects.get()
+        CallInvitation.objects.filter(pk=inv.pk).update(expires_at=timezone.now() - timedelta(minutes=1))
+        self.assertEqual(self._respond(inv, self.b, 'accept').status_code, 400)
+
+    def test_cancel_only_by_caller_and_only_when_pending(self):
+        from .models import CallInvitation
+        self.send()
+        inv = CallInvitation.objects.get()
+        url = reverse('chats:cancel_invitation', args=[inv.id])
+        with patch('chats.views.send_user_notification'):
+            self.assertEqual(self.client_for(self.b).post(url).status_code, 404)
+            self.assertEqual(self.client_for(self.a).post(url).status_code, 200)
+            self.assertEqual(self.client_for(self.a).post(url).status_code, 400)
+        inv.refresh_from_db()
+        self.assertEqual(inv.status, 'cancelled')
+
+    def test_pending_invitations_lists_only_live_ones_for_receiver(self):
+        from .models import CallInvitation
+        self.send()
+        r = self.client_for(self.b).get(reverse('chats:get_pending_invitations'))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('apia', r.content.decode())
+        r2 = self.client_for(self.a).get(reverse('chats:get_pending_invitations'))
+        self.assertNotIn('apia', r2.content.decode())
