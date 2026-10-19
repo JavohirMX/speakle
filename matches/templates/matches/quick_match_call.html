@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Quick match with {{ partner.username }} - Speakle{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-12 text-center">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Quick match with {{ partner.username }}</h1>
+    <p id="qm-timer" class="text-4xl font-mono my-6" aria-live="off"></p>
+
+    <div id="qm-call">
+        <a href="{% url 'chats:create_video_room' match.id %}" target="_blank" rel="noopener"
+           class="inline-block px-6 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-black focus-ring">Open video call</a>
+        <p class="text-sm text-gray-600 mt-3">The call opens in a new tab. Come back here when the timer ends.</p>
+        <div class="mt-8 flex gap-3 justify-center">
+            <button id="qm-block" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-800 hover:bg-gray-50">Block</button>
+            <button id="qm-report" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-800 hover:bg-gray-50">Report</button>
+        </div>
+    </div>
+
+    <div id="qm-decide" class="hidden">
+        <p class="text-gray-800 mb-4">Time is up. Want to keep in touch with {{ partner.username }}?</p>
+        <div class="flex gap-3 justify-center">
+            <button data-choice="keep" class="qm-choice px-6 py-3 rounded-xl bg-gray-900 text-white font-semibold hover:bg-black">Keep in touch</button>
+            <button data-choice="skip" class="qm-choice px-6 py-3 rounded-xl border border-gray-300 text-gray-800 font-semibold hover:bg-gray-50">Skip</button>
+        </div>
+    </div>
+    <p id="qm-msg" class="mt-6 text-gray-700" role="status"></p>
+</div>
+<script>
+(function () {
+    var remaining = {{ remaining_seconds }};
+    var H = {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'};
+    var t = document.getElementById('qm-timer'), msg = document.getElementById('qm-msg');
+    function fmt(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+    function tick() {
+        t.textContent = fmt(Math.max(0, remaining));
+        if (remaining <= 0) {
+            clearInterval(iv);
+            document.getElementById('qm-decide').classList.remove('hidden');
+        }
+        remaining -= 1;
+    }
+    var iv = setInterval(tick, 1000); tick();
+    {% if match.status != 'trial' %}
+    clearInterval(iv); document.getElementById('qm-decide').classList.add('hidden');
+    t.textContent = ''; msg.textContent = {% if match.status == 'active' %}'You are connected. Find them in My Matches.'{% else %}'This quick match has ended.'{% endif %};
+    {% endif %}
+    function post(url, body) { return fetch(url, {method: 'POST', headers: H, body: body}).then(r => r.json()); }
+    document.querySelectorAll('.qm-choice').forEach(function (b) {
+        b.addEventListener('click', function () {
+            post("{% url 'matches:quick_match_decide' match.id %}", 'choice=' + b.dataset.choice).then(function (d) {
+                if (!d.success) { msg.textContent = d.error || 'Could not save.'; return; }
+                document.getElementById('qm-decide').classList.add('hidden');
+                if (d.status === 'active') msg.textContent = 'You both said keep. Find them in My Matches.';
+                else if (d.status === 'ended') msg.textContent = 'Skipped. No hard feelings.';
+                else { msg.textContent = 'Saved. Waiting for your partner to choose.'; wait(); }
+            });
+        });
+    });
+    function wait() {
+        var w = setInterval(function () {
+            fetch("{% url 'matches:quick_match_result' match.id %}").then(r => r.json()).then(function (d) {
+                if (d.status === 'active') { clearInterval(w); msg.textContent = 'You both said keep. Find them in My Matches.'; }
+                else if (d.status === 'ended') { clearInterval(w); msg.textContent = 'Your partner skipped. On to the next one.'; }
+            });
+        }, 4000);
+    }
+    document.getElementById('qm-block').addEventListener('click', function () {
+        if (!confirm('Block {{ partner.username|escapejs }}?')) return;
+        post("{% url 'users:block_user' partner.id %}", '').then(function () { msg.textContent = 'Blocked. This match is over.'; });
+    });
+    document.getElementById('qm-report').addEventListener('click', function () {
+        var reason = prompt('Reason (e.g. harassment, spam, inappropriate, other):', 'other');
+        if (!reason) return;
+        post("{% url 'users:report_user' partner.id %}", 'reason=' + encodeURIComponent(reason)).then(function (d) {
+            msg.textContent = d.success ? 'Report sent to moderators.' : (d.error || 'Could not send.');
+        });
+    });
+})();
+</script>
+{% endblock %}

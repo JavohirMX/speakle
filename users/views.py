@@ -135,7 +135,7 @@ def block_user_view(request, user_id):
         return JsonResponse({'success': False, 'error': 'You cannot block yourself.'}, status=400)
     UserBlock.objects.get_or_create(blocker=request.user, blocked=target)
     pair = Q(user1=request.user, user2=target) | Q(user1=target, user2=request.user)
-    Match.objects.filter(pair, status__in=['active', 'pending', 'accepted']).update(
+    Match.objects.filter(pair, status__in=['active', 'pending', 'accepted', 'trial']).update(
         status='ended', ended_at=timezone.now(), ended_by=request.user,
         end_reason='Blocked', updated_at=timezone.now())
     MatchRequest.objects.filter(

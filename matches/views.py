@@ -5,8 +5,10 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from .models import PotentialMatch, Match, MatchRequest
+from django.urls import reverse
+from .models import PotentialMatch, Match, MatchRequest, QuickMatchEntry
 from .services import MatchingService
+from . import quick
 from users.models import Language
 
 @login_required
@@ -526,3 +528,86 @@ def get_match_statistics(request, match_id):
         'success': True,
         'statistics': statistics
     })
+
+
+# ===============================
+# QUICK MATCH
+# ===============================
+
+def _quick_payload(match):
+    return {'status': 'matched', 'match_id': match.id,
+            'url': reverse('matches:quick_match_call', args=[match.id])}
+
+
+@login_required
+def quick_match_page(request):
+    pair = quick.default_language_pair(request.user)
+    return render(request, 'matches/quick_match.html', {'pair': pair})
+
+
+@login_required
+@require_POST
+def quick_match_join(request):
+    try:
+        match = quick.join_queue(request.user)
+    except quick.QuickMatchError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    if match:
+        return JsonResponse({'success': True, **_quick_payload(match)})
+    return JsonResponse({'success': True, 'status': 'waiting'})
+
+
+@login_required
+def quick_match_status(request):
+    match = quick.poll(request.user)
+    if match:
+        return JsonResponse({'success': True, **_quick_payload(match)})
+    waiting = QuickMatchEntry.objects.filter(user=request.user, match__isnull=True).exists()
+    return JsonResponse({'success': True, 'status': 'waiting' if waiting else 'idle'})
+
+
+@login_required
+@require_POST
+def quick_match_leave(request):
+    quick.leave_queue(request.user)
+    return JsonResponse({'success': True})
+
+
+@login_required
+def quick_match_call(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    mine = match.user1_keep if request.user == match.user1 else match.user2_keep
+    ends_at = match.trial_ends_at
+    remaining = max(0, int((ends_at - timezone.now()).total_seconds())) if ends_at else 0
+    return render(request, 'matches/quick_match_call.html', {
+        'match': match,
+        'partner': match.get_partner(request.user),
+        'remaining_seconds': remaining,
+        'my_choice': mine,
+    })
+
+
+@login_required
+@require_POST
+def quick_match_decide(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    if request.POST.get('choice') not in ('keep', 'skip'):
+        return JsonResponse({'error': 'choice must be keep or skip'}, status=400)
+    try:
+        match = quick.decide(match, request.user, request.POST['choice'] == 'keep')
+    except quick.QuickMatchError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    return JsonResponse({'success': True, 'status': match.status})
+
+
+@login_required
+def quick_match_result(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    return JsonResponse({'status': match.status})
