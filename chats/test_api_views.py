@@ -441,3 +441,32 @@ class TextChatConsumerEditAndHistoryTests(TransactionTestCase):
         await c.connect()
         frame = await c.receive_json_from()
         self.assertEqual(frame['type'], 'error')
+
+
+class CleanCallEndFieldsTests(TestCase):
+    def test_normalises_garbage(self):
+        from .models import clean_call_end_fields
+        reason, notes, quality, issues = clean_call_end_fields('x' * 100, 'n' * 900, 'q' * 50, 'abc')
+        self.assertEqual(reason, 'user_hangup')
+        self.assertEqual(len(notes), 500)
+        self.assertEqual(len(quality), 20)
+        self.assertEqual(issues, 0)
+
+    def test_keeps_valid_values(self):
+        from .models import clean_call_end_fields
+        self.assertEqual(clean_call_end_fields('normal', 'ok', 'good', 3), ('normal', 'ok', 'good', 3))
+        self.assertEqual(clean_call_end_fields('normal', None, None, -5)[3], 0)
+
+
+class EndCallHttpSanitizesTests(ChatApiBase):
+    def test_garbage_reason_is_replaced_not_stored(self):
+        s = CallSession.objects.create(room=self.video, status='active')
+        with patch('chats.views.send_user_notification'):
+            r = self.client_for(self.a).post(
+                reverse('chats:end_call_with_reason', args=[self.video.room_id]),
+                {'end_reason': 'x' * 100, 'end_notes': 'n' * 900},
+            )
+        self.assertEqual(r.status_code, 200)
+        s.refresh_from_db()
+        self.assertEqual(s.end_reason, 'user_hangup')
+        self.assertEqual(len(s.end_notes), 500)

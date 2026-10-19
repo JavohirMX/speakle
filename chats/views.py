@@ -496,6 +496,10 @@ def end_call_with_reason(request, room_id):
         end_reason = request.POST.get('end_reason', 'user_hangup')
         end_notes = request.POST.get('end_notes', '')
         connection_quality = request.POST.get('connection_quality', '')
+        from .models import clean_call_end_fields
+        end_reason, end_notes, connection_quality, _ = clean_call_end_fields(
+            end_reason, end_notes, connection_quality
+        )
         
         # End active sessions
         active_sessions = room.sessions.filter(status='active')

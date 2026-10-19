@@ -389,3 +389,17 @@ class TypingStatus(models.Model):
         if exclude_user:
             queryset = queryset.exclude(user=exclude_user)
         return [status.user for status in queryset]
+
+
+def clean_call_end_fields(end_reason, end_notes, connection_quality, network_issues=0):
+    """Normalise client-supplied call-end data to values the CallSession columns accept."""
+    valid = {value for value, _ in CallSession.END_REASON_CHOICES}
+    if end_reason not in valid:
+        end_reason = 'user_hangup'
+    end_notes = str(end_notes or '')[:500]
+    connection_quality = str(connection_quality or '')[:20]
+    try:
+        network_issues = min(max(int(network_issues), 0), 10000)
+    except (TypeError, ValueError):
+        network_issues = 0
+    return end_reason, end_notes, connection_quality, network_issues

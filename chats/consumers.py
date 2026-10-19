@@ -360,6 +360,10 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         call_duration = data.get('call_duration', 0)  # Duration in seconds
         connection_quality = data.get('connection_quality', '')
         network_issues = data.get('network_issues', 0)
+        from .models import clean_call_end_fields
+        end_reason, end_notes, connection_quality, network_issues = clean_call_end_fields(
+            end_reason, end_notes, connection_quality, network_issues
+        )
         
         # End the call session with detailed information
         session_summary = await self.end_call_session_enhanced(
