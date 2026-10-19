@@ -607,7 +607,7 @@
                                 <div class="text-center p-4 bg-white/50 rounded-xl border border-purple-300">
                                     <div class="text-2xl mb-2">🕒</div>
                                     <p class="text-sm text-gray-600 mb-1">Last Activity</p>
-                                    <p class="font-bold text-purple-600">{{ match.last_activity|timesince|default:"Never" }} ago</p>
+                                    <p class="font-bold text-purple-600">{% if match.last_activity %}{{ match.last_activity|timesince }} ago{% else %}No activity yet{% endif %}</p>
                                 </div>
                             </div>
                         </div>
