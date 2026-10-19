@@ -179,3 +179,11 @@ class DeactivatedUsersHiddenTests(TestCase):
             self.assertIsNone(quick.join_queue(self.other))
             get_user_model().objects.filter(pk=self.other.pk).update(is_active=False)
             self.assertIsNone(quick.join_queue(self.me))
+
+    def test_request_to_a_deactivated_user_is_not_created(self):
+        from .services import MatchingService
+        get_user_model().objects.filter(pk=self.other.pk).update(is_active=False)
+        self.other.refresh_from_db()
+        req, created = MatchingService.send_match_request(self.me, self.other, self.en, self.ko)
+        self.assertEqual((req, created), (None, False))
+        self.assertFalse(MatchRequest.objects.filter(sender=self.me).exists())

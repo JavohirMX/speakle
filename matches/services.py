@@ -147,7 +147,7 @@ class MatchingService:
           sender to accept (returned with created=False) to avoid duplicate matches.
         - A previously declined/cancelled request is re-opened.
         """
-        if sender.id == receiver.id:
+        if sender.id == receiver.id or not receiver.is_active:
             return None, False
         from users.models import UserBlock
         if UserBlock.either_way(sender, receiver):
