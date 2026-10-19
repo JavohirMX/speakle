@@ -524,6 +524,28 @@ class QuickMatchTests(TestCase):
         self.assertEqual(ca.get(reverse('matches:quick_match_call', args=[mid])).status_code, 200)
         self.assertEqual(ca.get(reverse('matches:quick_match')).status_code, 200)
 
+    def test_http_decide_and_result(self):
+        from datetime import timedelta
+        ca, cb, cx = Client(), Client(), Client()
+        ca.force_login(self.a); cb.force_login(self.b); cx.force_login(self.mk('qy', self.en, self.ko))
+        self.quick.join_queue(self.a)
+        m = self.quick.join_queue(self.b)
+        dec = reverse('matches:quick_match_decide', args=[m.id])
+        res = reverse('matches:quick_match_result', args=[m.id])
+        # timer still running
+        self.assertEqual(ca.post(dec, {'choice': 'keep'}).status_code, 400)
+        Match.objects.filter(pk=m.pk).update(trial_ends_at=timezone.now() - timedelta(seconds=1))
+        # bad choice, non-participant, GET not allowed
+        self.assertEqual(ca.post(dec, {'choice': 'maybe'}).status_code, 400)
+        self.assertEqual(cx.get(res).status_code, 403)
+        self.assertEqual(ca.get(dec).status_code, 405)
+        r = ca.post(dec, {'choice': 'keep'})
+        self.assertEqual(r.json()['status'], 'trial')
+        self.assertEqual(cb.get(res).json()['status'], 'trial')
+        r = cb.post(dec, {'choice': 'keep'})
+        self.assertEqual(r.json()['status'], 'active')
+        self.assertEqual(ca.get(res).json()['status'], 'active')
+
     def test_user_without_languages_gets_clear_error(self):
         u = get_user_model().objects.create_user('nolang', 'n@x.com', 'pw12345!', email_verified=True)
         c = Client(); c.force_login(u)
