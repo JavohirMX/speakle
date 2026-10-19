@@ -11,8 +11,11 @@ from .forms import UserRegistrationForm, UserProfileForm, UserLanguageForm
 from .models import UserLanguage, UserBlock, UserReport
 
 import logging
+from datetime import timedelta
+from django.utils import timezone
 import time
 from django.contrib.auth import get_user_model as _get_user_model
+from .throttle import login_blocked, record_login_failure, clear_login_failures
 from .verification import send_verification_email, check_token
 
 RESEND_COOLDOWN_SECONDS = 60
@@ -94,9 +97,15 @@ def login_view(request):
     next_url = _safe_next(request)
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
+        username = request.POST.get('username', '')
+        if login_blocked(request, username):
+            form.add_error(None, 'Too many failed attempts. Try again in 15 minutes.')
+            return render(request, 'registration/login.html', {'form': form, 'next': next_url}, status=429)
         if form.is_valid():
+            clear_login_failures(request, username)
             login(request, form.get_user())
             return redirect(next_url or 'matches:find_matches')
+        record_login_failure(request, username)
     else:
         form = AuthenticationForm()
 
@@ -204,6 +213,10 @@ def report_user_view(request, user_id):
     reason = request.POST.get('reason', '')
     if reason not in dict(UserReport.REASON_CHOICES):
         return JsonResponse({'success': False, 'error': 'Choose a valid reason.'}, status=400)
+    since = timezone.now() - timedelta(hours=24)
+    if UserReport.objects.filter(reporter=request.user, reported=target, reason=reason, created_at__gte=since).exists():
+        # Same report already filed today: succeed quietly instead of flooding the review queue.
+        return JsonResponse({'success': True})
     UserReport.objects.create(
         reporter=request.user, reported=target, reason=reason,
         details=request.POST.get('details', '')[:2000])

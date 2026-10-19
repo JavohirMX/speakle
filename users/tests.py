@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from users.models import Language, UserLanguage
+from users.models import Language, UserLanguage, UserReport
 from django.test import TestCase
 
 # Create your tests here.
@@ -185,3 +185,35 @@ class LanguagePagesTests(TestCase):
         self.client.force_login(o)
         self.client.post(reverse('users:delete_language', args=[self.ul.id]))
         self.assertTrue(UserLanguage.objects.filter(id=self.ul.id).exists())
+
+
+class ThrottleTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.user = get_user_model().objects.create_user('thr', 'thr@x.com', 'pw12345!')
+
+    def test_login_locks_after_repeated_failures(self):
+        from users.throttle import LOGIN_MAX_FAILURES
+        for _ in range(LOGIN_MAX_FAILURES):
+            r = self.client.post(reverse('users:login'), {'username': 'thr', 'password': 'wrong'})
+            self.assertEqual(r.status_code, 200)
+        r = self.client.post(reverse('users:login'), {'username': 'thr', 'password': 'pw12345!'})
+        self.assertEqual(r.status_code, 429)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_success_resets_counter(self):
+        for _ in range(3):
+            self.client.post(reverse('users:login'), {'username': 'thr', 'password': 'wrong'})
+        r = self.client.post(reverse('users:login'), {'username': 'thr', 'password': 'pw12345!'})
+        self.assertEqual(r.status_code, 302)
+
+    def test_same_report_not_duplicated_but_new_reason_is_kept(self):
+        other = get_user_model().objects.create_user('thr2', 'thr2@x.com', 'pw12345!')
+        self.client.force_login(self.user)
+        url = reverse('users:report_user', args=[other.id])
+        self.assertTrue(self.client.post(url, {'reason': 'spam'}).json()['success'])
+        self.assertTrue(self.client.post(url, {'reason': 'spam'}).json()['success'])
+        self.assertEqual(UserReport.objects.count(), 1)
+        self.client.post(url, {'reason': 'harassment'})
+        self.assertEqual(UserReport.objects.count(), 2)

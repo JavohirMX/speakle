@@ -24,6 +24,7 @@
 - Find matches ran several queries per match card. Now a fixed number of queries.
 
 ### Changed
+- Login locks for 15 minutes after 10 failed attempts for the same name and address. Repeating the same report within a day no longer adds a duplicate.
 - Production settings warn at startup when `SECRET_KEY` is still a placeholder.
 - Tailwind CDN replaced by compiled CSS. Fonts are self-hosted.
 - Matching: no duplicate or reverse requests, re-send after decline, best language pairing per partner.
