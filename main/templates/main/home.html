@@ -1,7 +1,17 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Speakle - Swap languages, make a friend{% endblock %}
 {% block meta_description %}Practice a language by video with someone who is learning yours. Free two-way language exchange in your browser, with block and report built in.{% endblock %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"Organization","@id":"{{ site_origin }}/#org","name":"Speakle","url":"{{ site_origin }}/","logo":"{{ site_origin }}{% static 'img/icon-512.png' %}"},
+ {"@type":"WebSite","@id":"{{ site_origin }}/#website","url":"{{ site_origin }}/","name":"Speakle","publisher":{"@id":"{{ site_origin }}/#org"}}
+]}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="overflow-x-clip">

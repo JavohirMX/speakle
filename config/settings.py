@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'main.seo.NoIndexMiddleware',
     'chats.middleware.UserActivityMiddleware',  # Automatic user presence tracking
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -67,6 +68,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'main.seo.seo_context',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -168,3 +170,6 @@ CHANNEL_LAYERS = {
 # Verification emails print to the console in development.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'Speakle <noreply@localhost>'
+
+# Public origin used for canonical URLs, sitemap and share images. Falls back to the request host.
+SITE_URL = __import__('os').environ.get('SITE_URL', '')
