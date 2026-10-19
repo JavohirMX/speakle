@@ -817,8 +817,11 @@ def get_chat_messages(request, room_id):
             return JsonResponse({'error': 'Access denied'}, status=403)
         
         # Get pagination parameters
-        page = int(request.GET.get('page', 1))
-        page_size = min(int(request.GET.get('page_size', 50)), 100)  # Max 100 messages per request
+        try:
+            page = max(int(request.GET.get('page', 1)), 1)
+            page_size = min(max(int(request.GET.get('page_size', 50)), 1), 100)  # Max 100 messages per request
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'page and page_size must be integers'}, status=400)
         
         # Get messages with pagination
         from django.core.paginator import Paginator
