@@ -284,7 +284,7 @@
                 </div>
                 <h3 class="text-xl font-bold mb-4 text-gray-900">Smart Matching</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    Our AI algorithm matches you with the perfect partner based on your language goals, interests, and learning style for optimal results.
+                    We pair you with someone who speaks what you are learning and is learning what you speak, then favour shared interests.
                 </p>
                 <div class="mt-6 text-sm text-purple-600 font-medium">
                     Find your match →
@@ -383,54 +383,46 @@
                 🌎 Popular Languages
             </div>
             <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Learn Any Language</h2>
-            <p class="text-lg sm:text-xl text-gray-600">Practice with native speakers in these popular languages and many more</p>
+            <p class="text-lg sm:text-xl text-gray-600">Practice with real people in the languages our members speak and learn</p>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-12">
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇺🇸</div>
                 <p class="font-semibold text-gray-900 text-sm">English</p>
-                <p class="text-xs text-gray-500 mt-1">5.2k speakers</p>
             </div>
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇪🇸</div>
                 <p class="font-semibold text-gray-900 text-sm">Spanish</p>
-                <p class="text-xs text-gray-500 mt-1">3.8k speakers</p>
             </div>
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇫🇷</div>
                 <p class="font-semibold text-gray-900 text-sm">French</p>
-                <p class="text-xs text-gray-500 mt-1">2.1k speakers</p>
             </div>
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇩🇪</div>
                 <p class="font-semibold text-gray-900 text-sm">German</p>
-                <p class="text-xs text-gray-500 mt-1">1.9k speakers</p>
             </div>
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇮🇹</div>
                 <p class="font-semibold text-gray-900 text-sm">Italian</p>
-                <p class="text-xs text-gray-500 mt-1">1.5k speakers</p>
             </div>
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇯🇵</div>
                 <p class="font-semibold text-gray-900 text-sm">Japanese</p>
-                <p class="text-xs text-gray-500 mt-1">2.3k speakers</p>
             </div>
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇰🇷</div>
                 <p class="font-semibold text-gray-900 text-sm">Korean</p>
-                <p class="text-xs text-gray-500 mt-1">1.7k speakers</p>
             </div>
             <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
                 <div class="language-flag mb-3">🇨🇳</div>
                 <p class="font-semibold text-gray-900 text-sm">Chinese</p>
-                <p class="text-xs text-gray-500 mt-1">2.8k speakers</p>
             </div>
         </div>
         
         <div class="text-center fade-in-up">
-            <p class="text-gray-600 mb-6">Don't see your language? We support {{ stats.languages }} languages with new ones added regularly.</p>
+            <p class="text-gray-600 mb-6">{% if stats.languages >= 8 %}Don't see your language? We have {{ stats.languages }} languages and more are added when members ask.{% else %}Don't see your language? Tell us and we will add it.{% endif %}</p>
             <a href="{% url 'users:register' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors focus-ring">
                 View All Languages
                 <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
