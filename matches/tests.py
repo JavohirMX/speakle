@@ -587,3 +587,32 @@ class MyMatchesPageTests(TestCase):
         self.assertContains(r, 'mb')
         self.assertContains(r, reverse('matches:match_detail', args=[m.id]))
         self.assertNotContains(r, 'No matches yet')
+
+
+class SendRequestPageTests(TestCase):
+    def setUp(self):
+        U = get_user_model()
+        self.a = U.objects.create_user('sra', 'sra@x.com', 'pw12345!')
+        self.b = U.objects.create_user('srb', 'srb@x.com', 'pw12345!', bio='Hello there', interests='chess')
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.pm = PotentialMatch.objects.create(user=self.a, potential_partner=self.b, user_teaches=self.en, user_learns=self.ko, compatibility_score=82)
+        self.client.force_login(self.a)
+        self.url = reverse('matches:send_request', args=[self.pm.id])
+
+    def test_page_shows_partner_and_languages(self):
+        r = self.client.get(self.url)
+        self.assertContains(r, 'Say hi to srb')
+        self.assertContains(r, 'Hello there')
+        self.assertContains(r, 'English')
+        self.assertContains(r, '82% match')
+
+    def test_post_creates_request_with_message(self):
+        r = self.client.post(self.url, {'message': 'hi!'})
+        self.assertEqual(r.status_code, 302)
+        mr = MatchRequest.objects.get(sender=self.a, receiver=self.b)
+        self.assertEqual(mr.message, 'hi!')
+
+    def test_other_users_potential_match_is_404(self):
+        self.client.force_login(self.b)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
