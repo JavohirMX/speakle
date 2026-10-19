@@ -1032,7 +1032,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                         'sender_id': self.user.id,
                         'sender_username': self.user.username,
                         'timestamp': message_obj.timestamp.isoformat(),
-                        'reply_to': reply_to_id,
+                        'reply_to': message_obj.reply_payload,
                         'room_id': self.room_id
                     }
                 )
@@ -1237,6 +1237,12 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                 reply_to=reply_to
             )
             print(f"Saved chat message: {message.id}")
+            # Clients render the quoted message, so send its details, not just the id.
+            message.reply_payload = {
+                'id': reply_to.id,
+                'content': reply_to.content[:50] + '...' if len(reply_to.content) > 50 else reply_to.content,
+                'sender_username': reply_to.sender.username,
+            } if reply_to else None
             return message
             
         except Exception as e:
