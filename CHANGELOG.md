@@ -23,6 +23,13 @@
 - Blocking someone ended the match but both people could still use the text chat and video room. A block now cuts off access to both rooms for both people, including sending in an open chat or sending an offer in an open call.
 - Potential matches API returned each suggested person's email address to any signed-in user. Removed.
 - Find matches ran several queries per match card. Now a fixed number of queries.
+- Match detail page inserted a partner's chat text as HTML in the recent-messages preview (stored script injection). Escaped. Video room messages and names are escaped too.
+- Active users were marked offline after about 5 minutes because a heartbeat from an already-online user never saved its last activity. Checking a partner's availability also refreshed the partner's activity, so stale users showed online.
+- Chat messages API returned 500 for a non-numeric `page` or `page_size`; reply targets that were not numbers returned 500 or dropped the message. Message edits had no length limit and blocked users could still edit.
+- Notification socket crashed on `new_chat_message`, `message_edited` and `call_ended_enhanced` events sent by the HTTP views.
+- Video call socket let any user with an active match open a room id that did not exist, and failed open on errors. A call start with a non-boolean media flag silently created no session. Call-end reason, notes and quality values from the client are cleaned before saving.
+- Deactivated users were suggested as partners, kept in stored suggestions and the quick-match queue, and could be sent match requests. Blocking now also removes stored suggestions between the two people.
+- Profile bio (1000), interests (500) and picture size (5 MB) are now limited. Find matches says which language you still need to add.
 
 ### Changed
 - Login locks for 15 minutes after 10 failed attempts for the same name and address. Repeating the same report within a day no longer adds a duplicate.
