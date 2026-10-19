@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.utils import timezone
-from .models import PotentialMatch, Match, MatchRequest
+from .models import PotentialMatch, Match, MatchRequest, MatchFeedback
 from .services import MatchingService
 from users.models import Language
 
@@ -179,6 +179,7 @@ def match_detail(request, match_id):
         'user_learns': user_learns,
         'conversation_prompts': conversation_prompts(),
         'swap_tip': swap_tip(),
+        'my_feedback': MatchFeedback.objects.filter(match=match, author=request.user).first(),
     }
     
     return render(request, 'matches/match_detail.html', context)
@@ -529,3 +530,28 @@ def get_match_statistics(request, match_id):
         'success': True,
         'statistics': statistics
     })
+
+
+@login_required
+@require_POST
+def submit_feedback(request, match_id):
+    """Save (or update) the current user's private feedback for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        rating = int(request.POST.get('rating', ''))
+    except ValueError:
+        return JsonResponse({'error': 'Rating must be a number from 1 to 5'}, status=400)
+    if not 1 <= rating <= 5:
+        return JsonResponse({'error': 'Rating must be a number from 1 to 5'}, status=400)
+
+    helpful = request.POST.get('helpful', 'true').lower() not in ('false', '0', 'no')
+    comment = request.POST.get('comment', '').strip()[:500]
+
+    fb, created = MatchFeedback.objects.update_or_create(
+        match=match, author=request.user,
+        defaults={'rating': rating, 'helpful': helpful, 'comment': comment},
+    )
+    return JsonResponse({'success': True, 'created': created, 'rating': fb.rating})

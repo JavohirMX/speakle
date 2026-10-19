@@ -92,3 +92,25 @@ class MatchRequest(models.Model):
     
     def __str__(self):
         return f"Request: {self.sender.username} → {self.receiver.username} ({self.status})"
+
+
+class MatchFeedback(models.Model):
+    """Private post-call feedback from one partner about a match.
+
+    Only the author (and staff, via admin) can see it. It is not shown to the
+    partner, so people can be honest.
+    """
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='feedback')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='match_feedback_given')
+    rating = models.PositiveSmallIntegerField(help_text="1 (poor) to 5 (great)")
+    helpful = models.BooleanField(default=True, help_text="Was the partner a good practice fit?")
+    comment = models.TextField(blank=True, max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['match', 'author']
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Feedback {self.author.username} on match {self.match_id}: {self.rating}/5"
