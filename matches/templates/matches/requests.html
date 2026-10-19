@@ -5,6 +5,7 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
     <!-- Enhanced Header Section -->
+    {% include 'matches/partials/subnav.html' %}
     <div class="speakle-hero relative overflow-hidden mb-12">
         <div class="absolute inset-0 bg-black/10"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-purple-600/90"></div>
@@ -31,22 +32,6 @@
 
                 <!-- Enhanced Action Buttons -->
                 <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 animate-fade-in" style="animation-delay: 0.6s;">
-                    <a href="{% url 'matches:find_matches' %}" 
-                       class="group relative bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white/30 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
-                        <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span>
-                            <span>Find Partners</span>
-                        </span>
-                    </a>
-                    
-                    <a href="{% url 'matches:my_matches' %}" 
-                       class="group relative bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
-                        <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
-                            <span>My Matches</span>
-                        </span>
-                        <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </a>
                     
                     <button onclick="refreshRequests()" 
                        class="group relative bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">

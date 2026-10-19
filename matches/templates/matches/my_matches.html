@@ -5,6 +5,7 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
     <!-- Enhanced Header Section -->
+    {% include 'matches/partials/subnav.html' %}
     <div class="speakle-hero relative overflow-hidden">
         <div class="absolute inset-0 bg-black/10"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-purple-600/90 to-blue-600/90"></div>
@@ -34,22 +35,6 @@
                     <a href="{% url 'matches:quick_match' %}" 
                         class="group relative bg-white text-purple-700 px-8 py-4 rounded-2xl hover:bg-gray-50 transition-all duration-300 font-semibold text-lg shadow-xl focus-ring w-full sm:w-auto">
                         <span class="flex items-center justify-center space-x-3"><span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg></span><span>Quick match</span></span>
-                    </a>
-                    <a href="{% url 'matches:find_matches' %}" 
-                        class="group relative bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white/30 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
-                        <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span>
-                            <span>Find More Partners</span>
-                        </span>
-                    </a>
-                    
-                    <a href="{% url 'matches:requests' %}" 
-                        class="group relative bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 focus-ring w-full sm:w-auto">
-                        <span class="flex items-center justify-center space-x-3">
-                            <span class="text-2xl"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
-                            <span>View Requests</span>
-                        </span>
-                        <div class="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </a>
                     
                     <button onclick="refreshMatches()" 
@@ -303,7 +288,7 @@
                     </div>
                     <h3 class="text-3xl font-bold text-gray-900 mb-4">No matches yet</h3>
                     <p class="text-lg text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
-                        You haven't matched with anyone yet. Start by finding language partners and sending match requests!
+                        No one yet. Send a few requests from Find, or try Quick match for a five-minute call with someone new.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
                         <a href="{% url 'matches:find_matches' %}" 

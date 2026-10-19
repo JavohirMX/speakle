@@ -227,4 +227,10 @@ input[aria-invalid=true], select[aria-invalid=true] { background: var(--tomato-s
 .message.other .message-content { background: #fff !important; color: var(--ink) !important; border: var(--bw) solid var(--ink); box-shadow: var(--hard-sm) !important; }
 .message.own .message-meta { color: var(--ink-soft) !important; }
 @media (max-width: 767px) { body.immersive .tabbar { display: none !important; } body.immersive { padding-bottom: 0 !important; } .chat-container { height: calc(100dvh - 76px) !important; } .chat-header { flex-wrap: nowrap !important; padding: .6rem .8rem !important; } .partner-info { min-width: 0; flex: 1; gap: .6rem !important; } .header-actions { flex: none; } .header-btn { font-size: .8rem !important; padding: .4rem .6rem !important; box-shadow: 2px 2px 0 var(--ink) !important; } .chat-header h2 { font-size: 1.1rem !important; overflow: hidden; text-overflow: ellipsis; } .chat-header .language-info { display: none; } .partner-avatar { width: 40px !important; height: 40px !important; } .header-btn { padding: .4rem .7rem !important; } }
+.seg { display: flex; gap: .4rem; padding: .7rem 1rem; max-width: 72rem; margin: 0 auto; }
+.app-shell .seg { position: relative; z-index: 2; }
+.seg a { padding: .45rem 1rem; border: var(--bw) solid var(--ink); border-radius: 999px; background: #fff; font-weight: 700; min-height: 44px; display: inline-flex; gap: .4rem; align-items: center; text-decoration: none; }
+.seg a.on { background: var(--ink); color: var(--cream); } .seg-n { background: var(--tomato-bright); color: #fff; border: 2px solid var(--ink); border-radius: 999px; font-size: .75rem; min-width: 1.3rem; text-align: center; padding: 0 .3rem; } .seg-n[hidden] { display: none; }
+@media (max-width: 640px) { main .p-6 > .flex.items-center.justify-between { flex-wrap: wrap; gap: .75rem; } main .p-6 .space-x-4 > .relative { flex: none; } }
+main .flex.items-center.space-x-4 { gap: 1rem; }
 </style>

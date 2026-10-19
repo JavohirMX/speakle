@@ -38,7 +38,7 @@
                         </p>
                         {% if form.language_type.errors %}
                             {% for error in form.language_type.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                                <p class="field-error">{{ error }}</p>
                             {% endfor %}
                         {% endif %}
                     </div>
@@ -55,7 +55,7 @@
                         </p>
                         {% if form.proficiency.errors %}
                             {% for error in form.proficiency.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                                <p class="field-error">{{ error }}</p>
                             {% endfor %}
                         {% endif %}
                     </div>

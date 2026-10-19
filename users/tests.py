@@ -113,3 +113,26 @@ class EmailVerificationTests(TestCase):
         form.save()
         self.user.refresh_from_db()
         self.assertFalse(self.user.email_verified)
+
+
+class UxFlowTests(TestCase):
+    """Sign-up and sign-in flow behaviour (NN/g efficiency and error recovery)."""
+
+    def test_username_check(self):
+        from django.contrib.auth import get_user_model
+        get_user_model().objects.create_user('taken', 'a@x.com', 'pw12345!x')
+        self.assertEqual(self.client.get('/users/check-username/?username=taken').json()['available'], False)
+        self.assertEqual(self.client.get('/users/check-username/?username=freeone').json()['available'], True)
+        self.assertIsNone(self.client.get('/users/check-username/?username=ab').json()['available'])
+
+    def test_login_follows_safe_next_only(self):
+        from django.contrib.auth import get_user_model
+        get_user_model().objects.create_user('nx', 'n@x.com', 'pw12345!x')
+        r = self.client.post('/users/login/', {'username': 'nx', 'password': 'pw12345!x', 'next': '/matches/requests/'})
+        self.assertEqual(r.url, '/matches/requests/')
+        self.client.logout()
+        r = self.client.post('/users/login/', {'username': 'nx', 'password': 'pw12345!x', 'next': 'https://evil.example/'})
+        self.assertEqual(r.url, '/matches/')
+
+    def test_password_reset_page_exists(self):
+        self.assertEqual(self.client.get('/users/password-reset/').status_code, 200)
