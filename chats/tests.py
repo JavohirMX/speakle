@@ -1203,3 +1203,52 @@ class CallSummaryPageTests(TestCase):
         self.assertNotContains(r, 'rated this call')
         self.assertNotContains(r, '2/5')
         self.assertContains(r, 'Good chat')
+
+
+class TextChatConsumerReplyTests(TransactionTestCase):
+    def setUp(self):
+        from matches.models import Match
+        from .models import ChatRoom
+        self.a = User.objects.create_user('tcc_a', 'tcca@x.com', 'pw12345!')
+        self.b = User.objects.create_user('tcc_b', 'tccb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = ChatRoom.objects.create(match=m)
+
+    async def _connect(self, user):
+        from .consumers import TextChatConsumer
+        rid = str(self.room.room_id)
+        scope = {'type': 'websocket', 'path': f'/ws/text-chat/{rid}/', 'query_string': b'', 'headers': [],
+                 'user': user, 'url_route': {'kwargs': {'room_id': rid}}}
+        c = _make_communicator(TextChatConsumer, scope)
+        ok, _ = await c.connect()
+        self.assertTrue(ok)
+        return c
+
+    async def _next(self, c, wanted, limit=8):
+        for _ in range(limit):
+            msg = await c.receive_json_from()
+            if msg.get('type') == wanted:
+                return msg
+        self.fail(f'no {wanted} frame')
+
+    async def test_reply_broadcast_carries_quoted_message(self):
+        from .models import ChatMessage
+        original = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.a, content='first')
+        ca = await self._connect(self.a)
+        cb = await self._connect(self.b)
+        await cb.send_json_to({'type': 'send_message', 'message': 'second', 'reply_to': original.id})
+        msg = await self._next(ca, 'new_message')
+        self.assertEqual(msg['content'], 'second')
+        self.assertEqual(msg['reply_to']['id'], original.id)
+        self.assertEqual(msg['reply_to']['content'], 'first')
+        self.assertEqual(msg['reply_to']['sender_username'], 'tcc_a')
+        await ca.disconnect(); await cb.disconnect()
+
+    async def test_plain_message_has_no_reply(self):
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'send_message', 'message': 'hello'})
+        msg = await self._next(ca, 'new_message')
+        self.assertIsNone(msg['reply_to'])
+        await ca.disconnect()
