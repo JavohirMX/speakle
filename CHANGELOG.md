@@ -13,10 +13,14 @@
 - Favicons, web manifest, custom 404 and 500 pages.
 - CI workflow for tests and migration checks.
 
+### Fixed
+- Quick match showed Find and Cancel buttons at the same time.
+
 ### Changed
 - Tailwind CDN replaced by compiled CSS. Fonts are self-hosted.
 - Matching: no duplicate or reverse requests, re-send after decline, best language pairing per partner.
 - Landing page copy: removed invented statistics and testimonials.
+- Requests, My Matches, chat list, Profile and Quick match pages rewritten in the new design. Chat list uses real links and shows each partner's languages.
 - Text chat and video room: labelled controls, specific camera and microphone errors, auto-reconnect, input no longer hidden by the tab bar.
 
 ### Migrations
