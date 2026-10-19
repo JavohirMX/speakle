@@ -20,8 +20,11 @@
 - Call summary showed call success rate as language progress. Removed.
 - Text chat: reply preview and reply quote inserted message text as HTML (script injection from a partner's message). Escaped. Also the reply button could not work because a property shadowed the method.
 - Nav unread badge overlapped the Chats label.
+- Potential matches API returned each suggested person's email address to any signed-in user. Removed.
+- Find matches ran several queries per match card. Now a fixed number of queries.
 
 ### Changed
+- Production settings warn at startup when `SECRET_KEY` is still a placeholder.
 - Tailwind CDN replaced by compiled CSS. Fonts are self-hosted.
 - Matching: no duplicate or reverse requests, re-send after decline, best language pairing per partner.
 - Landing page copy: removed invented statistics and testimonials.
