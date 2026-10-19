@@ -9,11 +9,8 @@ User = get_user_model()
 
 def pair_is_blocked(user_a, user_b):
     """True if either user has blocked the other."""
-    from django.db.models import Q
     from users.models import UserBlock
-    return UserBlock.objects.filter(
-        Q(blocker=user_a, blocked=user_b) | Q(blocker=user_b, blocked=user_a)
-    ).exists()
+    return UserBlock.either_way(user_a, user_b)
 
 
 class VideoRoom(models.Model):
