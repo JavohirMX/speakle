@@ -683,3 +683,41 @@ class CallPagesTests(ChatApiBase):
         for url in (hist, summ):
             r = self.client_for(self.outsider).get(url)
             self.assertIn(r.status_code, (302, 403, 404))
+
+
+class PartnerAvailabilityTests(ChatApiBase):
+    def url(self):
+        return reverse('chats:check_partner_availability', args=[self.match.id])
+
+    def test_stale_partner_stays_offline_across_repeated_checks(self):
+        """Polling must not refresh the partner's own activity timestamp."""
+        from .models import UserPresence
+        p = UserPresence.objects.create(user=self.b, is_online=True)
+        stale = timezone.now() - timedelta(minutes=30)
+        UserPresence.objects.filter(pk=p.pk).update(last_seen=stale, last_activity=stale)
+        c = self.client_for(self.a)
+
+        results = [c.get(self.url()).json()['is_online'] for _ in range(3)]
+
+        self.assertEqual(results, [False, False, False])
+        p.refresh_from_db()
+        self.assertLess(p.last_activity, timezone.now() - timedelta(minutes=20))
+
+    def test_recently_active_partner_is_online(self):
+        from .models import UserPresence
+        UserPresence.objects.create(user=self.b, is_online=True)
+        data = self.client_for(self.a).get(self.url()).json()
+        self.assertTrue(data['is_online'])
+        self.assertEqual(data['partner_username'], 'apib')
+
+    def test_outsider_and_blocked_are_denied(self):
+        from users.models import UserBlock
+        self.assertEqual(self.client_for(self.outsider).get(self.url()).status_code, 403)
+        UserBlock.objects.create(blocker=self.b, blocked=self.a)
+        self.assertEqual(self.client_for(self.a).get(self.url()).status_code, 403)
+
+    def test_status_and_heartbeat(self):
+        c = self.client_for(self.a)
+        self.assertTrue(c.get(reverse('chats:get_user_status')).json()['success'])
+        self.assertEqual(c.post(reverse('chats:heartbeat')).status_code, 200)
+        self.assertEqual(c.get(reverse('chats:heartbeat')).status_code, 405)

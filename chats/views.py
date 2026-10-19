@@ -377,11 +377,10 @@ def check_partner_availability(request, match_id):
     # Update partner's status based on their activity
     if not created:
         # Check if partner should still be considered online based on activity
-        if partner_presence.should_be_online():
-            partner_presence.is_online = True
-        else:
-            partner_presence.is_online = False
-        partner_presence.save()
+        # Use update(): save() would refresh the auto_now timestamps and make a partner who
+        # has gone quiet look active again the next time anyone polls.
+        partner_presence.is_online = partner_presence.should_be_online()
+        UserPresence.objects.filter(pk=partner_presence.pk).update(is_online=partner_presence.is_online)
     
     # Clean up inactive users
     UserPresence.cleanup_offline_users()
