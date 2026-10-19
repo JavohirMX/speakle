@@ -203,6 +203,9 @@ def block_user_view(request, user_id):
     MatchRequest.objects.filter(
         Q(sender=request.user, receiver=target) | Q(sender=target, receiver=request.user),
         status='pending').update(status='cancelled', responded_at=timezone.now())
+    from matches.models import PotentialMatch
+    PotentialMatch.objects.filter(
+        Q(user=request.user, potential_partner=target) | Q(user=target, potential_partner=request.user)).delete()
     return JsonResponse({'success': True})
 
 

@@ -275,3 +275,20 @@ class ProfileFormLimitsTests(TestCase):
         big = SimpleUploadedFile('a.png', buf.getvalue() + b'0' * (5 * 1024 * 1024 + 1), content_type='image/png')
         f = UserProfileForm({'first_name': 'A', 'email': 'pf@x.com', 'bio': '', 'interests': ''}, {'profile_picture': big})
         self.assertIn('under 5 MB', str(f.errors.get('profile_picture')))
+
+
+class BlockClearsSuggestionsTests(TestCase):
+    def test_blocking_removes_stored_suggestions_both_ways(self):
+        from django.contrib.auth import get_user_model
+        from matches.models import PotentialMatch
+        U = get_user_model()
+        a = U.objects.create_user('bs_a', 'bsa@x.com', 'pw12345!')
+        b = U.objects.create_user('bs_b', 'bsb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        for u, p in ((a, b), (b, a)):
+            PotentialMatch.objects.create(user=u, potential_partner=p, user_teaches=en, user_learns=ko, compatibility_score=70)
+        self.client.force_login(a)
+        r = self.client.post(f'/users/block/{b.id}/')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(PotentialMatch.objects.exists())
