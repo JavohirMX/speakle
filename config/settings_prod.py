@@ -13,6 +13,11 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='change-me-in-production')
+if SECRET_KEY in ('change-me-in-production', 'your-super-secret-key-here-change-this-in-production') and not DEBUG:
+    import warnings
+    # Not fatal, so an existing deployment keeps booting, but sessions and tokens
+    # are signed with a public value until SECRET_KEY is set in the environment.
+    warnings.warn('SECRET_KEY is the placeholder value. Set SECRET_KEY in the environment.', RuntimeWarning)
 
 # Allowed hosts
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
