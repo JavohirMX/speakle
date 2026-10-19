@@ -15,7 +15,7 @@ from datetime import timedelta
 from django.utils import timezone
 import time
 from django.contrib.auth import get_user_model as _get_user_model
-from .throttle import login_blocked, record_login_failure, clear_login_failures
+from .throttle import signup_allowed, login_blocked, record_login_failure, clear_login_failures
 from .verification import send_verification_email, check_token
 
 RESEND_COOLDOWN_SECONDS = 60
@@ -74,6 +74,9 @@ def register_view(request):
 
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
+        if form.is_valid() and not signup_allowed(request):
+            form.add_error(None, 'Too many sign-ups from this address. Try again later.')
+            return render(request, 'registration/register.html', {'form': form}, status=429)
         if form.is_valid():
             user = form.save()
             try:

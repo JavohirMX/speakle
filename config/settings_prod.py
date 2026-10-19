@@ -158,3 +158,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Speakle <noreply@localhost>')
 SITE_URL = config('SITE_URL', default='')  # e.g. https://speakle.example.com, used in emails
 QUICK_MATCH_REQUIRE_VERIFIED_EMAIL = config('QUICK_MATCH_REQUIRE_VERIFIED_EMAIL', default=True, cast=bool)
+
+# Cap sign-ups per client address per hour. 0 disables it. Leave it off behind a proxy
+# that hides the client address (REMOTE_ADDR would be the proxy).
+SIGNUPS_PER_HOUR_PER_IP = config('SIGNUPS_PER_HOUR_PER_IP', default=0, cast=int)

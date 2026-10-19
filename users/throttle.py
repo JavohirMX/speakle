@@ -49,3 +49,16 @@ CHAT_WINDOW = 60
 
 def chat_allowed(user_id):
     return allow('chat-send:%s' % user_id, CHAT_LIMIT, CHAT_WINDOW)
+
+
+def signup_allowed(request):
+    """Per-address signup cap. Off unless SIGNUPS_PER_HOUR_PER_IP is set above 0.
+
+    Off by default because behind a reverse proxy REMOTE_ADDR can be the proxy's
+    address, which would turn this into a site-wide cap.
+    """
+    from django.conf import settings
+    limit = getattr(settings, 'SIGNUPS_PER_HOUR_PER_IP', 0)
+    if not limit:
+        return True
+    return allow('signup:%s' % request.META.get('REMOTE_ADDR', ''), limit, 3600)

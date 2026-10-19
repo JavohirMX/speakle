@@ -217,3 +217,33 @@ class ThrottleTests(TestCase):
         self.assertEqual(UserReport.objects.count(), 1)
         self.client.post(url, {'reason': 'harassment'})
         self.assertEqual(UserReport.objects.count(), 2)
+
+
+class SignupLimitTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+
+    def _post(self, n):
+        return self.client.post(reverse('users:register'), {
+            'username': 'su%d' % n, 'email': 'su%d@x.com' % n, 'first_name': 'Su',
+            'native_language': self.en.id, 'target_language': self.ko.id,
+            'target_proficiency': 'beginner',
+            'password1': 'Sup3r-secret-pw', 'password2': 'Sup3r-secret-pw'})
+
+    def test_off_by_default(self):
+        for n in range(3):
+            self.client.logout()
+            self.assertEqual(self._post(n).status_code, 302)
+
+    def test_cap_applies_when_set(self):
+        from django.test import override_settings
+        with override_settings(SIGNUPS_PER_HOUR_PER_IP=2):
+            for n in range(2):
+                self.client.logout()
+                self.assertEqual(self._post(n).status_code, 302)
+            self.client.logout()
+            self.assertEqual(self._post(9).status_code, 429)
+            self.assertFalse(get_user_model().objects.filter(username='su9').exists())

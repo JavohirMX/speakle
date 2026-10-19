@@ -1220,6 +1220,8 @@ class CallSummaryPageTests(TestCase):
 
 class TextChatConsumerReplyTests(TransactionTestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()  # the send throttle lives in the cache
         from matches.models import Match
         from .models import ChatRoom
         self.a = User.objects.create_user('tcc_a', 'tcca@x.com', 'pw12345!')
@@ -1264,6 +1266,20 @@ class TextChatConsumerReplyTests(TransactionTestCase):
         await ca.send_json_to({'type': 'send_message', 'message': 'hello'})
         msg = await self._next(ca, 'new_message')
         self.assertIsNone(msg['reply_to'])
+        await ca.disconnect()
+
+    async def test_flooding_gets_error_frame_and_is_not_saved(self):
+        from .models import ChatMessage
+        from users.throttle import CHAT_LIMIT
+        ca = await self._connect(self.a)
+        for i in range(CHAT_LIMIT):
+            await ca.send_json_to({'type': 'send_message', 'message': 'm%d' % i})
+            await self._next(ca, 'new_message')
+        await ca.send_json_to({'type': 'send_message', 'message': 'too many'})
+        err = await self._next(ca, 'error')
+        self.assertIn('too fast', err['message'])
+        saved = await database_sync_to_async(ChatMessage.objects.filter(content='too many').count)()
+        self.assertEqual(saved, 0)
         await ca.disconnect()
 
 
