@@ -1292,8 +1292,9 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             reply_to = None
             if reply_to_id:
                 try:
-                    reply_to = ChatMessage.objects.get(id=reply_to_id, room=room)
-                except ChatMessage.DoesNotExist:
+                    reply_to = ChatMessage.objects.get(id=int(reply_to_id), room=room)
+                except (ChatMessage.DoesNotExist, TypeError, ValueError, OverflowError):
+                    # Missing or malformed reply target: send the message without a quote.
                     pass
             
             message = ChatMessage.objects.create(

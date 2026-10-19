@@ -396,6 +396,14 @@ class TextChatConsumerEditAndHistoryTests(TransactionTestCase):
         self.assertEqual(saved.content, 'old')
         await ca.disconnect(); await cb.disconnect()
 
+    async def test_send_with_garbage_reply_to_still_delivers_without_a_quote(self):
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'send_message', 'message': 'hello', 'reply_to': 'abc'})
+        frame = await self._next(ca, 'new_message')
+        self.assertEqual(frame['content'], 'hello')
+        self.assertIsNone(frame.get('reply_to'))
+        await ca.disconnect()
+
     async def test_edit_after_block_is_refused(self):
         from users.models import UserBlock
         msg = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.a, content='old')
