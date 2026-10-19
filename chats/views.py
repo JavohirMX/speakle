@@ -639,9 +639,17 @@ def call_summary(request, room_id, session_id):
         # Get recent call history (last 5 calls excluding current)
         recent_calls = room.sessions.filter(status='ended').exclude(id=session.id)[:5]
         
+        # end_notes also holds private star ratings written by submit_feedback
+        # ("User x rated this call: 4/5 stars"). Never show those to the partner.
+        notes = '\n'.join(
+            line for line in (session.end_notes or '').splitlines()
+            if ' rated this call: ' not in line
+        ).strip()
+
         context = {
             'room': room,
             'session': session,
+            'notes': notes,
             'match': room.match,
             'partner': partner,
             'user_teaches': user_teaches,

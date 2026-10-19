@@ -1168,3 +1168,38 @@ class CallHistoryPageTests(TestCase):
     def test_outsider_is_redirected(self):
         self.client.force_login(self.o)
         self.assertEqual(self.client.get(self.url).status_code, 302)
+
+
+class CallSummaryPageTests(TestCase):
+    def setUp(self):
+        from matches.models import Match
+        U = get_user_model()
+        self.a = U.objects.create_user('csa', 'csa@x.com', 'pw12345!')
+        self.b = U.objects.create_user('csb', 'csb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = VideoRoom.objects.create(match=m)
+        self.s = CallSession.objects.create(room=self.room, status='ended', duration=timedelta(minutes=12), end_notes='Good chat')
+        self.s.participants.add(self.a, self.b)
+        self.url = reverse('chats:call_summary', args=[self.room.room_id, self.s.id])
+
+    def test_summary_renders_without_fake_progress(self):
+        self.client.force_login(self.a)
+        r = self.client.get(self.url)
+        self.assertContains(r, 'lasted 12m')
+        self.assertContains(r, 'Good chat')
+        self.assertNotContains(r, '% Progress')
+        self.assertNotContains(r, 'Korean Progress')
+
+    def test_partner_rating_is_not_shown_to_other_user(self):
+        self.client.force_login(self.b)
+        r = self.client.post(reverse('chats:submit_feedback'),
+                             data=json.dumps({'session_id': self.s.id, 'rating': 2, 'room_id': str(self.room.room_id)}),
+                             content_type='application/json')
+        self.assertEqual(r.status_code, 200)
+        self.client.force_login(self.a)
+        r = self.client.get(self.url)
+        self.assertNotContains(r, 'rated this call')
+        self.assertNotContains(r, '2/5')
+        self.assertContains(r, 'Good chat')
