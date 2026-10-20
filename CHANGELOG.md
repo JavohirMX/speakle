@@ -3,6 +3,7 @@
 ## Unreleased (dev)
 
 ### Added
+- Login and sign-up pages get their own description and OG/Twitter titles instead of repeating the home page ones.
 - Performance: the ~140 KB of inline CSS in every page moved into cacheable static files (`app.css`, `design.css`) linked with a content hash. Pages drop from ~100 KB to ~38 KB of HTML with identical rendering (pixel-compared).
 - Redesign: "sticker pop" design system, app shell with side rail and mobile tab bar, new landing page.
 - UX pass: toasts for server messages, inline sign-up validation, auto-login after sign-up, working password reset, safe `?next=` redirect, nav badges and correct active states.
