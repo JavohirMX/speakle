@@ -186,7 +186,6 @@ input[aria-invalid=true], select[aria-invalid=true] { background: var(--tomato-s
 .pm-act { margin-top: auto; } .pm-state { display: flex; gap: .4rem; align-items: center; font-weight: 700; font-size: .9rem; padding: .65rem .8rem; background: var(--sun-soft); border: var(--bw) dashed var(--ink); border-radius: 12px; }
 .empty { max-width: 34rem; margin: 2.5rem auto; padding: 1.6rem; background: #fff; border: var(--bw) solid var(--ink); border-radius: 18px; box-shadow: var(--hard); transform: rotate(-.6deg); }
 .empty h2, .empty h3 { font-size: 1.5rem; margin: 0 0 .5rem; } .empty-steps { margin: .8rem 0 1.2rem 1.1rem; list-style: disc; display: grid; gap: .4rem; } .empty-act { display: flex; flex-wrap: wrap; gap: .6rem; }
-@media (max-width: 640px) { .empty-act .btn { flex: 1 1 100%; justify-content: center; text-align: center; } }
 .req-dialog { border: var(--bw) solid var(--ink); border-radius: 18px; box-shadow: var(--hard); padding: 1.3rem; width: min(94vw, 30rem); background: #fff; color: var(--ink); }
 .req-dialog::backdrop { background: rgba(26,21,16,.55); }
 .req-head { display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: .4rem; } .req-head h2 { font-size: 1.5rem; margin: 0; } .req-x { font-size: 1.8rem; line-height: 1; width: 40px; }
