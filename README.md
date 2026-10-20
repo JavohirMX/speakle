@@ -97,6 +97,8 @@ Local development works without any config beyond `DEBUG=True`. Docker and produ
 | `DATABASE_URL` | Postgres URL. Falls back to SQLite if unset. |
 | `REDIS_URL` | Redis for the Channels layer, cache and sessions. |
 | `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` | SMTP for verification and password reset. Without them, links only print to the container log. |
+| `WEBRTC_STUN_URLS` | Comma-separated STUN URLs for video calls. Defaults to five public Google STUN servers. Empty means none. |
+| `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL` | Optional TURN relay for networks where direct calls fail. A TURN entry is used only when all three are set. |
 | `QUICK_MATCH_REQUIRE_VERIFIED_EMAIL` | Require a verified email for quick match. Default `True`. |
 | `SIGNUPS_PER_HOUR_PER_IP` | Cap sign-ups per client address per hour. `0` (default) is off. Leave it off behind a proxy that hides client addresses. |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_*`, `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_SECURE`, `X_FRAME_OPTIONS` | HTTPS hardening. Cookie and redirect flags default to off, so turn them on once HTTPS works. HSTS defaults to one year, so only deploy with HTTPS. |
@@ -157,7 +159,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for models, WebSocket endpoints
 
 ## Known limits
 
-- Calls use public Google STUN servers only, with no TURN relay. Some networks (strict NATs, some mobile carriers) will not connect.
+- Calls use public Google STUN servers by default, with no TURN relay. Some networks (strict NATs, some mobile carriers) will not connect. Set the `WEBRTC_TURN_*` variables to add a TURN relay.
 - The video room page loads Tailwind from `cdn.tailwindcss.com`, so it needs internet access to render as designed.
 - No scheduled sessions or reminders yet.
 
