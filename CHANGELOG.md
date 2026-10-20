@@ -12,7 +12,6 @@
 - SEO: canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, `noindex` on non-public pages.
 - Favicons, web manifest, custom 404 and 500 pages.
 - CI workflow for tests and migration checks.
-
 - Privacy-first analytics: per-day counters by page name, referrer host and `?utm_source=` on landing, sign-up and login pages. No IPs, cookies, user ids, URLs with ids or chat content. Staff-only dashboard at `/stats/` with sign-ups, matches, calls and message counts. Turn off with `ANALYTICS_ENABLED = False`.
 
 ### Fixed
@@ -50,5 +49,5 @@
 - Text chat and video room: labelled controls, specific camera and microphone errors, auto-reconnect, input no longer hidden by the tab bar.
 
 ### Migrations
-- `matches/0003_matchfeedback`, `matches/0004_quick_match`, `users/0003_userblock_userreport`, `users/0004_email_verified`.
+- `matches/0003_matchfeedback`, `matches/0004_quick_match`, `users/0003_userblock_userreport`, `users/0004_email_verified`, `users/0005_share_email_with_matches`, `main/0001_initial` (analytics counters). All add tables or a column with a default; none delete or rewrite data.
 - If you applied the earlier `matches/0003_quick_match` locally, it was renamed to `0004_quick_match`. Remove its row from `django_migrations` and run `migrate matches 0004 --fake`, or recreate your dev database.
