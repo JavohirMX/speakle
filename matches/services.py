@@ -228,4 +228,4 @@ class MatchingService:
         return Match.objects.filter(
             Q(user1=user) | Q(user2=user),
             status=status
-        ).order_by('-created_at') 
+        ).select_related('user1', 'user2', 'user1_teaches', 'user1_learns').order_by('-created_at')

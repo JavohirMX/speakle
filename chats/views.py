@@ -1025,56 +1025,54 @@ def get_unread_count(request, room_id):
 @login_required
 def chat_list(request):
     """Display list of all chat rooms for the user."""
-    from django.db.models import Count, Q
-    
-    # Get all matches for the user
-    user_matches = Match.objects.filter(
+    from django.db.models import Count, OuterRef, Q, Subquery
+
+    # Matches with everything the list needs in one query (no per-row lookups).
+    user_matches = list(Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
         status='active'
-    ).select_related('user1', 'user2')
-    
-    # Get chat rooms with message counts and last message info
-    chat_rooms = []
+    ).select_related('user1', 'user2', 'user1_teaches', 'user1_learns', 'chat_room'))
+
+    # Create missing chat rooms first so every match has one.
+    rooms = {}
     for match in user_matches:
         try:
-            room = match.chat_room
-            partner = match.get_partner(request.user)
-            
-            # Get unread count
-            unread_count = room.messages.filter(
-                sender=partner, 
-                is_read=False
-            ).count()
-            
-            # Get last message
-            last_message = room.messages.order_by('-timestamp').first()
-            
-            chat_rooms.append({
-                'room': room,
-                'match': match,
-                'partner': partner,
-                'unread_count': unread_count,
-                'last_message': last_message,
-                'last_activity': room.last_activity,
-                'user_teaches': match.get_user_teaches(request.user),
-                'user_learns': match.get_user_learns(request.user),
-            })
+            rooms[match.pk] = match.chat_room
         except ChatRoom.DoesNotExist:
-            # Create chat room for matches that don't have one yet
-            room = ChatRoom.objects.create(match=match)
-            partner = match.get_partner(request.user)
-            
-            chat_rooms.append({
-                'room': room,
-                'match': match,
-                'partner': partner,
-                'unread_count': 0,
-                'last_message': None,
-                'last_activity': room.last_activity,
-                'user_teaches': match.get_user_teaches(request.user),
-                'user_learns': match.get_user_learns(request.user),
-            })
-    
+            rooms[match.pk] = ChatRoom.objects.create(match=match)
+
+    room_ids = [room.pk for room in rooms.values()]
+    # Unread counts for all rooms in one query. A room has two people, so
+    # "not sent by me" means sent by the partner.
+    unread_by_room = dict(
+        ChatMessage.objects.filter(room_id__in=room_ids, is_read=False)
+        .exclude(sender=request.user)
+        .values_list('room_id').annotate(n=Count('id'))
+    )
+    # Latest message per room: one subquery, then one fetch.
+    newest = ChatMessage.objects.filter(room=OuterRef('pk')).order_by('-timestamp', '-id').values('id')[:1]
+    last_ids = [
+        i for i in ChatRoom.objects.filter(pk__in=room_ids)
+        .annotate(last_id=Subquery(newest)).values_list('last_id', flat=True) if i
+    ]
+    last_by_room = {
+        m.room_id: m for m in ChatMessage.objects.filter(pk__in=last_ids).select_related('sender')
+    }
+
+    chat_rooms = []
+    for match in user_matches:
+        room = rooms[match.pk]
+        chat_rooms.append({
+            'room': room,
+            'match': match,
+            'partner': match.get_partner(request.user),
+            'unread_count': unread_by_room.get(room.pk, 0),
+            'last_message': last_by_room.get(room.pk),
+            'last_activity': room.last_activity,
+            'user_teaches': match.get_user_teaches(request.user),
+            'user_learns': match.get_user_learns(request.user),
+        })
+
     # Sort by last activity (most recent first)
     chat_rooms.sort(key=lambda x: x['last_activity'], reverse=True)
     

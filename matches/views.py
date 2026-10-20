@@ -105,11 +105,11 @@ def match_requests(request):
     incoming_requests = MatchRequest.objects.filter(
         receiver=request.user,
         status='pending'
-    ).order_by('-created_at')
+    ).select_related('sender', 'receiver', 'sender_teaches', 'sender_learns').order_by('-created_at')
     
     outgoing_requests = MatchRequest.objects.filter(
         sender=request.user
-    ).order_by('-created_at')
+    ).select_related('sender', 'receiver', 'sender_teaches', 'sender_learns').order_by('-created_at')
     
     context = {
         'incoming_requests': incoming_requests,
