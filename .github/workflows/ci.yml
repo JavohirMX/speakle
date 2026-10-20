@@ -8,6 +8,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      DEBUG: 'True'  # local-style settings; real deployments must set SECRET_KEY
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

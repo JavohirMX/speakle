@@ -25,10 +25,13 @@ Apps: `users` (accounts, languages, blocks and reports), `matches` (matching, re
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+export DEBUG=True   # local development only
 python manage.py migrate
 python manage.py createsuperuser   # optional
 daphne -b 127.0.0.1 -p 8000 config.asgi:application
 ```
+
+Settings are safe by default: debug is off and the app refuses to start without a real `SECRET_KEY`. For local development set `DEBUG=True` first (for example `DEBUG=True python manage.py runserver`, or put `DEBUG=True` in a `.env` file). The test runner needs nothing.
 
 Use Daphne rather than `runserver` if you want WebSockets (calls, chat, notifications). `manage.py runserver` is fine for pages that do not need them.
 

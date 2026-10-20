@@ -19,13 +19,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=y2tzgny9lvn^zb)4%8fkf*d1_r*ka@&k&j5xv7_d=^1_+=n7y'
+import sys
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 
-ALLOWED_HOSTS = []
+# Safe by default: debug is OFF unless DEBUG=True is set in the environment or .env.
+# For local development run: DEBUG=True python manage.py runserver
+DEBUG = config('DEBUG', default=False, cast=bool)
+
+_PLACEHOLDER_KEYS = {'', 'change-me-in-production', 'your-super-secret-key-here-change-this-in-production'}
+SECRET_KEY = config('SECRET_KEY', default='')
+if SECRET_KEY in _PLACEHOLDER_KEYS:
+    if DEBUG or 'test' in sys.argv[1:2]:
+        # Throwaway key for local development and the test runner only.
+        SECRET_KEY = 'dev-only-insecure-key-never-use-in-production'
+    else:
+        raise ImproperlyConfigured(
+            'SECRET_KEY is not set. Set a long random SECRET_KEY in the environment '
+            '(or DEBUG=True for local development).')
+
+ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='').split(',') if h.strip()]
 
 
 # Application definition
