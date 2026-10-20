@@ -488,3 +488,55 @@ class PublicPageHeadingTests(TestCase):
         for url in ('/users/login/', '/users/register/', '/users/password-reset/', '/users/password-reset/sent/'):
             body = self.client.get(url).content.decode()
             self.assertEqual(body.count('<h1'), 1, url)
+
+
+class ShortSignupTests(TestCase):
+    """The sign-up form asks for the languages, a username, an email and one password."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+
+    def _data(self, **kw):
+        data = {'username': 'short1', 'email': 'short1@example.com',
+                'native_language': self.en.id, 'target_language': self.ko.id,
+                'password1': 'Zx9!kqpwoeiR'}
+        data.update(kw)
+        return data
+
+    def test_form_has_no_name_or_repeat_password_fields(self):
+        from users.forms import UserRegistrationForm
+        names = list(UserRegistrationForm().fields)
+        self.assertEqual(names, ['native_language', 'target_language', 'target_proficiency',
+                                 'username', 'email', 'password1'])
+
+    def test_signs_up_with_only_those_fields_and_defaults_level_to_beginner(self):
+        r = self.client.post(reverse('users:register'), self._data())
+        self.assertEqual(r.status_code, 302)
+        user = get_user_model().objects.get(username='short1')
+        self.assertTrue(user.check_password('Zx9!kqpwoeiR'))
+        learning = user.userlanguage_set.get(language_type='learning')
+        self.assertEqual((learning.language, learning.proficiency), (self.ko, 'beginner'))
+        self.assertEqual(user.userlanguage_set.get(language_type='native').language, self.en)
+        self.assertEqual(user.proficiency, 'beginner')
+
+    def test_level_is_still_saved_when_chosen(self):
+        self.client.post(reverse('users:register'), self._data(target_proficiency='advanced'))
+        user = get_user_model().objects.get(username='short1')
+        self.assertEqual(user.userlanguage_set.get(language_type='learning').proficiency, 'advanced')
+
+    def test_password_rules_still_apply(self):
+        for bad in ('12345678', 'short1', 'abc'):
+            r = self.client.post(reverse('users:register'), self._data(password1=bad))
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.context['form'].errors.get('password1'), bad)
+        self.assertFalse(get_user_model().objects.filter(username='short1').exists())
+
+    def test_page_has_five_visible_inputs_and_one_password_box(self):
+        r = self.client.get(reverse('users:register'))
+        html = r.content.decode()
+        self.assertIn('name="password1"', html)
+        self.assertNotIn('name="password2"', html)
+        self.assertNotIn('name="first_name"', html)

@@ -47,6 +47,7 @@
 - Profile bio (1000), interests (500) and picture size (5 MB) are now limited. Find matches says which language you still need to add.
 
 ### Changed
+- Sign-up form is shorter: languages first, then username, email and one password. First and last name (never shown anywhere) and the repeat-password box are gone, and the level is a collapsed control that defaults to Beginner. See `docs/SIGNUP-UX.md`.
 - Settings are safe by default: `DEBUG` is off unless `DEBUG=True`, and the app refuses to start without a real `SECRET_KEY` (no hardcoded key in source). Local development now needs `DEBUG=True`; CI sets it.
 - Sign-up and profile reject an email that already has an account (case-insensitive). `manage.py duplicate_emails` lists existing duplicates without changing anything.
 - Partner email is no longer returned by the confirmed-match APIs unless that person turns on "Show my email to matches" in their profile.

@@ -11,7 +11,7 @@
 <div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <h1 class="text-3xl font-bold">Join Speakle</h1>
-        <p class="mt-2 text-sm text-gray-600">One minute to set up. Then find someone to talk to.</p>
+        <p class="mt-2 text-sm text-gray-600">Pick your languages, make an account. Then find someone to talk to.</p>
     </div>
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div class="bg-white py-8 px-5 border border-gray-200 rounded-2xl sm:px-10">
@@ -21,21 +21,28 @@
             <form method="post" class="space-y-5" data-validate novalidate id="signup-form">
                 {% csrf_token %}
                 <fieldset class="space-y-5">
-                    <legend class="font-display text-lg font-bold mb-3">About you</legend>
-                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <div>
-                    <label for="id_first_name" class="block text-sm font-medium">First name</label>
-                    <div class="mt-1">{{ form.first_name }}</div>
-                    {% for e in form.first_name.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
-                    
+                    <legend class="font-display text-lg font-bold mb-3">Your languages</legend>
+                    <div>
+                    <label for="id_native_language" class="block text-sm font-medium">I already speak</label>
+                    <div class="mt-1">{{ form.native_language }}</div>
+                    {% for e in form.native_language.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
                 </div>
-                        <div>
-                    <label for="id_last_name" class="block text-sm font-medium">Last name <span class="text-gray-500 font-normal">(optional)</span></label>
-                    <div class="mt-1">{{ form.last_name }}</div>
-                    {% for e in form.last_name.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
-                    
+                    <div>
+                    <label for="id_target_language" class="block text-sm font-medium">I want to practise</label>
+                    <div class="mt-1">{{ form.target_language }}</div>
+                    {% for e in form.target_language.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
                 </div>
-                    </div>
+                    <details class="text-sm"{% if form.is_bound and form.target_proficiency.value != 'beginner' %} open{% endif %}>
+                        <summary class="cursor-pointer font-semibold underline underline-offset-2">Your level (Beginner unless you change it)</summary>
+                        <div class="mt-2">
+                            <label for="id_target_proficiency" class="block text-sm font-medium">My level in that language</label>
+                            <div class="mt-1">{{ form.target_proficiency }}</div>
+                            {% for e in form.target_proficiency.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
+                        </div>
+                    </details>
+                </fieldset>
+                <fieldset class="space-y-5 pt-2">
+                    <legend class="font-display text-lg font-bold mb-3">Your account</legend>
                     <div>
                     <label for="id_username" class="block text-sm font-medium">Username</label>
                     <div class="mt-1">{{ form.username }}</div>
@@ -48,30 +55,6 @@
                     {% for e in form.email.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
                     <p class="field-hint">For your confirmation link and password resets.</p>
                 </div>
-                </fieldset>
-                <fieldset class="space-y-5 pt-2">
-                    <legend class="font-display text-lg font-bold mb-3">Languages</legend>
-                    <div>
-                    <label for="id_native_language" class="block text-sm font-medium">I already speak</label>
-                    <div class="mt-1">{{ form.native_language }}</div>
-                    {% for e in form.native_language.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
-                    
-                </div>
-                    <div>
-                    <label for="id_target_language" class="block text-sm font-medium">I want to practise</label>
-                    <div class="mt-1">{{ form.target_language }}</div>
-                    {% for e in form.target_language.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
-                    
-                </div>
-                    <div>
-                    <label for="id_target_proficiency" class="block text-sm font-medium">My level in that language</label>
-                    <div class="mt-1">{{ form.target_proficiency }}</div>
-                    {% for e in form.target_proficiency.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
-                    
-                </div>
-                </fieldset>
-                <fieldset class="space-y-5 pt-2">
-                    <legend class="font-display text-lg font-bold mb-3">Password</legend>
                     <div>
                         <label for="id_password1" class="block text-sm font-medium">Password</label>
                         <div class="relative mt-1">
@@ -83,13 +66,6 @@
                             <li data-rule="num">Not only numbers</li>
                         </ul>
                         {% for e in form.password1.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
-                    </div>
-                    <div>
-                        <label for="id_password2" class="block text-sm font-medium">Type it again</label>
-                        <div class="relative mt-1">
-                            <input id="id_password2" name="password2" type="password" required autocomplete="new-password" class="block w-full px-3 py-2" data-custom="1">
-                        </div>
-                        {% for e in form.password2.errors %}<p class="field-error" role="alert">{{ e }}</p>{% endfor %}
                     </div>
                 </fieldset>
                 <button type="submit" class="btn btn-solid w-full" data-loading-text="Creating your account...">Create account</button>
@@ -103,10 +79,9 @@
 <script>
 (function () {
     var F = window.SpeakleForm, $ = function (id) { return document.getElementById(id); };
-    var u = $('id_username'), p1 = $('id_password1'), p2 = $('id_password2'), nat = $('id_native_language'), tgt = $('id_target_language'), timer;
+    var u = $('id_username'), p1 = $('id_password1'), nat = $('id_native_language'), tgt = $('id_target_language'), timer;
     u.dataset.custom = '1'; u.setAttribute('autocomplete', 'username'); u.setAttribute('autocapitalize', 'none'); u.setAttribute('spellcheck', 'false');
-    $('id_email').setAttribute('autocomplete', 'email'); $('id_first_name').setAttribute('autocomplete', 'given-name');
-    ['id_first_name'].forEach(function (i) { $(i).dataset.msgRequired = 'Enter your first name.'; });
+    $('id_email').setAttribute('autocomplete', 'email');
     $('id_email').dataset.msgRequired = 'Enter your email address.';
     nat.dataset.msgRequired = 'Pick the language you already speak.'; tgt.dataset.msgRequired = 'Pick the language you want to practise.';
     nat.required = tgt.required = true;
@@ -128,10 +103,8 @@
         document.querySelectorAll('#pw-rules li').forEach(function (li) { li.classList.toggle('met', !!r[li.dataset.rule]); });
         return r.len && r.num;
     }
-    p1.addEventListener('input', function () { rules(); if (p2.value) match(); });
+    p1.addEventListener('input', function () { rules(); });
     p1.addEventListener('blur', function () { if (p1.value && !rules()) F.show(p1, 'error', 'Make the password at least 8 characters and not only numbers.'); else if (!p1.value) F.show(p1, 'error', 'Choose a password.'); else F.show(p1, 'none'); });
-    function match() { if (!p2.value) { F.show(p2, 'error', 'Type the password again to confirm it.'); return; } if (p2.value !== p1.value) F.show(p2, 'error', "The passwords don't match yet."); else F.show(p2, 'ok', 'Passwords match.'); }
-    p2.addEventListener('blur', match); p2.addEventListener('input', function () { if (p2.value) match(); });
     function langs() { if (nat.value && tgt.value && nat.value === tgt.value) { F.show(tgt, 'error', 'Pick a different language to learn. You already speak this one.'); } else if (tgt.value) { F.show(tgt, 'none'); } }
     nat.addEventListener('change', langs); tgt.addEventListener('change', langs);
     tgt.dataset.custom = '';
@@ -139,7 +112,6 @@
         if (ev.defaultPrevented) return;
         var bad = null;
         if (!rules()) { F.show(p1, 'error', 'Make the password at least 8 characters and not only numbers.'); bad = p1; }
-        if (p2.value !== p1.value) { F.show(p2, 'error', "The passwords don't match yet."); bad = bad || p2; }
         if (nat.value && nat.value === tgt.value) { F.show(tgt, 'error', 'Pick a different language to learn. You already speak this one.'); bad = bad || tgt; }
         if (u.getAttribute('aria-invalid')) bad = bad || u;
         if (bad) { ev.preventDefault(); ev.stopImmediatePropagation(); var b = document.querySelector('#signup-form button[type=submit]'); b.disabled = false; b.textContent = 'Create account'; bad.focus(); }
