@@ -12,6 +12,7 @@
 - Sign-up is all-or-nothing (no account without its languages); replaced profile pictures are deleted from storage.
 - Profile page shows a "Finish your profile" checklist until the account is complete.
 - List pages (chats, matches, requests) use a fixed number of queries instead of several per row.
+- Password reset pages and email subject now use the Speakle templates (Django admin ones were shadowing them). Accessibility: one h1 on sign-in, sign-up and reset pages, valid heading order on Find, closed mobile menu no longer takes keyboard focus.
 - Match detail page restyled to the design system (overview, stats, settings); quick match spacing and long-word wrapping fixes.
 - SEO: canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, `noindex` on non-public pages.
 - Favicons, web manifest, custom 404 and 500 pages.
