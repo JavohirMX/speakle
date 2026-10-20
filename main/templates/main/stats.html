@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Stats - Speakle{% endblock %}
+{% block content %}
+<section class="max-w-5xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold mb-1">Stats</h1>
+  <p class="text-sm text-gray-600 mb-6">Last 14 days. Counts only: no IP addresses, cookies, user ids or chat content are collected. {{ members }} active member{{ members|pluralize }} now.</p>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm border-collapse">
+      <thead><tr><th class="text-left p-2">Metric</th>{% for d in days %}<th class="p-2 text-right">{{ d|date:"j/n" }}</th>{% endfor %}<th class="p-2 text-right">Total</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr class="border-t"><td class="p-2 font-semibold">{{ r.label }}</td>{% for v in r.values %}<td class="p-2 text-right">{{ v }}</td>{% endfor %}<td class="p-2 text-right font-bold">{{ r.total }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="grid md:grid-cols-2 gap-8 mt-8">
+    <div>
+      <h2 class="font-bold mb-2">Where visitors come from</h2>
+      <p class="text-xs text-gray-600 mb-2">Referrer host or <code>?utm_source=</code> on landing, sign-up and login pages.</p>
+      {% for s in sources %}<div class="flex justify-between border-t py-1"><span>{{ s.key }}</span><span>{{ s.n }}</span></div>{% empty %}<p class="text-sm text-gray-600">Nothing yet.</p>{% endfor %}
+    </div>
+    <div>
+      <h2 class="font-bold mb-2">Most viewed pages</h2>
+      {% for name, n in top_pages %}<div class="flex justify-between border-t py-1"><span>{{ name }}</span><span>{{ n }}</span></div>{% empty %}<p class="text-sm text-gray-600">Nothing yet.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

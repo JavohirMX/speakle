@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'main.seo.NoIndexMiddleware',
     'chats.middleware.UserActivityMiddleware',  # Automatic user presence tracking
+    'main.analytics.AnalyticsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

@@ -13,6 +13,8 @@
 - Favicons, web manifest, custom 404 and 500 pages.
 - CI workflow for tests and migration checks.
 
+- Privacy-first analytics: per-day counters by page name, referrer host and `?utm_source=` on landing, sign-up and login pages. No IPs, cookies, user ids, URLs with ids or chat content. Staff-only dashboard at `/stats/` with sign-ups, matches, calls and message counts. Turn off with `ANALYTICS_ENABLED = False`.
+
 ### Fixed
 - Quick match showed Find and Cancel buttons at the same time.
 - Call summary showed the other person's private star rating (it was stored in the shared call notes). Ratings are now hidden from the partner.
