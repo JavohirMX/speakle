@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from .forms import UserRegistrationForm, UserProfileForm, UserLanguageForm
 from .models import UserLanguage, UserBlock, UserReport
 
+from django.urls import reverse
 import logging
 from datetime import timedelta
 from django.utils import timezone
@@ -121,6 +122,23 @@ def logout_view(request):
     messages.success(request, 'You have been logged out successfully.')
     return redirect('main:home')
 
+def profile_checklist(user, user_languages):
+    """Steps that make a profile ready for matching. Returns (steps, done_count).
+
+    Each step is (label, done, link). Only facts we can read from the account.
+    """
+    types = {ul.language_type for ul in user_languages}
+    steps = [
+        ('Add a language you speak', bool(types & {'native', 'fluent'}), reverse('users:add_language')),
+        ('Add a language you want to learn', 'learning' in types, reverse('users:add_language')),
+        ('Confirm your email', bool(user.email_verified), None),
+        ('Add a profile picture', bool(user.profile_picture), '#infoTitle'),
+        ('Write a short bio', bool((user.bio or '').strip()), '#infoTitle'),
+        ('Add your interests', bool((user.interests or '').strip()), '#infoTitle'),
+    ]
+    return steps, sum(1 for _, done, _ in steps if done)
+
+
 @login_required
 def profile_view(request):
     """User profile view."""
@@ -136,9 +154,14 @@ def profile_view(request):
     # Get user's languages
     user_languages = request.user.userlanguage_set.all().order_by('language__name')
     
+    steps, done_count = profile_checklist(request.user, user_languages)
     return render(request, 'users/profile.html', {
         'form': form,
-        'user_languages': user_languages
+        'user_languages': user_languages,
+        'checklist': steps,
+        'checklist_done': done_count,
+        'checklist_total': len(steps),
+        'checklist_complete': done_count == len(steps),
     })
 
 @login_required

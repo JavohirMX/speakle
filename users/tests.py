@@ -405,3 +405,23 @@ class LogoutPostOnlyTests(TestCase):
         html = self.client.get('/users/profile/').content.decode()
         self.assertIn('method="post" action="/users/logout/"', html)
         self.assertNotIn('href="/users/logout/"', html)
+
+
+class ProfileChecklistTests(TestCase):
+    def test_new_account_shows_checklist_and_completes(self):
+        from users.views import profile_checklist
+        U = get_user_model()
+        u = U.objects.create_user('chk', 'chk@x.com', 'pw12345!')
+        c = Client(); c.force_login(u)
+        r = c.get(reverse('users:profile'))
+        self.assertContains(r, 'Finish your profile')
+        self.assertContains(r, '0 of 6 done')
+        en = Language.objects.create(name='English', code='en')
+        es = Language.objects.create(name='Spanish', code='es')
+        UserLanguage.objects.create(user=u, language=en, proficiency='native', language_type='native')
+        UserLanguage.objects.create(user=u, language=es, proficiency='beginner', language_type='learning')
+        U.objects.filter(pk=u.pk).update(email_verified=True, bio='Hi', interests='tea', profile_picture='profile_pictures/x.png')
+        u.refresh_from_db()
+        steps, done = profile_checklist(u, u.userlanguage_set.all())
+        self.assertEqual(done, len(steps))
+        self.assertNotContains(c.get(reverse('users:profile')), 'Finish your profile')
