@@ -415,3 +415,32 @@ def clean_call_end_fields(end_reason, end_notes, connection_quality, network_iss
     except (TypeError, ValueError):
         network_issues = 0
     return end_reason, end_notes, connection_quality, network_issues
+
+
+def close_rooms_for_pair(user_a, user_b):
+    """Close the video and text rooms between two people right now (used when one blocks the other).
+
+    Ends any active call session and tells every open socket in those rooms to disconnect,
+    so an established call does not outlive the block.
+    """
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+    from django.db.models import Q
+    from django.utils import timezone
+
+    pair = Q(match__user1=user_a, match__user2=user_b) | Q(match__user1=user_b, match__user2=user_a)
+    video_rooms = list(VideoRoom.objects.filter(pair))
+    chat_rooms = list(ChatRoom.objects.filter(pair))
+    for room in video_rooms:
+        for session in room.sessions.filter(status='active'):
+            session.status = 'ended'
+            session.ended_at = timezone.now()
+            session.calculate_duration()
+            session.save()
+        if room.is_active:
+            VideoRoom.objects.filter(pk=room.pk).update(is_active=False)
+    layer = get_channel_layer()
+    if layer is None:
+        return
+    for group in [f'video_call_{r.room_id}' for r in video_rooms] + [f'text_chat_{r.room_id}' for r in chat_rooms]:
+        async_to_sync(layer.group_send)(group, {'type': 'access_revoked'})

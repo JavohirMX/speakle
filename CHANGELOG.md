@@ -34,6 +34,10 @@
 - Profile bio (1000), interests (500) and picture size (5 MB) are now limited. Find matches says which language you still need to add.
 
 ### Changed
+- Settings are safe by default: `DEBUG` is off unless `DEBUG=True`, and the app refuses to start without a real `SECRET_KEY` (no hardcoded key in source). Local development now needs `DEBUG=True`; CI sets it.
+- Sign-up and profile reject an email that already has an account (case-insensitive). `manage.py duplicate_emails` lists existing duplicates without changing anything.
+- Partner email is no longer returned by the confirmed-match APIs unless that person turns on "Show my email to matches" in their profile.
+- Sign out is a POST (form buttons), so another page cannot sign you out with a link or image.
 - Login locks for 15 minutes after 10 failed attempts for the same name and address. Repeating the same report within a day no longer adds a duplicate.
 - Optional sign-up cap per address (`SIGNUPS_PER_HOUR_PER_IP`, off by default).
 - Text chat allows 30 messages a minute per person (HTTP and WebSocket).

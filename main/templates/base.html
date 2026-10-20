@@ -1199,10 +1199,12 @@
                             </div>
                             
                             <div class="border-t border-gray-100 py-2">
-                                <a href="{% url 'users:logout' %}" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-red-600 hover:text-red-700 font-medium">
+                                <form method="post" action="{% url 'users:logout' %}" style="margin:0">{% csrf_token %}
+                                <button type="submit" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-red-600 hover:text-red-700 font-medium w-full text-left" style="background:none;border:0;cursor:pointer;font:inherit">
                                     <svg class="ico"><use href="#i-logout"/></svg>
                                     <span>Sign Out</span>
-                                </a>
+                                </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -1283,12 +1285,12 @@
                 
                 <!-- Mobile Logout -->
                 <div class="pt-6 border-t border-gray-200">
-                    <a href="{% url 'users:logout' %}" class="block w-full text-center bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-colors font-semibold focus-ring">
+                    <form method="post" action="{% url 'users:logout' %}" style="margin:0">{% csrf_token %}<button type="submit" class="block w-full text-center bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-colors font-semibold focus-ring" style="border:0;cursor:pointer;font:inherit">
                         <span class="flex items-center justify-center space-x-2">
                             <svg class="ico"><use href="#i-logout"/></svg>
                             <span>Sign Out</span>
                         </span>
-                    </a>
+                    </button></form>
                 </div>
             {% else %}
                 <!-- Non-authenticated Mobile Menu -->
@@ -1533,7 +1535,7 @@
                 <ul class="mt-3 space-y-2 text-sm">
                     {% if user.is_authenticated %}
                     <li><a class="hover:text-white" href="{% url 'users:profile' %}">Profile</a></li>
-                    <li><a class="hover:text-white" href="{% url 'users:logout' %}">Sign out</a></li>
+                    <li><form method="post" action="{% url 'users:logout' %}" style="margin:0">{% csrf_token %}<button type="submit" class="hover:text-white" style="background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit">Sign out</button></form></li>
                     {% else %}
                     <li><a class="hover:text-white" href="{% url 'users:login' %}">Sign in</a></li>
                     <li><a class="hover:text-white" href="{% url 'users:register' %}">Create account</a></li>

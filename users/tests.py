@@ -325,3 +325,71 @@ class PasswordResetFlowTests(TestCase):
         self.U.objects.filter(pk=self.u.pk).update(is_active=False)
         self.client.post('/users/password-reset/', {'email': 'pr@x.com'})
         self.assertEqual(len(mail.outbox), 0)
+
+
+class UniqueEmailTests(TestCase):
+    def _reg(self, email, username='newbie'):
+        from users.models import Language
+        en, _ = Language.objects.get_or_create(code='en', defaults={'name': 'English'})
+        ko, _ = Language.objects.get_or_create(code='ko', defaults={'name': 'Korean'})
+        return self.client.post('/users/register/', {
+            'username': username, 'first_name': 'N', 'email': email, 'native_language': en.id,
+            'target_language': ko.id, 'target_proficiency': 'beginner',
+            'password1': 'Zx9!kqpwoeiR', 'password2': 'Zx9!kqpwoeiR'})
+
+    def test_registration_rejects_an_email_in_use_ignoring_case(self):
+        from django.contrib.auth import get_user_model
+        get_user_model().objects.create_user('first', 'Taken@Example.com', 'pw12345!x')
+        r = self._reg('taken@example.com')
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'already has an account')
+        self.assertFalse(get_user_model().objects.filter(username='newbie').exists())
+
+    def test_registration_accepts_a_new_email(self):
+        from django.contrib.auth import get_user_model
+        r = self._reg('fresh@example.com')
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(get_user_model().objects.filter(username='newbie').exists())
+
+    def test_profile_cannot_take_someone_elses_email_but_can_keep_its_own(self):
+        from django.contrib.auth import get_user_model
+        from users.forms import UserProfileForm
+        U = get_user_model()
+        a = U.objects.create_user('pa', 'pa@x.com', 'pw12345!x')
+        U.objects.create_user('pb', 'pb@x.com', 'pw12345!x')
+        base = {'first_name': 'A', 'last_name': '', 'bio': '', 'interests': ''}
+        self.assertIn('email', UserProfileForm({**base, 'email': 'PB@x.com'}, instance=a).errors)
+        self.assertNotIn('email', UserProfileForm({**base, 'email': 'pa@x.com'}, instance=a).errors)
+
+    def test_duplicate_report_command_is_read_only(self):
+        from io import StringIO
+        from django.contrib.auth import get_user_model
+        from django.core.management import call_command
+        U = get_user_model()
+        U.objects.create_user('d1', 'dup@x.com', 'pw12345!x')
+        U.objects.create_user('d2', 'DUP@x.com', 'pw12345!x')
+        out = StringIO()
+        call_command('duplicate_emails', stdout=out)
+        self.assertIn('d1', out.getvalue()); self.assertIn('d2', out.getvalue())
+        self.assertEqual(U.objects.filter(email__iexact='dup@x.com').count(), 2)
+
+
+class LogoutPostOnlyTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        get_user_model().objects.create_user('lo', 'lo@x.com', 'pw12345!x')
+        self.client.login(username='lo', password='pw12345!x')
+
+    def test_get_does_not_sign_out(self):
+        self.assertEqual(self.client.get('/users/logout/').status_code, 405)
+        self.assertIn('_auth_user_id', self.client.session)
+
+    def test_post_signs_out(self):
+        r = self.client.post('/users/logout/')
+        self.assertEqual(r.status_code, 302)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_pages_render_logout_as_a_post_form_not_a_link(self):
+        html = self.client.get('/users/profile/').content.decode()
+        self.assertIn('method="post" action="/users/logout/"', html)
+        self.assertNotIn('href="/users/logout/"', html)

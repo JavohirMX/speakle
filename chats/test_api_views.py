@@ -611,6 +611,25 @@ class VideoCallConsumerFlowTests(TransactionTestCase):
         await self._no_frame(cb, 'typing_start')
         await cb.disconnect()
 
+    async def test_block_ends_the_session_and_closes_open_sockets(self):
+        from asgiref.sync import sync_to_async
+        from django.test import Client
+        from .models import CallSession
+        ca = await self._connect(self.a); cb = await self._connect(self.b)
+        await ca.send_json_to({'type': 'call_start'})
+        await self._next(cb, 'call_started')
+        client = Client()
+        await sync_to_async(client.force_login)(self.b)
+        r = await sync_to_async(client.post)(f'/users/block/{self.a.id}/')
+        self.assertEqual(r.status_code, 200)
+        for c in (ca, cb):
+            frame = await self._next(c, 'error')
+            self.assertTrue(frame.get('closed'))
+            out = await c.receive_output(timeout=5)
+            self.assertEqual(out['type'], 'websocket.close')
+        status = await database_sync_to_async(lambda: CallSession.objects.get().status)()
+        self.assertEqual(status, 'ended')
+
     async def test_offer_without_payload_is_an_error(self):
         ca = await self._connect(self.a)
         await ca.send_json_to({'type': 'offer'})

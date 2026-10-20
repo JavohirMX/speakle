@@ -52,6 +52,12 @@ class UserRegistrationForm(UserCreationForm):
         # Add autofocus to first_name field
         self.fields['first_name'].widget.attrs['autofocus'] = True
     
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('That email already has an account. Sign in, or reset your password.')
+        return email
+
     def clean(self):
         cleaned_data = super().clean()
         native_language = cleaned_data.get('native_language')
@@ -101,12 +107,18 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'bio', 'profile_picture', 'interests']
+        fields = ['first_name', 'last_name', 'email', 'share_email_with_matches', 'bio', 'profile_picture', 'interests']
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
             'interests': forms.Textarea(attrs={'rows': 3}),
         }
     
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip()
+        if email and User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('That email is already used by another account.')
+        return email
+
     MAX_BIO = 1000
     MAX_INTERESTS = 500
     MAX_PICTURE_BYTES = 5 * 1024 * 1024
@@ -143,6 +155,8 @@ class UserProfileForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Add CSS classes for styling
         for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                continue
             if isinstance(field.widget, forms.Textarea):
                 field.widget.attrs['class'] = 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
             elif isinstance(field.widget, forms.FileInput):

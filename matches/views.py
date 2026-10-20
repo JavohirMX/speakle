@@ -348,11 +348,7 @@ def get_my_matches(request):
         
         match_data.append({
             'id': match.id,
-            'partner': {
-                'id': partner.id,
-                'username': partner.username,
-                'email': partner.email,
-            },
+            'partner': _partner_payload(partner),
             'user_teaches': user_teaches.name if user_teaches else None,
             'user_learns': user_learns.name if user_learns else None,
             'created_at': match.created_at.isoformat(),
@@ -363,6 +359,14 @@ def get_my_matches(request):
         'success': True,
         'matches': match_data
     })
+
+def _partner_payload(partner):
+    """Public partner fields. The email is included only if the partner opted in."""
+    data = {'id': partner.id, 'username': partner.username}
+    if partner.share_email_with_matches:
+        data['email'] = partner.email
+    return data
+
 
 @login_required
 def get_match_detail(request, match_id):
@@ -381,11 +385,7 @@ def get_match_detail(request, match_id):
         'success': True,
         'match': {
             'id': match.id,
-            'partner': {
-                'id': partner.id,
-                'username': partner.username,
-                'email': partner.email,
-            },
+            'partner': _partner_payload(partner),
             'user_teaches': user_teaches.name if user_teaches else None,
             'user_learns': user_learns.name if user_learns else None,
             'created_at': match.created_at.isoformat(),

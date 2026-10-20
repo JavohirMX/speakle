@@ -575,6 +575,15 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 'room_id': event.get('room_id', self.room_id)
             }))
 
+    async def access_revoked(self, event):
+        """The room was closed for both people (a block). Tell the client and drop the socket."""
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            'message': 'This conversation is no longer available.',
+            'closed': True,
+        }))
+        await self.close()
+
     # Database operations
     @database_sync_to_async
     def check_room_access(self):
@@ -1225,6 +1234,15 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             'username': event['username'],
             'room_id': event.get('room_id', self.room_id)
         }))
+
+    async def access_revoked(self, event):
+        """The room was closed for both people (a block). Tell the client and drop the socket."""
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            'message': 'This conversation is no longer available.',
+            'closed': True,
+        }))
+        await self.close()
 
     async def new_message(self, event):
         """Forward new message to clients."""

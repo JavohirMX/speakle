@@ -114,6 +114,7 @@ def login_view(request):
 
     return render(request, 'registration/login.html', {'form': form, 'next': next_url})
 
+@require_POST
 def logout_view(request):
     """User logout view."""
     logout(request)
@@ -206,6 +207,8 @@ def block_user_view(request, user_id):
     from matches.models import PotentialMatch
     PotentialMatch.objects.filter(
         Q(user=request.user, potential_partner=target) | Q(user=target, potential_partner=request.user)).delete()
+    from chats.models import close_rooms_for_pair
+    close_rooms_for_pair(request.user, target)
     return JsonResponse({'success': True})
 
 

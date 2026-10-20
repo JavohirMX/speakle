@@ -197,3 +197,29 @@ class DeactivatedUsersHiddenTests(TestCase):
         req.refresh_from_db()
         self.assertEqual(req.status, 'cancelled')
         self.assertFalse(Match.objects.exists())
+
+
+class PartnerEmailOptInTests(TestCase):
+    def setUp(self):
+        U = get_user_model()
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.me = U.objects.create_user('pe_me', 'me@x.com', 'pw12345!')
+        self.p = U.objects.create_user('pe_p', 'partner@x.com', 'pw12345!')
+        self.match = Match.objects.create(user1=self.me, user2=self.p, user1_teaches=en, user1_learns=ko, status='active')
+        self.client.force_login(self.me)
+
+    def _both(self):
+        lst = self.client.get(reverse('matches:get_my_matches')).json()['matches'][0]['partner']
+        det = self.client.get(reverse('matches:get_match_detail', args=[self.match.id])).json()['match']['partner']
+        return lst, det
+
+    def test_email_hidden_by_default(self):
+        for partner in self._both():
+            self.assertNotIn('email', partner)
+            self.assertEqual(partner['username'], 'pe_p')
+
+    def test_email_shown_after_partner_opts_in(self):
+        get_user_model().objects.filter(pk=self.p.pk).update(share_email_with_matches=True)
+        for partner in self._both():
+            self.assertEqual(partner['email'], 'partner@x.com')
