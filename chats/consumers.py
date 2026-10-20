@@ -5,6 +5,7 @@ from channels.db import database_sync_to_async
 from django.db.models import Q
 from django.db import models
 from django.urls import reverse
+from users.throttle import chat_allowed
 
 class VideoCallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -97,7 +98,18 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             message_type = data.get('type')
             
             print(f"Received message type: {message_type} from user: {self.user.username}")
-            
+
+            # Re-check access on the low-volume frames (not on every ICE candidate), so a
+            # block made during a call stops chat, offers and call control.
+            if message_type in ('offer', 'chat_message', 'call_start', 'peer_ready', 'typing_start'):
+                if not await self.check_room_access():
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': 'This call is no longer available.'
+                    }))
+                    await self.close()
+                    return
+
             if message_type == 'offer':
                 await self.handle_offer(data)
             elif message_type == 'answer':
@@ -348,6 +360,10 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         call_duration = data.get('call_duration', 0)  # Duration in seconds
         connection_quality = data.get('connection_quality', '')
         network_issues = data.get('network_issues', 0)
+        from .models import clean_call_end_fields
+        end_reason, end_notes, connection_quality, network_issues = clean_call_end_fields(
+            end_reason, end_notes, connection_quality, network_issues
+        )
         
         # End the call session with detailed information
         session_summary = await self.end_call_session_enhanced(
@@ -559,6 +575,15 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 'room_id': event.get('room_id', self.room_id)
             }))
 
+    async def access_revoked(self, event):
+        """The room was closed for both people (a block). Tell the client and drop the socket."""
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            'message': 'This conversation is no longer available.',
+            'closed': True,
+        }))
+        await self.close()
+
     # Database operations
     @database_sync_to_async
     def check_room_access(self):
@@ -572,23 +597,11 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 room = VideoRoom.objects.get(room_id=self.room_id)
                 return room.can_user_access(self.user)
             except VideoRoom.DoesNotExist:
-                # If room doesn't exist, check if user has a match that could create this room
-                # This is a more permissive approach for development
-                print(f"Room {self.room_id} doesn't exist, checking match access")
-                
-                # Get all matches where user is involved
-                user_matches = Match.objects.filter(
-                    Q(user1=self.user) | Q(user2=self.user),
-                    status='active'
-                )
-                
-                # For development, allow access if user has any active matches
-                return user_matches.exists()
-                
+                return False
+
         except Exception as e:
             print(f"Error checking room access: {e}")
-            # For development, be permissive
-            return True
+            return False
 
     @database_sync_to_async
     def save_chat_message(self, content):
@@ -645,8 +658,8 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             # Create new session
             session = CallSession.objects.create(
                 room=room,
-                video_enabled=data.get('video_enabled', True),
-                audio_enabled=data.get('audio_enabled', True),
+                video_enabled=data.get('video_enabled') if isinstance(data.get('video_enabled'), bool) else True,
+                audio_enabled=data.get('audio_enabled') if isinstance(data.get('audio_enabled'), bool) else True,
                 status='active'
             )
             session.participants.add(self.user)
@@ -858,6 +871,37 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
             'canceller_username': event['canceller_username']
         }))
 
+    async def new_chat_message(self, event):
+        """Forward a chat message sent over HTTP so the partner's page can show it."""
+        await self.send(text_data=json.dumps({
+            'type': 'new_chat_message',
+            'room_id': event.get('room_id'),
+            'message_id': event.get('message_id'),
+            'content': event.get('content', ''),
+            'sender_username': event.get('sender_username'),
+            'timestamp': event.get('timestamp'),
+        }))
+
+    async def message_edited(self, event):
+        """Forward a message edit made over HTTP."""
+        await self.send(text_data=json.dumps({
+            'type': 'message_edited',
+            'room_id': event.get('room_id'),
+            'message_id': event.get('message_id'),
+            'new_content': event.get('new_content', ''),
+            'editor_username': event.get('editor_username'),
+        }))
+
+    async def call_ended_enhanced(self, event):
+        """Forward a call end made over HTTP."""
+        await self.send(text_data=json.dumps({
+            'type': 'call_ended_enhanced',
+            'ended_by': event.get('ended_by'),
+            'end_reason': event.get('end_reason'),
+            'session_summaries': event.get('session_summaries', []),
+        }))
+
+
 class TextChatConsumer(AsyncWebsocketConsumer):
     """WebSocket consumer specifically for text chat functionality."""
     
@@ -993,6 +1037,20 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_send_message(self, data):
         """Handle sending a new text message."""
+        if not await self.check_chat_room_access():
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'This conversation is no longer available.'
+            }))
+            return
+
+        if not chat_allowed(self.user.id):
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'You are sending messages too fast. Wait a moment.'
+            }))
+            return
+
         message_content = data.get('message', '').strip()
         reply_to_id = data.get('reply_to')
         
@@ -1032,7 +1090,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                         'sender_id': self.user.id,
                         'sender_username': self.user.username,
                         'timestamp': message_obj.timestamp.isoformat(),
-                        'reply_to': reply_to_id,
+                        'reply_to': message_obj.reply_payload,
                         'room_id': self.room_id
                     }
                 )
@@ -1058,6 +1116,20 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Invalid edit request'
+            }))
+            return
+
+        if len(new_content) > 1000:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'Message too long (max 1000 characters)'
+            }))
+            return
+
+        if not await self.check_chat_room_access():
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': 'This conversation is no longer available.'
             }))
             return
         
@@ -1090,12 +1162,16 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_mark_messages_read(self, data):
         """Handle marking messages as read."""
+        if not await self.check_chat_room_access():
+            return
         message_ids = data.get('message_ids', [])
         if message_ids:
             await self.mark_messages_read(message_ids)
 
     async def handle_typing_start(self, data):
         """Handle typing start notification."""
+        if not await self.check_chat_room_access():
+            return
         await self.set_typing_status(True)
         
         # Broadcast typing status to others in room
@@ -1126,9 +1202,12 @@ class TextChatConsumer(AsyncWebsocketConsumer):
 
     async def handle_load_messages(self, data):
         """Handle loading message history."""
-        page = data.get('page', 1)
-        page_size = data.get('page_size', 50)
-        
+        try:
+            page = max(int(data.get('page', 1)), 1)
+            page_size = min(max(int(data.get('page_size', 50)), 1), 100)
+        except (TypeError, ValueError):
+            page, page_size = 1, 50
+
         messages = await self.get_message_history(page, page_size)
         
         await self.send(text_data=json.dumps({
@@ -1155,6 +1234,15 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             'username': event['username'],
             'room_id': event.get('room_id', self.room_id)
         }))
+
+    async def access_revoked(self, event):
+        """The room was closed for both people (a block). Tell the client and drop the socket."""
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            'message': 'This conversation is no longer available.',
+            'closed': True,
+        }))
+        await self.close()
 
     async def new_message(self, event):
         """Forward new message to clients."""
@@ -1226,8 +1314,9 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             reply_to = None
             if reply_to_id:
                 try:
-                    reply_to = ChatMessage.objects.get(id=reply_to_id, room=room)
-                except ChatMessage.DoesNotExist:
+                    reply_to = ChatMessage.objects.get(id=int(reply_to_id), room=room)
+                except (ChatMessage.DoesNotExist, TypeError, ValueError, OverflowError):
+                    # Missing or malformed reply target: send the message without a quote.
                     pass
             
             message = ChatMessage.objects.create(
@@ -1237,6 +1326,12 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                 reply_to=reply_to
             )
             print(f"Saved chat message: {message.id}")
+            # Clients render the quoted message, so send its details, not just the id.
+            message.reply_payload = {
+                'id': reply_to.id,
+                'content': reply_to.content[:50] + '...' if len(reply_to.content) > 50 else reply_to.content,
+                'sender_username': reply_to.sender.username,
+            } if reply_to else None
             return message
             
         except Exception as e:

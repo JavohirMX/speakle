@@ -6,6 +6,13 @@ import uuid
 
 User = get_user_model()
 
+
+def pair_is_blocked(user_a, user_b):
+    """True if either user has blocked the other."""
+    from users.models import UserBlock
+    return UserBlock.either_way(user_a, user_b)
+
+
 class VideoRoom(models.Model):
     """Model for video chat rooms linked to matches."""
     match = models.OneToOneField(Match, on_delete=models.CASCADE, related_name='video_room')
@@ -22,8 +29,8 @@ class VideoRoom(models.Model):
         return [self.match.user1, self.match.user2]
     
     def can_user_access(self, user):
-        """Check if a user has access to this room."""
-        return user in self.get_participants()
+        """Check if a user has access to this room. A block between the two ends access."""
+        return user in self.get_participants() and not pair_is_blocked(self.match.user1, self.match.user2)
 
 class CallInvitation(models.Model):
     """Model for video call invitations between matched users."""
@@ -118,6 +125,10 @@ class UserPresence(models.Model):
             defaults={'is_online': True, 'last_activity': timezone.now()}
         )
         
+        previous_activity = presence.last_activity
+        previous_online = presence.is_online
+        previous_room_id = presence.current_room_id
+
         # Update activity timestamp
         presence.last_activity = timezone.now()
         
@@ -136,7 +147,15 @@ class UserPresence(models.Model):
             presence.current_room = None
         
         # Save if changed or forced
-        if created or force_update or presence.is_online != cls.objects.get(user=user).is_online:
+        # The activity timestamp must be persisted too, otherwise a user who keeps sending
+        # heartbeats is still marked offline after OFFLINE_THRESHOLD_MINUTES. Writes are
+        # throttled to one per 30 seconds unless the status or room changed.
+        stale = (
+            previous_activity is None
+            or (presence.last_activity - previous_activity).total_seconds() >= 30
+        )
+        changed = presence.is_online != previous_online or presence.current_room_id != previous_room_id
+        if created or force_update or changed or stale:
             presence.save(update_fields=['is_online', 'last_activity', 'last_seen', 'current_room'])
         
         return presence
@@ -285,8 +304,8 @@ class ChatRoom(models.Model):
         return [self.match.user1, self.match.user2]
     
     def can_user_access(self, user):
-        """Check if a user has access to this room."""
-        return user in self.get_participants()
+        """Check if a user has access to this room. A block between the two ends access."""
+        return user in self.get_participants() and not pair_is_blocked(self.match.user1, self.match.user2)
     
     def get_partner(self, user):
         """Get the partner of the given user in this chat room."""
@@ -382,3 +401,46 @@ class TypingStatus(models.Model):
         if exclude_user:
             queryset = queryset.exclude(user=exclude_user)
         return [status.user for status in queryset]
+
+
+def clean_call_end_fields(end_reason, end_notes, connection_quality, network_issues=0):
+    """Normalise client-supplied call-end data to values the CallSession columns accept."""
+    valid = {value for value, _ in CallSession.END_REASON_CHOICES}
+    if end_reason not in valid:
+        end_reason = 'user_hangup'
+    end_notes = str(end_notes or '')[:500]
+    connection_quality = str(connection_quality or '')[:20]
+    try:
+        network_issues = min(max(int(network_issues), 0), 10000)
+    except (TypeError, ValueError):
+        network_issues = 0
+    return end_reason, end_notes, connection_quality, network_issues
+
+
+def close_rooms_for_pair(user_a, user_b):
+    """Close the video and text rooms between two people right now (used when one blocks the other).
+
+    Ends any active call session and tells every open socket in those rooms to disconnect,
+    so an established call does not outlive the block.
+    """
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+    from django.db.models import Q
+    from django.utils import timezone
+
+    pair = Q(match__user1=user_a, match__user2=user_b) | Q(match__user1=user_b, match__user2=user_a)
+    video_rooms = list(VideoRoom.objects.filter(pair))
+    chat_rooms = list(ChatRoom.objects.filter(pair))
+    for room in video_rooms:
+        for session in room.sessions.filter(status='active'):
+            session.status = 'ended'
+            session.ended_at = timezone.now()
+            session.calculate_duration()
+            session.save()
+        if room.is_active:
+            VideoRoom.objects.filter(pk=room.pk).update(is_active=False)
+    layer = get_channel_layer()
+    if layer is None:
+        return
+    for group in [f'video_call_{r.room_id}' for r in video_rooms] + [f'text_chat_{r.room_id}' for r in chat_rooms]:
+        async_to_sync(layer.group_send)(group, {'type': 'access_revoked'})

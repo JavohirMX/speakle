@@ -1,15 +1,15 @@
-<!DOCTYPE html>
+{% load assets %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Video Chat with {{ partner.username }} - Speakle</title>
     
-    <!-- Tailwind CSS CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Compiled Tailwind (see tailwind.config.js), same file the rest of the site uses -->
+    <link rel="stylesheet" href="{% versioned_static 'css/tailwind.css' %}">
     
     <!-- CSRF Token for AJAX requests -->
     <meta name="csrf-token" content="{{ csrf_token }}">
@@ -373,7 +373,7 @@
             padding: 12px;
         }
         
-        .video-overlay h3 {
+        .video-overlay h2, .video-overlay h3 {
             font-size: 16px;
         }
         
@@ -708,24 +708,41 @@
         font-weight: 600;
     }
 </style>
+<style>
+.ico { width: 1.4em; height: 1.4em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
+.controls-bar { gap: .6rem !important; background: #1a1510 !important; border: 3px solid #fff9ec !important; border-radius: 22px !important; padding: .55rem .7rem !important; box-shadow: 4px 4px 0 #ffc61a !important; backdrop-filter: none !important; flex-wrap: nowrap; }
+.control-btn { width: auto !important; min-width: 64px; height: 64px !important; border-radius: 14px !important; flex-direction: column; gap: .15rem; padding: .3rem .55rem; background: #fff9ec !important; color: #1a1510 !important; border: 2px solid #1a1510 !important; box-shadow: none !important; font-size: 12px !important; font-weight: 700; }
+.control-btn .cb-label { font-size: .7rem; line-height: 1; white-space: nowrap; }
+.control-btn.active { background: #55d99a !important; } .control-btn.inactive { background: #ff6b4a !important; } .control-btn.call-start { background: #ffc61a !important; } .control-btn.call-end { background: #d63a1a !important; color: #fff !important; }
+.control-btn:focus-visible { outline: 3px solid #ffc61a; outline-offset: 2px; }
+.video-placeholder { background: #2a2118 !important; }
+.media-error { max-width: 26rem; margin: 1rem auto 0; background: #fff9ec; color: #1a1510; border: 3px solid #1a1510; border-radius: 16px; box-shadow: 4px 4px 0 #ffc61a; padding: 1rem 1.2rem; text-align: left; }
+.media-error h3 { font-weight: 800; font-size: 1.15rem; margin-bottom: .3rem; } .media-error .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
+.media-error .b { padding: .55rem 1rem; border: 2px solid #1a1510; border-radius: 12px; font-weight: 700; background: #ffc61a; text-decoration: none; color: #1a1510; min-height: 44px; display: inline-flex; align-items: center; }
+.media-error .b.o { background: #fff; }
+@media (max-width: 640px) { .controls-bar { gap: .3rem !important; padding: .4rem !important; max-width: 96vw; } .control-btn { min-width: 0; flex: 1; height: 58px !important; padding: .25rem .2rem; } .control-btn .cb-label { font-size: .6rem; white-space: normal; text-align: center; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 96px; } }
+</style>
 </head>
 <body>
-<div class="min-h-screen bg-gray-900 relative">
+{% include 'partials/icons.html' %}
+<main class="min-h-screen bg-gray-900 relative">
+    <h1 class="sr-only">Video call with {{ partner.username }}</h1>
     <!-- Video Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 video-grid">
         <!-- Remote Video (Partner) -->
         <div class="video-container remote-video-container">
             <div id="remoteVideoPlaceholder" class="video-placeholder">
                 <div class="text-center">
-                    <div class="text-6xl mb-4">👤</div>
+                    <div class="text-6xl mb-4 flex justify-center"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></div>
                     <div class="text-xl font-semibold">{{ partner.username }}</div>
-                    <div class="text-sm opacity-75 mt-2">Waiting to connect...</div>
+                    <div class="text-sm opacity-75 mt-2" role="status">Waiting for {{ partner.username }} to join. Keep this tab open.</div>
                 </div>
             </div>
             <video id="remoteVideo" class="video-element" autoplay playsinline style="display: none;"></video>
             <div class="video-overlay">
                 <div>
-                    <h3 class="text-lg font-semibold">{{ partner.username }}</h3>
+                    <h2 class="text-lg font-semibold">{{ partner.username }}</h2>
                     <p class="text-sm opacity-75">Teaching {{ user_learns.name }}</p>
                 </div>
                 <div class="text-right">
@@ -733,7 +750,7 @@
                 </div>
             </div>
             <div class="video-info">
-                <span id="remoteVideoStatus">📹 Video Off</span>
+                <span id="remoteVideoStatus"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Video Off</span>
             </div>
         </div>
 
@@ -743,42 +760,42 @@
             <video id="localVideo" class="video-element" autoplay playsinline muted></video>
             <div class="video-overlay">
                 <div>
-                    <h3 class="text-lg font-semibold">You</h3>
+                    <h2 class="text-lg font-semibold">You</h2>
                     <p class="text-sm opacity-75">Teaching {{ user_teaches.name }}</p>
                 </div>
                 <div class="text-right">
                     <div class="text-sm" id="localStatus">Ready</div>
-                    <div id="localVideoInfo" class="text-xs opacity-75 mt-1">📹 720p</div>
+                    <div id="localVideoInfo" class="text-xs opacity-75 mt-1"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> 720p</div>
                 </div>
             </div>
             <div class="video-info">
-                <span id="localVideoStatus">📹 Video On</span>
+                <span id="localVideoStatus"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Video On</span>
             </div>
         </div>
     </div>
 
     <!-- Enhanced Controls Bar -->
-    <div class="controls-bar" id="controlsBar">
-        <button id="toggleVideo" class="control-btn active" title="Toggle Video" data-tooltip="Video On">
-            📹
+    <div class="controls-bar" id="controlsBar" role="toolbar" aria-label="Call controls">
+        <button id="toggleVideo" class="control-btn active" type="button" aria-label="Camera"  data-on="Camera" data-off="Camera off">
+            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg><span class="cb-label">Camera</span>
         </button>
-        <button id="toggleAudio" class="control-btn active" title="Toggle Audio" data-tooltip="Audio On">
-            🎤
+        <button id="toggleAudio" class="control-btn active" type="button" aria-label="Mic"  data-on="Mic" data-off="Mic off">
+            <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg><span class="cb-label">Mic</span>
         </button>
-        <button id="toggleChat" class="control-btn neutral" title="Toggle Chat" data-tooltip="Open Chat">
-            💬
+        <button id="toggleChat" class="control-btn neutral" type="button" aria-label="Chat"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg><span class="cb-label">Chat</span>
         </button>
-        <button id="startCall" class="control-btn call-start" title="Start Call" data-tooltip="Start Video Call">
-            📞
+        <button id="shareScreen" class="control-btn neutral" type="button" aria-label="Share"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-screen"/></svg><span class="cb-label">Share</span>
         </button>
-        <button id="endCall" class="control-btn call-end" title="End Call" style="display: none;" data-tooltip="End Call">
-            📞
+        <button id="toggleFullscreen" class="control-btn neutral" type="button" aria-label="Expand to full screen"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-maximize"/></svg><span class="cb-label">Expand</span>
         </button>
-        <button id="shareScreen" class="control-btn neutral" title="Share Screen" data-tooltip="Share Screen">
-            🖥️
+        <button id="startCall" class="control-btn call-start" type="button" aria-label="Start call"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg><span class="cb-label">Start call</span>
         </button>
-        <button id="toggleFullscreen" class="control-btn neutral" title="Fullscreen" data-tooltip="Fullscreen">
-            ⛶
+        <button id="endCall" class="control-btn call-end" type="button" aria-label="Leave" style="display: none;" >
+            <svg class="ico" aria-hidden="true"><use href="#i-phone-off"/></svg><span class="cb-label">Leave</span>
         </button>
     </div>
 
@@ -787,7 +804,7 @@
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
             <div class="flex justify-between items-center">
                 <div>
-                    <h3 class="text-xl font-semibold">Chat</h3>
+                    <h2 class="text-xl font-semibold">Chat</h2>
                     <p class="text-sm opacity-90">with {{ partner.username }}</p>
                 </div>
                 <button id="closeChatBtn" class="text-2xl hover:text-gray-300 transition">&times;</button>
@@ -807,9 +824,9 @@
                 </div>
             {% empty %}
                 <div class="text-center py-12">
-                    <div class="text-6xl mb-4">💬</div>
+                    <div class="text-6xl mb-4"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></div>
                     <p class="text-gray-500">No messages yet</p>
-                    <p class="text-sm text-gray-400 mt-2">Start the conversation!</p>
+                    <p class="text-sm text-gray-500 mt-2">Start the conversation!</p>
                 </div>
             {% endfor %}
         </div>
@@ -829,7 +846,7 @@
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content">
             <div class="spinner"></div>
-            <h3 class="text-xl font-semibold text-gray-800 mb-2">Setting up video chat</h3>
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">Setting up video chat</h2>
             <p class="text-gray-600">Please allow camera and microphone access</p>
             <div class="mt-4 text-sm text-gray-500">
                 <span id="loadingStatus">Initializing...</span>
@@ -847,7 +864,7 @@
 <div id="callEndModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="text-xl font-semibold text-gray-900">End Call</h3>
+            <h2 class="text-xl font-semibold text-gray-900">End Call</h2>
             <button id="closeCallEndModal" class="close-btn">&times;</button>
         </div>
         
@@ -903,7 +920,7 @@
 <div id="callSummaryModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="text-xl font-semibold text-gray-900">Call Summary</h3>
+            <h2 class="text-xl font-semibold text-gray-900">Call Summary</h2>
             <button id="closeCallSummaryModal" class="close-btn">&times;</button>
         </div>
         
@@ -918,9 +935,10 @@
             <button id="closeCallSummary" class="btn-primary">Close</button>
         </div>
     </div>
-</div>
+</main>
 
 <!-- Enhanced WebRTC JavaScript -->
+{{ ice_servers|json_script:"ice-servers" }}
 <script>
 class VideoChat {
     constructor(roomId, userId) {
@@ -949,15 +967,9 @@ class VideoChat {
         this.isMobile = this.detectMobile(); // Detect mobile device
         this.orientationChanged = false; // Track orientation changes
         
-        // WebRTC configuration with more STUN servers
+        // WebRTC configuration. The ICE servers come from settings (WEBRTC_* variables).
         this.pcConfig = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' }
-            ]
+            iceServers: JSON.parse(document.getElementById('ice-servers').textContent)
         };
         
         this.initializeElements();
@@ -997,6 +1009,7 @@ class VideoChat {
         this.toggleVideoBtn.addEventListener('click', () => this.toggleVideo());
         this.toggleAudioBtn.addEventListener('click', () => this.toggleAudio());
         this.toggleChatBtn.addEventListener('click', () => this.toggleChat());
+        if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) { this.shareScreenBtn.style.display = 'none'; }
         this.shareScreenBtn.addEventListener('click', () => this.shareScreen());
         this.sendChatBtn.addEventListener('click', () => this.sendChatMessage());
         this.chatInput.addEventListener('keypress', (e) => {
@@ -1135,15 +1148,24 @@ class VideoChat {
         } catch (error) {
 
             this.loadingStatus.textContent = 'Error accessing camera/microphone';
-            this.updateStatus('Error accessing camera/microphone', 'disconnected');
-            
-            // Show error details and retry option
-            setTimeout(() => {
-                this.loadingOverlay.style.display = 'none';
-                this.addChatMessage(`❌ Camera/Microphone Error: ${error.message}`, 'system');
-                this.addChatMessage('💡 Please check your camera/microphone permissions and refresh the page', 'system');
-            }, 2000);
+            this.updateStatus('Camera or microphone unavailable', 'disconnected');
+            this.showMediaError(error);
         }
+    }
+
+    showMediaError(error) {
+        const name = (error && error.name) || '';
+        let title = 'We could not start your camera', body = 'Check that a camera and microphone are connected, then try again.';
+        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') { title = 'Camera and microphone are blocked'; body = 'Click the lock icon next to the web address, set Camera and Microphone to Allow, then press Try again.'; }
+        else if (name === 'NotFoundError') { title = 'No camera or microphone found'; body = 'Plug one in or switch device, then press Try again. You can still use text chat meanwhile.'; }
+        else if (name === 'NotReadableError') { title = 'Your camera is busy'; body = 'Another app or tab is using it. Close that, then press Try again.'; }
+        const ov = this.loadingOverlay; ov.style.display = 'flex'; ov.style.alignItems = 'center'; ov.style.justifyContent = 'center'; Array.from(ov.children).forEach(c => { if (!c.classList.contains('media-error')) c.style.display = 'none'; });
+        const old = ov.querySelector('.media-error'); if (old) old.remove();
+        const box = document.createElement('div'); box.className = 'media-error'; box.setAttribute('role', 'alert');
+        box.innerHTML = '<h3></h3><p></p><div class="row"><button type="button" class="b" id="mediaRetry">Try again</button><a class="b o" href="javascript:history.back()">Leave call</a></div>';
+        box.querySelector('h3').textContent = title; box.querySelector('p').textContent = body;
+        ov.appendChild(box);
+        box.querySelector('#mediaRetry').addEventListener('click', () => { box.remove(); Array.from(ov.children).forEach(c => { c.style.display = ''; }); this.initializeLocalVideo(); });
     }
     
     updateLocalVideoInfo() {
@@ -1151,7 +1173,7 @@ class VideoChat {
             const videoTrack = this.localStream.getVideoTracks()[0];
             if (videoTrack) {
                 const settings = videoTrack.getSettings();
-                const info = `📹 ${settings.width}x${settings.height}`;
+                const info = `${settings.width}x${settings.height}`;
                 document.getElementById('localVideoInfo').textContent = info;
             }
         }
@@ -1214,11 +1236,11 @@ class VideoChat {
         switch (data.type) {
             case 'connection_test':
 
-                this.addChatMessage('✅ WebSocket connection established', 'system');
+                this.addChatMessage('WebSocket connection established', 'system');
                 break;
             case 'test_response':
 
-                this.addChatMessage('✅ Two-way communication working', 'system');
+                this.addChatMessage('Two-way communication working', 'system');
                 break;
             case 'error':
 
@@ -1294,19 +1316,19 @@ class VideoChat {
                 break;
             case 'call_started':
                 if (data.sender_id !== this.userId) {
-                    this.addChatMessage('📞 Partner started call', 'system');
+                    this.addChatMessage('Partner started call', 'system');
                 }
                 break;
             case 'call_ended':
                 if (data.sender_id !== this.userId) {
-                    this.addChatMessage('📞 Partner ended call', 'system');
+                    this.addChatMessage('Partner ended call', 'system');
                     this.resetCall();
                 }
                 break;
             case 'call_ended_enhanced':
                 if (data.sender_id !== this.userId) {
                     const endReasonDisplay = this.getEndReasonDisplay(data.end_reason);
-                    this.addChatMessage(`📞 Partner ended call: ${endReasonDisplay}`, 'system');
+                    this.addChatMessage(`Partner ended call: ${endReasonDisplay}`, 'system');
                     this.resetCall();
                     
                     // Show call summary if available
@@ -1336,14 +1358,14 @@ class VideoChat {
             case 'video_status_change':
                 if (data.sender_id !== this.userId) {
                     const status = data.video_enabled ? 'on' : 'off';
-                    this.addChatMessage(`📹 Partner turned video ${status}`, 'system');
-                    this.remoteVideoStatus.textContent = `📹 Video ${data.video_enabled ? 'On' : 'Off'}`;
+                    this.addChatMessage(`Partner turned video ${status}`, 'system');
+                    this.remoteVideoStatus.textContent = `Video ${data.video_enabled ? 'On' : 'Off'}`;
                 }
                 break;
             case 'audio_status_change':
                 if (data.sender_id !== this.userId) {
                     const status = data.audio_enabled ? 'on' : 'off';
-                    this.addChatMessage(`🎤 Partner turned audio ${status}`, 'system');
+                    this.addChatMessage(`Partner turned audio ${status}`, 'system');
                 }
                 break;
             case 'typing_start':
@@ -1365,7 +1387,7 @@ class VideoChat {
         // Only signal if both WebSocket and media are ready
         if (this.isWebSocketReady && this.isMediaReady && !this.isCallActive) {
 
-            this.addChatMessage('✅ Ready for video call', 'system');
+            this.addChatMessage('Ready for video call', 'system');
             this.signalPeerReady();
         } else {
 
@@ -1399,7 +1421,7 @@ class VideoChat {
         if (this.isMediaReady && this.localStream && !this.isCallActive) {
             if (!this.isAutoStarting) {
 
-                this.addChatMessage('🚀 Both users ready, starting call automatically...', 'system');
+                this.addChatMessage('Both users ready, starting call automatically...', 'system');
                 this.isAutoStarting = true;
                 this.updateCallButtons();
                 
@@ -1425,7 +1447,7 @@ class VideoChat {
             this.autoStartRetryCount++;
             
             if (this.autoStartRetryCount <= this.maxAutoStartRetries) {
-                this.addChatMessage(`🔄 Waiting for media... (${this.autoStartRetryCount}/${this.maxAutoStartRetries})`, 'system');
+                this.addChatMessage(`Waiting for media... (${this.autoStartRetryCount}/${this.maxAutoStartRetries})`, 'system');
                 
                 setTimeout(() => {
 
@@ -1433,7 +1455,7 @@ class VideoChat {
                 }, 1500);
             } else {
 
-                this.addChatMessage('⚠️ Auto-start failed. You can start the call manually.', 'system');
+                this.addChatMessage('Auto-start failed. You can start the call manually.', 'system');
                 this.autoStartRetryCount = 0;
                 this.isAutoStarting = false;
                 this.updateCallButtons();
@@ -1450,13 +1472,13 @@ class VideoChat {
     showRemoteVideoPlaceholder() {
         this.remoteVideo.style.display = 'none';
         this.remoteVideoPlaceholder.style.display = 'flex';
-        this.remoteVideoStatus.textContent = '📹 Video Off';
+        this.remoteVideoStatus.textContent = 'Video Off';
     }
     
     hideRemoteVideoPlaceholder() {
         this.remoteVideo.style.display = 'block';
         this.remoteVideoPlaceholder.style.display = 'none';
-        this.remoteVideoStatus.textContent = '📹 Video On';
+        this.remoteVideoStatus.textContent = 'Video On';
     }
     
     resetPeerConnection() {
@@ -1487,7 +1509,7 @@ class VideoChat {
         // Check if media is ready before starting call
         if (!this.isMediaReady || !this.localStream) {
 
-            this.addChatMessage('⚠️ Media not ready. Please wait...', 'system');
+            this.addChatMessage('Media not ready. Please wait...', 'system');
             return;
         }
         
@@ -1533,7 +1555,7 @@ class VideoChat {
             this.isInitiator = true;
             this.callStartTime = Date.now();
             this.startTimer();
-            this.addChatMessage('📞 Call started', 'system');
+            this.addChatMessage('Call started', 'system');
             
         } catch (error) {
 
@@ -1541,7 +1563,7 @@ class VideoChat {
             this.isCallActive = false;
             this.isAutoStarting = false;
             this.updateCallButtons();
-            this.addChatMessage(`❌ Error starting call: ${error.message}`, 'system');
+            this.addChatMessage(`Error starting call: ${error.message}`, 'system');
         }
     }
     
@@ -1603,7 +1625,7 @@ class VideoChat {
                 
                 // Reset call state
                 this.resetCall();
-                this.addChatMessage('📞 Call ended', 'system');
+                this.addChatMessage('Call ended', 'system');
                 
                 // Instead of showing local summary, redirect to call summary page
                 if (data.session_summaries && data.session_summaries.length > 0) {
@@ -1621,14 +1643,14 @@ class VideoChat {
 
                 // Still reset the call locally
                 this.resetCall();
-                this.addChatMessage('📞 Call ended', 'system');
+                this.addChatMessage('Call ended', 'system');
             }
             
         } catch (error) {
 
             // Fallback to simple end
             this.resetCall();
-            this.addChatMessage('📞 Call ended', 'system');
+            this.addChatMessage('Call ended', 'system');
         }
     }
     
@@ -1678,18 +1700,18 @@ class VideoChat {
         summaryContent.innerHTML = `
             <div class="call-summary">
                 <div class="summary-stat">
-                    <span class="label">📞 Call Duration:</span>
+                    <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg> Call Duration:</span>
                     <span class="value">${formatDuration(callDetails.callDuration)}</span>
                 </div>
                 
                 <div class="summary-stat">
-                    <span class="label">🎯 End Reason:</span>
+                    <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg> End Reason:</span>
                     <span class="value">${getEndReasonDisplay(callDetails.endReason)}</span>
                 </div>
                 
                 ${callDetails.connectionQuality ? `
                 <div class="summary-stat">
-                    <span class="label">📶 Call Quality:</span>
+                    <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg> Call Quality:</span>
                     <span class="value ${getQualityClass(callDetails.connectionQuality)}">
                         ${callDetails.connectionQuality.charAt(0).toUpperCase() + callDetails.connectionQuality.slice(1)}
                     </span>
@@ -1697,7 +1719,7 @@ class VideoChat {
                 ` : ''}
                 
                 <div class="summary-stat">
-                    <span class="label">✅ Status:</span>
+                    <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Status:</span>
                     <span class="value ${sessionSummary?.was_successful ? 'success-indicator' : 'warning-indicator'}">
                         ${sessionSummary?.was_successful ? 'Successful' : 'Ended with issues'}
                     </span>
@@ -1705,13 +1727,13 @@ class VideoChat {
                 
                 ${callDetails.endNotes ? `
                 <div class="summary-stat">
-                    <span class="label">📝 Notes:</span>
+                    <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg> Notes:</span>
                     <span class="value">${callDetails.endNotes}</span>
                 </div>
                 ` : ''}
                 
                 <div class="summary-stat">
-                    <span class="label">👥 Participants:</span>
+                    <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg> Participants:</span>
                     <span class="value">${sessionSummary?.participants?.join(', ') || 'You and partner'}</span>
                 </div>
             </div>
@@ -1779,7 +1801,7 @@ class VideoChat {
                 this.remoteStream = event.streams[0];
                 this.remoteVideo.srcObject = this.remoteStream;
                 this.hideRemoteVideoPlaceholder();
-                this.addChatMessage('📹 Remote video connected', 'system');
+                this.addChatMessage('Remote video connected', 'system');
                 
 
                 
@@ -1799,14 +1821,14 @@ class VideoChat {
             
             switch (this.pc.connectionState) {
                 case 'connected':
-                    this.addChatMessage('🔗 Peer connection established', 'system');
+                    this.addChatMessage('Peer connection established', 'system');
                     break;
                 case 'disconnected':
-                    this.addChatMessage('⚠️ Connection lost', 'system');
+                    this.addChatMessage('Connection lost', 'system');
                     this.networkIssuesCount++;
                     break;
                 case 'failed':
-                    this.addChatMessage('❌ Connection failed', 'system');
+                    this.addChatMessage('Connection failed', 'system');
                     this.networkIssuesCount++;
                     this.resetCall();
                     break;
@@ -1822,14 +1844,14 @@ class VideoChat {
             switch (this.pc.iceConnectionState) {
                 case 'connected':
                 case 'completed':
-                    this.addChatMessage('🌐 ICE connection established', 'system');
+                    this.addChatMessage('ICE connection established', 'system');
                     break;
                 case 'disconnected':
-                    this.addChatMessage('⚠️ ICE connection lost', 'system');
+                    this.addChatMessage('ICE connection lost', 'system');
                     this.networkIssuesCount++;
                     break;
                 case 'failed':
-                    this.addChatMessage('❌ ICE connection failed', 'system');
+                    this.addChatMessage('ICE connection failed', 'system');
                     this.networkIssuesCount++;
                     break;
             }
@@ -1889,11 +1911,11 @@ class VideoChat {
             this.callStartTime = Date.now();
             this.startTimer();
             this.updateCallButtons();
-            this.addChatMessage('📞 Incoming call accepted', 'system');
+            this.addChatMessage('Incoming call accepted', 'system');
             
         } catch (error) {
 
-            this.addChatMessage(`❌ Error handling call: ${error.message}`, 'system');
+            this.addChatMessage(`Error handling call: ${error.message}`, 'system');
         }
     }
     
@@ -1913,10 +1935,10 @@ class VideoChat {
                 }
                 
 
-                this.addChatMessage('✅ Call connection established', 'system');
+                this.addChatMessage('Call connection established', 'system');
             } catch (error) {
 
-                this.addChatMessage(`❌ Error processing answer: ${error.message}`, 'system');
+                this.addChatMessage(`Error processing answer: ${error.message}`, 'system');
             }
         } else {
 
@@ -1954,8 +1976,8 @@ class VideoChat {
                 this.toggleVideoBtn.classList.toggle('inactive', !videoTrack.enabled);
                 
                 const status = videoTrack.enabled ? 'Video On' : 'Video Off';
-                this.localVideoStatus.textContent = `📹 ${status}`;
-                this.addChatMessage(`📹 ${status}`, 'system');
+                this.localVideoStatus.textContent = `${status}`;
+                this.addChatMessage(`${status}`, 'system');
                 
                 // Notify other participants
                 this.ws.send(JSON.stringify({
@@ -1976,7 +1998,7 @@ class VideoChat {
                 this.toggleAudioBtn.classList.toggle('inactive', !audioTrack.enabled);
                 
                 const status = audioTrack.enabled ? 'Audio On' : 'Audio Off';
-                this.addChatMessage(`🎤 ${status}`, 'system');
+                this.addChatMessage(`${status}`, 'system');
                 
                 // Notify other participants
                 this.ws.send(JSON.stringify({
@@ -1997,7 +2019,7 @@ class VideoChat {
             
             if (sender && videoTrack) {
                 await sender.replaceTrack(videoTrack);
-                this.addChatMessage('🖥️ Screen sharing stopped', 'system');
+                this.addChatMessage('Screen sharing stopped', 'system');
             }
         } catch (error) {
 
@@ -2052,13 +2074,19 @@ class VideoChat {
         }
     }
     
+    escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    }
+
     showError(message) {
         // Create a temporary error message
         const errorDiv = document.createElement('div');
         errorDiv.className = 'mb-4';
         errorDiv.innerHTML = `
             <div class="text-center">
-                <span class="text-xs text-red-600 bg-red-100 rounded-full px-3 py-2">❌ ${message}</span>
+                <span class="text-xs text-red-600 bg-red-100 rounded-full px-3 py-2"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg> ${this.escapeHtml(message)}</span>
             </div>
         `;
         this.chatMessages.appendChild(errorDiv);
@@ -2083,7 +2111,7 @@ class VideoChat {
         if (sender === 'system') {
             messageDiv.innerHTML = `
                 <div class="text-center">
-                    <span class="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-2">${message}</span>
+                    <span class="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-2">${this.escapeHtml(message)}</span>
                 </div>
             `;
         } else {
@@ -2095,7 +2123,7 @@ class VideoChat {
             
             messageDiv.innerHTML = `
                 <div class="inline-block max-w-xs ${isOwnMessage ? 'bg-blue-500 text-white' : 'bg-white shadow-md'} rounded-xl px-4 py-3">
-                    ${!isOwnMessage ? `<p class="text-xs font-semibold mb-1 opacity-75">${sender}</p>` : ''}
+                    ${!isOwnMessage ? `<p class="text-xs font-semibold mb-1 opacity-75">${this.escapeHtml(sender)}</p>` : ''}
                     <p class="text-sm">${escapedMessage}</p>
                     <p class="text-xs opacity-75 mt-1">${timeString}</p>
                 </div>
@@ -2159,7 +2187,7 @@ class VideoChat {
             this.startCallBtn.textContent = '⏳';
             this.startCallBtn.title = 'Auto-starting... (or click to start manually)';
         } else if (!this.isCallActive) {
-            this.startCallBtn.textContent = '📞';
+            this.startCallBtn.textContent = '';
             this.startCallBtn.title = 'Start Call';
         }
     }
@@ -2215,7 +2243,7 @@ class VideoChat {
             })
             .catch(error => {
 
-                this.addChatMessage('⚠️ Could not load recent messages', 'system');
+                this.addChatMessage('Could not load recent messages', 'system');
                 this.showEmptyState();
             });
     }
@@ -2223,9 +2251,9 @@ class VideoChat {
     showEmptyState() {
         this.chatMessages.innerHTML = `
             <div class="text-center py-12">
-                <div class="text-6xl mb-4">💬</div>
+                <div class="text-6xl mb-4"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></div>
                 <p class="text-gray-500">No messages yet</p>
-                <p class="text-sm text-gray-400 mt-2">Start the conversation!</p>
+                <p class="text-sm text-gray-500 mt-2">Start the conversation!</p>
             </div>
         `;
     }
@@ -2239,7 +2267,7 @@ class VideoChat {
         typingDiv.className = 'mb-4 typing-indicator';
         typingDiv.innerHTML = `
             <div class="inline-block bg-gray-200 rounded-xl px-4 py-3">
-                <p class="text-xs text-gray-500 mb-1">${username} is typing</p>
+                <p class="text-xs text-gray-500 mb-1">${this.escapeHtml(username)} is typing</p>
                 <div class="flex space-x-1">
                     <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                     <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
@@ -2414,7 +2442,7 @@ class VideoChat {
     // Override share screen for mobile (not supported on most mobile browsers)
     async shareScreen() {
         if (this.isMobile) {
-            this.addChatMessage('📱 Screen sharing not available on mobile devices', 'system');
+            this.addChatMessage('Screen sharing not available on mobile devices', 'system');
             return;
         }
         
@@ -2430,7 +2458,7 @@ class VideoChat {
             
             if (sender) {
                 await sender.replaceTrack(videoTrack);
-                this.addChatMessage('🖥️ Screen sharing started', 'system');
+                this.addChatMessage('Screen sharing started', 'system');
                 
                 videoTrack.addEventListener('ended', () => {
                     this.stopScreenShare();
@@ -2438,7 +2466,7 @@ class VideoChat {
             }
         } catch (error) {
 
-            this.addChatMessage(`❌ Screen share error: ${error.message}`, 'system');
+            this.addChatMessage(`Screen share error: ${error.message}`, 'system');
         }
     }
     
@@ -2608,6 +2636,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     new VideoChat(roomId, userId);
 });
+</script>
+<script>
+(function () {
+  function sync(btn) {
+    var on = btn.classList.contains('active'), l = btn.querySelector('.cb-label');
+    if (btn.dataset.on) { l.textContent = on ? btn.dataset.on : btn.dataset.off; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.setAttribute('aria-label', l.textContent + (on ? ', on. Press to turn off' : '. Press to turn on')); }
+  }
+  document.querySelectorAll('.control-btn[data-on]').forEach(function (b) { sync(b); new MutationObserver(function () { sync(b); }).observe(b, {attributes: true, attributeFilter: ['class']}); });
+})();
 </script>
 </body>
 </html>

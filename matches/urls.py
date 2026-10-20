@@ -9,6 +9,15 @@ urlpatterns = [
     path('requests/', views.match_requests, name='requests'),
     path('match/<int:match_id>/', views.match_detail, name='match_detail'),
     
+    # Quick match
+    path('quick/', views.quick_match_page, name='quick_match'),
+    path('quick/join/', views.quick_match_join, name='quick_match_join'),
+    path('quick/status/', views.quick_match_status, name='quick_match_status'),
+    path('quick/leave/', views.quick_match_leave, name='quick_match_leave'),
+    path('quick/call/<int:match_id>/', views.quick_match_call, name='quick_match_call'),
+    path('quick/decide/<int:match_id>/', views.quick_match_decide, name='quick_match_decide'),
+    path('quick/result/<int:match_id>/', views.quick_match_result, name='quick_match_result'),
+
     # API endpoints - Match requests
     path('api/send-request/<int:potential_match_id>/', views.send_match_request_api, name='send_request_api'),
     path('api/respond-request/<int:request_id>/', views.respond_to_request_api, name='respond_request_api'),
@@ -20,6 +29,7 @@ urlpatterns = [
     path('api/my-matches/', views.get_my_matches, name='get_my_matches'),
     path('api/match-detail/<int:match_id>/', views.get_match_detail, name='get_match_detail'),
     path('api/end-match/<int:match_id>/', views.end_match, name='end_match'),
+    path('api/feedback/<int:match_id>/', views.submit_feedback, name='submit_feedback'),
     
     # API endpoints - Potential matches
     path('api/potential-matches/', views.get_potential_matches, name='get_potential_matches'),

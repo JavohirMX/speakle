@@ -45,6 +45,9 @@ class User(AbstractUser):
     """
     Custom user model that extends the AbstractUser model.
     """
+    email_verified = models.BooleanField(default=False)
+    share_email_with_matches = models.BooleanField(
+        default=False, help_text='Let people you are matched with see your email address.')
     bio = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     interests = models.TextField(blank=True)
@@ -73,3 +76,46 @@ class User(AbstractUser):
     
     def __str__(self):
         return self.username
+
+
+class UserBlock(models.Model):
+    """`blocker` does not want to see or be matched with `blocked`."""
+    blocker = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blocks_made')
+    blocked = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blocks_received')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['blocker', 'blocked']
+
+    def __str__(self):
+        return f"{self.blocker.username} blocked {self.blocked.username}"
+
+    @staticmethod
+    def either_way(user_a, user_b):
+        """True if either user has blocked the other."""
+        return UserBlock.objects.filter(
+            models.Q(blocker=user_a, blocked=user_b) | models.Q(blocker=user_b, blocked=user_a)
+        ).exists()
+
+
+class UserReport(models.Model):
+    """A user report for moderators to review in the admin."""
+    REASON_CHOICES = [
+        ('harassment', 'Harassment or unwanted advances'),
+        ('spam', 'Spam or scam'),
+        ('inappropriate', 'Inappropriate content'),
+        ('underage', 'Seems underage'),
+        ('other', 'Other'),
+    ]
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_made')
+    reported = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_received')
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    details = models.TextField(blank=True, max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.reporter.username} reported {self.reported.username} ({self.reason})"

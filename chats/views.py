@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from users.throttle import chat_allowed
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -9,7 +10,8 @@ from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from matches.models import Match
-from .models import VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
+from .webrtc import ice_servers
+from .models import pair_is_blocked, VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
 import uuid
 from django.db import transaction
 
@@ -35,7 +37,7 @@ def create_video_room(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         messages.error(request, 'You do not have access to this match.')
         return redirect('matches:my_matches')
     
@@ -53,7 +55,7 @@ def get_video_room_url(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get or create video room
@@ -73,9 +75,13 @@ def send_call_invitation(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
+    invite_message = request.POST.get('message', '')
+    if len(invite_message) > 500:
+        return JsonResponse({'error': 'Message too long (max 500 characters)'}, status=400)
+
     # Get partner
     partner = match.get_partner(request.user)
     
@@ -109,7 +115,7 @@ def send_call_invitation(request, match_id):
         room=video_room,
         caller=request.user,
         receiver=partner,
-        message=request.POST.get('message', ''),
+        message=invite_message,
     )
     
     # Invalidate pending invitations cache for the receiver
@@ -283,6 +289,7 @@ def video_room(request, room_id):
         'recent_messages': recent_messages,
         'call_history': call_history,
         'room_id_str': str(room.room_id),
+        'ice_servers': ice_servers(),
     }
     
     return render(request, 'chats/video_room.html', context)
@@ -308,6 +315,18 @@ def room_status(request, room_id):
     except VideoRoom.DoesNotExist:
         return JsonResponse({'error': 'Room not found'}, status=404)
 
+from datetime import timedelta
+
+
+def _format_minutes(delta):
+    """Format a timedelta as '1h 05m' or '7m'."""
+    if delta.total_seconds() < 60:
+        return f'{int(delta.total_seconds())}s'
+    minutes = int(delta.total_seconds() // 60)
+    hours, minutes = divmod(minutes, 60)
+    return f'{hours}h {minutes:02d}m' if hours else f'{minutes}m'
+
+
 @login_required
 def call_history(request, room_id):
     """View call history for a room."""
@@ -321,11 +340,16 @@ def call_history(request, room_id):
         messages.error(request, 'You do not have access to this room.')
         return redirect('matches:my_matches')
     
-    sessions = room.sessions.filter(status='ended').order_by('-started_at')
-    
+    sessions = list(room.sessions.filter(status='ended').order_by('-started_at'))
+    durations = [x.duration for x in sessions if x.duration]
+    total = sum(durations, timedelta())
+    average = total / len(durations) if durations else None
+
     context = {
         'room': room,
         'sessions': sessions,
+        'total_time': _format_minutes(total) if durations else None,
+        'average_time': _format_minutes(average) if durations else None,
         'partner': room.match.get_partner(request.user),
     }
     
@@ -337,7 +361,7 @@ def check_partner_availability(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get partner
@@ -355,11 +379,10 @@ def check_partner_availability(request, match_id):
     # Update partner's status based on their activity
     if not created:
         # Check if partner should still be considered online based on activity
-        if partner_presence.should_be_online():
-            partner_presence.is_online = True
-        else:
-            partner_presence.is_online = False
-        partner_presence.save()
+        # Use update(): save() would refresh the auto_now timestamps and make a partner who
+        # has gone quiet look active again the next time anyone polls.
+        partner_presence.is_online = partner_presence.should_be_online()
+        UserPresence.objects.filter(pk=partner_presence.pk).update(is_online=partner_presence.is_online)
     
     # Clean up inactive users
     UserPresence.cleanup_offline_users()
@@ -474,6 +497,10 @@ def end_call_with_reason(request, room_id):
         end_reason = request.POST.get('end_reason', 'user_hangup')
         end_notes = request.POST.get('end_notes', '')
         connection_quality = request.POST.get('connection_quality', '')
+        from .models import clean_call_end_fields
+        end_reason, end_notes, connection_quality, _ = clean_call_end_fields(
+            end_reason, end_notes, connection_quality
+        )
         
         # End active sessions
         active_sessions = room.sessions.filter(status='active')
@@ -622,9 +649,17 @@ def call_summary(request, room_id, session_id):
         # Get recent call history (last 5 calls excluding current)
         recent_calls = room.sessions.filter(status='ended').exclude(id=session.id)[:5]
         
+        # end_notes also holds private star ratings written by submit_feedback
+        # ("User x rated this call: 4/5 stars"). Never show those to the partner.
+        notes = '\n'.join(
+            line for line in (session.end_notes or '').splitlines()
+            if ' rated this call: ' not in line
+        ).strip()
+
         context = {
             'room': room,
             'session': session,
+            'notes': notes,
             'match': room.match,
             'partner': partner,
             'user_teaches': user_teaches,
@@ -654,6 +689,8 @@ def submit_feedback(request):
     try:
         import json
         data = json.loads(request.body)
+        if not isinstance(data, dict):
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
         
         session_id = data.get('session_id')
         rating = data.get('rating')
@@ -679,6 +716,11 @@ def submit_feedback(request):
         # For now, we can store this in the session's end_notes or create a separate model
         # Let's append it to end_notes for simplicity
         feedback_text = f"User {request.user.username} rated this call: {rating}/5 stars"
+
+        # One rating line per user: a repeat submit must not grow the notes without bound.
+        marker = f"User {request.user.username} rated this call:"
+        kept = [line for line in (session.end_notes or '').split('\n') if not line.startswith(marker)]
+        session.end_notes = '\n'.join(kept)
         
         if session.end_notes:
             session.end_notes += f"\n{feedback_text}"
@@ -708,7 +750,7 @@ def create_chat_room(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         messages.error(request, 'You do not have access to this match.')
         return redirect('matches:my_matches')
     
@@ -768,7 +810,7 @@ def get_chat_room_url(request, match_id):
     match = get_object_or_404(Match, id=match_id)
     
     # Check if user is part of this match
-    if request.user not in [match.user1, match.user2]:
+    if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Get or create chat room
@@ -791,8 +833,11 @@ def get_chat_messages(request, room_id):
             return JsonResponse({'error': 'Access denied'}, status=403)
         
         # Get pagination parameters
-        page = int(request.GET.get('page', 1))
-        page_size = min(int(request.GET.get('page_size', 50)), 100)  # Max 100 messages per request
+        try:
+            page = max(int(request.GET.get('page', 1)), 1)
+            page_size = min(max(int(request.GET.get('page_size', 50)), 1), 100)  # Max 100 messages per request
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'page and page_size must be integers'}, status=400)
         
         # Get messages with pagination
         from django.core.paginator import Paginator
@@ -846,6 +891,9 @@ def send_chat_message(request, room_id):
         if not room.can_user_access(request.user):
             return JsonResponse({'error': 'Access denied'}, status=403)
         
+        if not chat_allowed(request.user.id):
+            return JsonResponse({'error': 'You are sending messages too fast. Wait a moment.'}, status=429)
+
         content = request.POST.get('content', '').strip()
         reply_to_id = request.POST.get('reply_to')
         
@@ -860,7 +908,7 @@ def send_chat_message(request, room_id):
         if reply_to_id:
             try:
                 reply_to = ChatMessage.objects.get(id=reply_to_id, room=room)
-            except ChatMessage.DoesNotExist:
+            except (ChatMessage.DoesNotExist, ValueError, TypeError):
                 return JsonResponse({'error': 'Reply message not found'}, status=400)
         
         # Create message
@@ -904,6 +952,12 @@ def edit_chat_message(request, message_id):
         
         if not new_content:
             return JsonResponse({'error': 'Message content is required'}, status=400)
+
+        if len(new_content) > 1000:
+            return JsonResponse({'error': 'Message too long (max 1000 characters)'}, status=400)
+
+        if not message.room.can_user_access(request.user):
+            return JsonResponse({'error': 'Access denied'}, status=403)
         
         if not message.can_edit(request.user):
             return JsonResponse({'error': 'Cannot edit this message'}, status=403)
@@ -973,52 +1027,54 @@ def get_unread_count(request, room_id):
 @login_required
 def chat_list(request):
     """Display list of all chat rooms for the user."""
-    from django.db.models import Count, Q
-    
-    # Get all matches for the user
-    user_matches = Match.objects.filter(
+    from django.db.models import Count, OuterRef, Q, Subquery
+
+    # Matches with everything the list needs in one query (no per-row lookups).
+    user_matches = list(Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
         status='active'
-    ).select_related('user1', 'user2')
-    
-    # Get chat rooms with message counts and last message info
-    chat_rooms = []
+    ).select_related('user1', 'user2', 'user1_teaches', 'user1_learns', 'chat_room'))
+
+    # Create missing chat rooms first so every match has one.
+    rooms = {}
     for match in user_matches:
         try:
-            room = match.chat_room
-            partner = match.get_partner(request.user)
-            
-            # Get unread count
-            unread_count = room.messages.filter(
-                sender=partner, 
-                is_read=False
-            ).count()
-            
-            # Get last message
-            last_message = room.messages.order_by('-timestamp').first()
-            
-            chat_rooms.append({
-                'room': room,
-                'match': match,
-                'partner': partner,
-                'unread_count': unread_count,
-                'last_message': last_message,
-                'last_activity': room.last_activity,
-            })
+            rooms[match.pk] = match.chat_room
         except ChatRoom.DoesNotExist:
-            # Create chat room for matches that don't have one yet
-            room = ChatRoom.objects.create(match=match)
-            partner = match.get_partner(request.user)
-            
-            chat_rooms.append({
-                'room': room,
-                'match': match,
-                'partner': partner,
-                'unread_count': 0,
-                'last_message': None,
-                'last_activity': room.last_activity,
-            })
-    
+            rooms[match.pk] = ChatRoom.objects.create(match=match)
+
+    room_ids = [room.pk for room in rooms.values()]
+    # Unread counts for all rooms in one query. A room has two people, so
+    # "not sent by me" means sent by the partner.
+    unread_by_room = dict(
+        ChatMessage.objects.filter(room_id__in=room_ids, is_read=False)
+        .exclude(sender=request.user)
+        .values_list('room_id').annotate(n=Count('id'))
+    )
+    # Latest message per room: one subquery, then one fetch.
+    newest = ChatMessage.objects.filter(room=OuterRef('pk')).order_by('-timestamp', '-id').values('id')[:1]
+    last_ids = [
+        i for i in ChatRoom.objects.filter(pk__in=room_ids)
+        .annotate(last_id=Subquery(newest)).values_list('last_id', flat=True) if i
+    ]
+    last_by_room = {
+        m.room_id: m for m in ChatMessage.objects.filter(pk__in=last_ids).select_related('sender')
+    }
+
+    chat_rooms = []
+    for match in user_matches:
+        room = rooms[match.pk]
+        chat_rooms.append({
+            'room': room,
+            'match': match,
+            'partner': match.get_partner(request.user),
+            'unread_count': unread_by_room.get(room.pk, 0),
+            'last_message': last_by_room.get(room.pk),
+            'last_activity': room.last_activity,
+            'user_teaches': match.get_user_teaches(request.user),
+            'user_learns': match.get_user_learns(request.user),
+        })
+
     # Sort by last activity (most recent first)
     chat_rooms.sort(key=lambda x: x['last_activity'], reverse=True)
     

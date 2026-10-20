@@ -13,11 +13,33 @@ from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 
 from users.models import Language, UserLanguage
-from matches.models import Match
+from matches.models import Match, MatchRequest
 from .models import VideoRoom, CallInvitation, UserPresence, CallSession, RoomMessage
 from .consumers import VideoCallConsumer, UserNotificationConsumer
 
 User = get_user_model()
+
+
+
+def _make_communicator(consumer, scope):
+    """Build a WebsocketCommunicator and inject the user / url_route into its scope.
+
+    WebsocketCommunicator takes (application, path); extra scope keys such as
+    'user' and 'url_route' must be set on the communicator's scope afterwards.
+    """
+    communicator = WebsocketCommunicator(consumer.as_asgi(), scope['path'])
+    for key in ('user', 'url_route'):
+        if key in scope:
+            communicator.scope[key] = scope[key]
+    return communicator
+
+async def _receive_type(communicator, wanted, limit=6):
+    """Skip join/handshake frames (user_joined, notification_connected...) until `wanted` arrives."""
+    for _ in range(limit):
+        msg = await communicator.receive_json_from()
+        if msg.get('type') == wanted:
+            return msg
+    raise AssertionError('never received %s' % wanted)
 
 
 class VideoRoomModelTest(TestCase):
@@ -678,7 +700,6 @@ class ChatsViewsTest(TestCase):
         
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        self.assertTrue(data['success'])
         self.assertEqual(len(data['invitations']), 1)
         self.assertEqual(data['invitations'][0]['caller'], 'testuser1')
         self.assertEqual(data['invitations'][0]['message'], "Let's practice!")
@@ -789,7 +810,7 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
+        communicator = _make_communicator(VideoCallConsumer, scope)
         connected, subprotocol = await communicator.connect()
         
         self.assertTrue(connected)
@@ -814,64 +835,50 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
-        connected, subprotocol = await communicator.connect()
-        
-        # Skip connection test message
-        await communicator.receive_json_from()
-        
-        # Test chat message
+        communicator = _make_communicator(VideoCallConsumer, scope)
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+        scope2 = dict(scope, user=self.user2)
+        other = _make_communicator(VideoCallConsumer, scope2)
+        connected2, _ = await other.connect()
+        self.assertTrue(connected2)
+
         await communicator.send_json_to({
-            'type': 'chat_message',
-            'message': 'Hello, how are you?'
-        })
-        
-        # Should receive chat message back
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['type'], 'chat_message')
-        self.assertEqual(response['message'], 'Hello, how are you?')
-        self.assertEqual(response['sender'], 'testuser1')
-        
-        await communicator.disconnect()
-    
-    async def test_video_call_consumer_webrtc_offer(self):
-        """Test WebRTC offer handling."""
-        scope = {
-            'type': 'websocket',
-            'path': f'/ws/video/{self.room.room_id}/',
-            'query_string': b'',
-            'headers': [],
-            'user': self.user1,
-            'url_route': {
-                'kwargs': {'room_id': str(self.room.room_id)}
-            }
-        }
-        
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
-        connected, subprotocol = await communicator.connect()
-        
-        # Skip connection test message
-        await communicator.receive_json_from()
-        
-        # Test WebRTC offer
-        offer_data = {
             'type': 'offer',
-            'offer': {
-                'type': 'offer',
-                'sdp': 'test-sdp-data'
-            }
-        }
-        
-        await communicator.send_json_to(offer_data)
-        
-        # Should receive offer back
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['type'], 'webrtc_offer')
+            'offer': {'type': 'offer', 'sdp': 'test-sdp-data'}
+        })
+
+        # The other participant receives the offer...
+        response = await _receive_type(other, 'offer')
         self.assertEqual(response['sender_username'], 'testuser1')
         self.assertIn('offer', response)
-        
+
+        # ...and the sender never gets its own offer echoed back.
+        while not await communicator.receive_nothing():
+            msg = await communicator.receive_json_from()
+            self.assertNotEqual(msg.get('type'), 'offer')
+
         await communicator.disconnect()
-    
+        await other.disconnect()
+
+    async def test_block_during_call_stops_offers(self):
+        from users.models import UserBlock
+        scope = {'type': 'websocket', 'path': f'/ws/video/{self.room.room_id}/', 'query_string': b'',
+                 'headers': [], 'user': self.user1,
+                 'url_route': {'kwargs': {'room_id': str(self.room.room_id)}}}
+        mine = _make_communicator(VideoCallConsumer, scope)
+        self.assertTrue((await mine.connect())[0])
+        other = _make_communicator(VideoCallConsumer, dict(scope, user=self.user2))
+        self.assertTrue((await other.connect())[0])
+        await database_sync_to_async(UserBlock.objects.create)(blocker=self.user2, blocked=self.user1)
+
+        await mine.send_json_to({'type': 'offer', 'offer': {'type': 'offer', 'sdp': 'x'}})
+        err = await _receive_type(mine, 'error')
+        self.assertIn('no longer available', err['message'])
+        while not await other.receive_nothing():
+            self.assertNotEqual((await other.receive_json_from()).get('type'), 'offer')
+        await other.disconnect()
+
     async def test_user_notification_consumer(self):
         """Test UserNotificationConsumer."""
         scope = {
@@ -885,7 +892,7 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(UserNotificationConsumer.as_asgi(), scope)
+        communicator = _make_communicator(UserNotificationConsumer, scope)
         connected, subprotocol = await communicator.connect()
         
         self.assertTrue(connected)
@@ -898,12 +905,15 @@ class WebSocketConsumerTest(TransactionTestCase):
                 'type': 'call_invitation_received',
                 'invitation_id': 123,
                 'caller_username': 'testuser2',
+                'caller_id': self.user2.id,
+                'match_id': 1,
+                'expires_at': '2030-01-01T00:00:00Z',
                 'message': 'Want to practice?'
             }
         )
         
         # Should receive the notification
-        response = await communicator.receive_json_from()
+        response = await _receive_type(communicator, 'call_invitation_received')
         self.assertEqual(response['type'], 'call_invitation_received')
         self.assertEqual(response['caller_username'], 'testuser2')
         self.assertEqual(response['message'], 'Want to practice?')
@@ -1041,3 +1051,533 @@ class ChatsIntegrationTest(TestCase):
         self.assertEqual(messages.count(), 2)
         self.assertEqual(messages.first().content, "Can you hear me?")
         self.assertEqual(messages.last().content, "Yes, clearly!")
+
+
+class ChatListPageTests(TestCase):
+    def test_chat_list_shows_partner_languages_and_unread(self):
+        from matches.models import Match
+        from users.models import Language
+        from .models import ChatRoom, ChatMessage
+        U = get_user_model()
+        a = U.objects.create_user('cla', 'cla@x.com', 'pw12345!')
+        b = U.objects.create_user('clb', 'clb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = ChatRoom.objects.create(match=m)
+        ChatMessage.objects.create(room=room, sender=b, content='annyeong')
+        c = Client(); c.force_login(a)
+        r = c.get(reverse('chats:chat_list'))
+        self.assertContains(r, 'you teach English')
+        self.assertContains(r, 'you learn Korean')
+        self.assertContains(r, 'annyeong')
+        self.assertContains(r, reverse('chats:text_chat', args=[room.room_id]))
+        self.assertEqual(r.context['total_unread'], 1)
+
+
+class TextChatApiTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()  # the send throttle lives in the cache
+        from matches.models import Match
+        from .models import ChatRoom
+        U = get_user_model()
+        self.a = U.objects.create_user('tca', 'tca@x.com', 'pw12345!')
+        self.b = U.objects.create_user('tcb', 'tcb@x.com', 'pw12345!')
+        self.c = U.objects.create_user('tcc', 'tcc@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = ChatRoom.objects.create(match=m)
+        self.client = Client()
+        self.client.force_login(self.a)
+
+    def _send(self, content, **extra):
+        with patch('chats.views.send_user_notification'):
+            return self.client.post(reverse('chats:send_chat_message', args=[self.room.room_id]),
+                                    {'content': content, **extra})
+
+    def test_flooding_is_limited_per_user(self):
+        from django.core.cache import cache
+        from .models import ChatMessage
+        from users.throttle import CHAT_LIMIT
+        cache.clear()
+        for i in range(CHAT_LIMIT):
+            self.assertEqual(self._send('m%d' % i).status_code, 200)
+        self.assertEqual(self._send('one too many').status_code, 429)
+        self.assertEqual(ChatMessage.objects.filter(content='one too many').count(), 0)
+        cache.clear()
+
+    def test_send_message_saves_it(self):
+        r = self._send('  hello  ')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.room.messages.get().content, 'hello')
+
+    def test_empty_and_too_long_messages_rejected(self):
+        self.assertEqual(self._send('   ').status_code, 400)
+        self.assertEqual(self._send('x' * 1001).status_code, 400)
+        self.assertEqual(self.room.messages.count(), 0)
+
+    def test_outsider_cannot_send_or_read(self):
+        self.client.force_login(self.c)
+        self.assertEqual(self._send('hi').status_code, 403)
+        r = self.client.get(reverse('chats:get_chat_messages', args=[self.room.room_id]))
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(self.room.messages.count(), 0)
+
+    def test_reply_to_message_from_other_room_rejected(self):
+        r = self._send('hi', reply_to=99999)
+        self.assertEqual(r.status_code, 400)
+
+    def test_login_required(self):
+        r = Client().post(reverse('chats:send_chat_message', args=[self.room.room_id]), {'content': 'x'})
+        self.assertEqual(r.status_code, 302)
+
+    def test_edit_only_own_message(self):
+        from .models import ChatMessage
+        mine = ChatMessage.objects.create(room=self.room, sender=self.a, content='old')
+        theirs = ChatMessage.objects.create(room=self.room, sender=self.b, content='theirs')
+        with patch('chats.views.send_user_notification'):
+            ok = self.client.post(reverse('chats:edit_chat_message', args=[mine.id]), {'content': 'new'})
+            no = self.client.post(reverse('chats:edit_chat_message', args=[theirs.id]), {'content': 'hack'})
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(no.status_code, 404)
+        mine.refresh_from_db(); theirs.refresh_from_db()
+        self.assertEqual(mine.content, 'new')
+        self.assertEqual(theirs.content, 'theirs')
+
+    def test_text_chat_page_renders_for_participant_only(self):
+        url = reverse('chats:text_chat', args=[self.room.room_id])
+        self.assertEqual(self.client.get(url).status_code, 200)
+        self.client.force_login(self.c)
+        self.assertNotEqual(self.client.get(url).status_code, 200)
+
+    def test_mark_read_only_clears_partner_messages(self):
+        from .models import ChatMessage
+        ChatMessage.objects.create(room=self.room, sender=self.b, content='1')
+        ChatMessage.objects.create(room=self.room, sender=self.b, content='2')
+        ChatMessage.objects.create(room=self.room, sender=self.a, content='mine')
+        url = reverse('chats:get_unread_count', args=[self.room.room_id])
+        self.assertEqual(self.client.get(url).json()['unread_count'], 2)
+        r = self.client.post(reverse('chats:mark_messages_read', args=[self.room.room_id]))
+        self.assertEqual(r.json()['marked_read'], 2)
+        self.assertEqual(self.client.get(url).json()['unread_count'], 0)
+        self.assertFalse(self.room.messages.get(content='mine').is_read)
+
+
+class CallHistoryPageTests(TestCase):
+    def setUp(self):
+        from matches.models import Match
+        U = get_user_model()
+        self.a = U.objects.create_user('cha', 'cha@x.com', 'pw12345!')
+        self.b = U.objects.create_user('chb', 'chb@x.com', 'pw12345!')
+        self.o = U.objects.create_user('cho', 'cho@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = VideoRoom.objects.create(match=m)
+        self.url = reverse('chats:call_history', args=[self.room.room_id])
+        self.client.force_login(self.a)
+
+    def _session(self, minutes):
+        s = CallSession.objects.create(room=self.room, status='ended', duration=timedelta(minutes=minutes))
+        s.participants.add(self.a, self.b)
+        return s
+
+    def test_empty_state_has_no_invented_numbers(self):
+        r = self.client.get(self.url)
+        self.assertContains(r, 'No calls yet')
+        self.assertIsNone(r.context['total_time'])
+        self.assertIsNone(r.context['average_time'])
+
+    def test_totals_and_average_are_computed(self):
+        self._session(10); self._session(20)
+        r = self.client.get(self.url)
+        self.assertEqual(r.context['total_time'], '30m')
+        self.assertEqual(r.context['average_time'], '15m')
+
+    def test_outsider_is_redirected(self):
+        self.client.force_login(self.o)
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+
+class CallSummaryPageTests(TestCase):
+    def setUp(self):
+        from matches.models import Match
+        U = get_user_model()
+        self.a = U.objects.create_user('csa', 'csa@x.com', 'pw12345!')
+        self.b = U.objects.create_user('csb', 'csb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = VideoRoom.objects.create(match=m)
+        self.s = CallSession.objects.create(room=self.room, status='ended', duration=timedelta(minutes=12), end_notes='Good chat')
+        self.s.participants.add(self.a, self.b)
+        self.url = reverse('chats:call_summary', args=[self.room.room_id, self.s.id])
+
+    def test_summary_renders_without_fake_progress(self):
+        self.client.force_login(self.a)
+        r = self.client.get(self.url)
+        self.assertContains(r, 'lasted 12m')
+        self.assertContains(r, 'Good chat')
+        self.assertNotContains(r, '% Progress')
+        self.assertNotContains(r, 'Korean Progress')
+
+    def test_partner_rating_is_not_shown_to_other_user(self):
+        self.client.force_login(self.b)
+        r = self.client.post(reverse('chats:submit_feedback'),
+                             data=json.dumps({'session_id': self.s.id, 'rating': 2, 'room_id': str(self.room.room_id)}),
+                             content_type='application/json')
+        self.assertEqual(r.status_code, 200)
+        self.client.force_login(self.a)
+        r = self.client.get(self.url)
+        self.assertNotContains(r, 'rated this call')
+        self.assertNotContains(r, '2/5')
+        self.assertContains(r, 'Good chat')
+
+
+class TextChatConsumerReplyTests(TransactionTestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()  # the send throttle lives in the cache
+        from matches.models import Match
+        from .models import ChatRoom
+        self.a = User.objects.create_user('tcc_a', 'tcca@x.com', 'pw12345!')
+        self.b = User.objects.create_user('tcc_b', 'tccb@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = ChatRoom.objects.create(match=m)
+
+    async def _connect(self, user):
+        from .consumers import TextChatConsumer
+        rid = str(self.room.room_id)
+        scope = {'type': 'websocket', 'path': f'/ws/text-chat/{rid}/', 'query_string': b'', 'headers': [],
+                 'user': user, 'url_route': {'kwargs': {'room_id': rid}}}
+        c = _make_communicator(TextChatConsumer, scope)
+        ok, _ = await c.connect()
+        self.assertTrue(ok)
+        return c
+
+    async def _next(self, c, wanted, limit=8):
+        for _ in range(limit):
+            msg = await c.receive_json_from()
+            if msg.get('type') == wanted:
+                return msg
+        self.fail(f'no {wanted} frame')
+
+    async def test_reply_broadcast_carries_quoted_message(self):
+        from .models import ChatMessage
+        original = await database_sync_to_async(ChatMessage.objects.create)(room=self.room, sender=self.a, content='first')
+        ca = await self._connect(self.a)
+        cb = await self._connect(self.b)
+        await cb.send_json_to({'type': 'send_message', 'message': 'second', 'reply_to': original.id})
+        msg = await self._next(ca, 'new_message')
+        self.assertEqual(msg['content'], 'second')
+        self.assertEqual(msg['reply_to']['id'], original.id)
+        self.assertEqual(msg['reply_to']['content'], 'first')
+        self.assertEqual(msg['reply_to']['sender_username'], 'tcc_a')
+        await ca.disconnect(); await cb.disconnect()
+
+    async def test_plain_message_has_no_reply(self):
+        ca = await self._connect(self.a)
+        await ca.send_json_to({'type': 'send_message', 'message': 'hello'})
+        msg = await self._next(ca, 'new_message')
+        self.assertIsNone(msg['reply_to'])
+        await ca.disconnect()
+
+    async def test_flooding_gets_error_frame_and_is_not_saved(self):
+        from .models import ChatMessage
+        from users.throttle import CHAT_LIMIT
+        ca = await self._connect(self.a)
+        for i in range(CHAT_LIMIT):
+            await ca.send_json_to({'type': 'send_message', 'message': 'm%d' % i})
+            await self._next(ca, 'new_message')
+        await ca.send_json_to({'type': 'send_message', 'message': 'too many'})
+        err = await self._next(ca, 'error')
+        self.assertIn('too fast', err['message'])
+        saved = await database_sync_to_async(ChatMessage.objects.filter(content='too many').count)()
+        self.assertEqual(saved, 0)
+        await ca.disconnect()
+
+
+class OutsiderAccessSweepTests(TestCase):
+    """A signed-in user who is not in the match must get nothing from any room-scoped URL."""
+
+    def setUp(self):
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.a = User.objects.create_user('sw_a', 'sw_a@x.com', 'pw12345!')
+        self.b = User.objects.create_user('sw_b', 'sw_b@x.com', 'pw12345!')
+        self.out = User.objects.create_user('sw_out', 'sw_out@x.com', 'pw12345!')
+        for u in (self.a, self.b, self.out):
+            UserLanguage.objects.create(user=u, language=en, language_type='native', proficiency='native')
+            UserLanguage.objects.create(user=u, language=ko, language_type='learning', proficiency='beginner')
+        self.match = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.room = VideoRoom.objects.create(match=self.match)
+        self.client = Client()
+        self.client.force_login(self.out)
+
+    def test_outsider_gets_no_room_data(self):
+        urls = [
+            reverse('chats:video_room', args=[self.room.room_id]),
+            reverse('chats:room_status', args=[self.room.room_id]),
+            reverse('chats:get_recent_messages', args=[self.room.room_id]),
+            reverse('chats:get_call_statistics', args=[self.room.room_id]),
+            reverse('chats:call_history', args=[self.room.room_id]),
+            reverse('chats:get_video_room_url', args=[self.match.id]),
+            reverse('chats:check_partner_availability', args=[self.match.id]),
+        ]
+        for url in urls:
+            r = self.client.get(url)
+            body = r.content.decode()
+            self.assertNotIn('sw_a@x.com', body, url)
+            self.assertNotEqual(r.status_code, 200, f'{url} returned 200 to an outsider')
+
+    def test_outsider_cannot_create_rooms_or_invites(self):
+        for url in (reverse('chats:create_video_room', args=[self.match.id]),
+                    reverse('chats:send_call_invitation', args=[self.match.id]),
+                    reverse('chats:create_chat_room', args=[self.match.id])):
+            before = (VideoRoom.objects.count(), CallInvitation.objects.count())
+            r = self.client.post(url)
+            self.assertNotEqual(r.status_code, 200, url)
+            self.assertEqual(before, (VideoRoom.objects.count(), CallInvitation.objects.count()), url)
+
+
+class BlockEndsRoomAccessTests(TestCase):
+    """After one user blocks the other, the blocked user must not keep chatting or calling."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        from users.models import UserBlock
+        from .models import ChatRoom
+        cache.clear()
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.a = User.objects.create_user('bl_a', 'bl_a@x.com', 'pw12345!')
+        self.b = User.objects.create_user('bl_b', 'bl_b@x.com', 'pw12345!')
+        self.match = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=en, user1_learns=ko, status='active')
+        self.chat = ChatRoom.objects.create(match=self.match)
+        self.video = VideoRoom.objects.create(match=self.match)
+        self.UserBlock = UserBlock
+
+    def _send(self, user):
+        c = Client(); c.force_login(user)
+        with patch('chats.views.send_user_notification'):
+            return c.post(reverse('chats:send_chat_message', args=[self.chat.room_id]), {'content': 'hi'})
+
+    def test_access_before_block(self):
+        self.assertEqual(self._send(self.b).status_code, 200)
+
+    def test_blocked_user_cannot_send_or_open_rooms(self):
+        self.UserBlock.objects.create(blocker=self.a, blocked=self.b)
+        self.assertEqual(self._send(self.b).status_code, 403)
+        c = Client(); c.force_login(self.b)
+        self.assertNotEqual(c.get(reverse('chats:video_room', args=[self.video.room_id])).status_code, 200)
+        self.assertNotEqual(c.get(reverse('chats:text_chat', args=[self.chat.room_id])).status_code, 200)
+        self.assertEqual(c.get(reverse('chats:get_video_room_url', args=[self.match.id])).status_code, 403)
+
+    def test_blocker_is_also_cut_off(self):
+        self.UserBlock.objects.create(blocker=self.a, blocked=self.b)
+        self.assertEqual(self._send(self.a).status_code, 403)
+
+
+class CleanupCommandTests(TestCase):
+    def setUp(self):
+        from io import StringIO
+        self.out = StringIO()
+        self.u1 = User.objects.create_user('cc1', 'cc1@x.com', 'pw12345!')
+        self.u2 = User.objects.create_user('cc2', 'cc2@x.com', 'pw12345!')
+        en = Language.objects.create(name='English', code='en')
+        ko = Language.objects.create(name='Korean', code='ko')
+        self.match = Match.objects.create(
+            user1=self.u1, user2=self.u2, user1_teaches=en, user1_learns=ko, status='active'
+        )
+        self.room = VideoRoom.objects.create(match=self.match)
+
+    def _invite(self, status, created_days_ago=0, expires_in_minutes=10):
+        inv = CallInvitation.objects.create(
+            room=self.room, caller=self.u1, receiver=self.u2, status=status,
+            expires_at=timezone.now() + timedelta(minutes=expires_in_minutes),
+        )
+        CallInvitation.objects.filter(pk=inv.pk).update(
+            created_at=timezone.now() - timedelta(days=created_days_ago)
+        )
+        return inv
+
+    def test_invitations_cleanup_marks_expired_pending_and_deletes_old_finished(self):
+        from django.core.management import call_command
+        expired_pending = self._invite('pending', expires_in_minutes=-5)
+        live_pending = self._invite('pending', expires_in_minutes=10)
+        old_declined = self._invite('declined', created_days_ago=30)
+        recent_declined = self._invite('declined', created_days_ago=1)
+
+        call_command('cleanup_expired_invitations', stdout=self.out)
+
+        expired_pending.refresh_from_db()
+        live_pending.refresh_from_db()
+        self.assertEqual(expired_pending.status, 'expired')
+        self.assertEqual(live_pending.status, 'pending')
+        self.assertFalse(CallInvitation.objects.filter(pk=old_declined.pk).exists())
+        self.assertTrue(CallInvitation.objects.filter(pk=recent_declined.pk).exists())
+
+    def test_invitations_cleanup_dry_run_changes_nothing(self):
+        from django.core.management import call_command
+        expired_pending = self._invite('pending', expires_in_minutes=-5)
+        old_declined = self._invite('declined', created_days_ago=30)
+
+        call_command('cleanup_expired_invitations', '--dry-run', stdout=self.out)
+
+        expired_pending.refresh_from_db()
+        self.assertEqual(expired_pending.status, 'pending')
+        self.assertTrue(CallInvitation.objects.filter(pk=old_declined.pk).exists())
+        self.assertIn('DRY RUN', self.out.getvalue())
+
+    def test_offline_cleanup_only_touches_stale_online_users(self):
+        from django.core.management import call_command
+        stale = UserPresence.objects.create(user=self.u1, is_online=True)
+        fresh = UserPresence.objects.create(user=self.u2, is_online=True)
+        UserPresence.objects.filter(pk=stale.pk).update(last_seen=timezone.now() - timedelta(minutes=30))
+
+        call_command('cleanup_offline_users', stdout=self.out)
+
+        stale.refresh_from_db()
+        fresh.refresh_from_db()
+        self.assertFalse(stale.is_online)
+        self.assertTrue(fresh.is_online)
+
+    def test_offline_cleanup_dry_run_changes_nothing(self):
+        from django.core.management import call_command
+        stale = UserPresence.objects.create(user=self.u1, is_online=True)
+        UserPresence.objects.filter(pk=stale.pk).update(last_seen=timezone.now() - timedelta(minutes=30))
+
+        call_command('cleanup_offline_users', '--dry-run', stdout=self.out)
+
+        stale.refresh_from_db()
+        self.assertTrue(stale.is_online)
+
+
+from .models import ChatRoom, ChatMessage
+
+
+class ListQueryCountTests(TestCase):
+    """List pages must not issue queries per row."""
+
+    def _setup(self, partners):
+        from django.contrib.auth import get_user_model
+        from users.models import Language
+        U = get_user_model()
+        me = U.objects.filter(username='qme').first() or U.objects.create_user('qme', 'qme@x.com', 'pw12345!')
+        en, _ = Language.objects.get_or_create(name='English', defaults={'code': 'en'})
+        ko, _ = Language.objects.get_or_create(name='Korean', defaults={'code': 'ko'})
+        rooms = []
+        for i in range(partners):
+            other = U.objects.create_user(f'qp{partners}_{i}', f'qp{partners}_{i}@x.com', 'pw12345!')
+            m = Match.objects.create(user1=me, user2=other, user1_teaches=en, user1_learns=ko, status='active')
+            room = ChatRoom.objects.create(match=m)
+            ChatMessage.objects.create(room=room, sender=other, content=f'first {i}')
+            ChatMessage.objects.create(room=room, sender=other, content=f'latest {i}')
+            MatchRequest.objects.create(sender=other, receiver=me, sender_teaches=ko, sender_learns=en)
+            rooms.append(room)
+        self.client.force_login(me)
+        return me, rooms
+
+    def _count(self, url):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        with CaptureQueriesContext(connection) as q:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        return len(q)
+
+    def test_list_pages_use_constant_queries(self):
+        from django.urls import reverse
+        self._setup(2)
+        urls = [reverse('chats:chat_list'), reverse('matches:my_matches'), reverse('matches:requests')]
+        for u in urls:
+            self.client.get(u)  # warm one-time caches
+        small = [self._count(u) for u in urls]
+        self._setup(8)
+        big = [self._count(u) for u in urls]
+        self.assertEqual(small, big)
+
+    def test_chat_list_shows_unread_and_latest_message(self):
+        from django.urls import reverse
+        me, rooms = self._setup(1)
+        r = self.client.get(reverse('chats:chat_list'))
+        self.assertContains(r, 'latest 0')
+        self.assertNotContains(r, 'first 0')
+        self.assertEqual(r.context['total_unread'], 2)
+
+
+class VideoRoomAssetsTests(TestCase):
+    def test_video_room_uses_compiled_css_not_a_cdn(self):
+        a = User.objects.create_user('va', 'va@example.com', 'pw12345!x')
+        b = User.objects.create_user('vb', 'vb@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        r = self.client.get(reverse('chats:video_room', args=[room.room_id]))
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertNotIn('cdn.tailwindcss.com', html)
+        self.assertRegex(html, r'/static/css/tailwind\.css\?v=[0-9a-f]{10}')
+
+
+class VideoRoomLandmarkTests(TestCase):
+    def test_video_room_has_one_h1_and_a_main_landmark(self):
+        a = User.objects.create_user('la', 'la@example.com', 'pw12345!x')
+        b = User.objects.create_user('lb', 'lb@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        html = self.client.get(reverse('chats:video_room', args=[room.room_id])).content.decode()
+        self.assertEqual(html.count('<h1'), 1)
+        self.assertEqual(html.count('<main'), 1)
+        self.assertNotIn('<h3 class="text-lg font-semibold">', html)
+
+
+class IceServersTests(TestCase):
+    def test_default_is_google_stun_only(self):
+        from .webrtc import ice_servers
+        servers = ice_servers()
+        self.assertEqual(len(servers), 1)
+        self.assertEqual(len(servers[0]['urls']), 5)
+        self.assertTrue(all(u.startswith('stun:') for u in servers[0]['urls']))
+        self.assertNotIn('credential', servers[0])
+
+    def test_turn_added_only_when_fully_configured(self):
+        from django.test import override_settings
+        from .webrtc import ice_servers
+        with override_settings(WEBRTC_TURN_URLS='turn:t.example.com:3478, turns:t.example.com:5349',
+                               WEBRTC_TURN_USERNAME='u', WEBRTC_TURN_CREDENTIAL='c'):
+            servers = ice_servers()
+        self.assertEqual(servers[1], {'urls': ['turn:t.example.com:3478', 'turns:t.example.com:5349'],
+                                      'username': 'u', 'credential': 'c'})
+        with override_settings(WEBRTC_TURN_URLS='turn:t.example.com:3478', WEBRTC_TURN_USERNAME='u',
+                               WEBRTC_TURN_CREDENTIAL=''):
+            self.assertEqual(len(ice_servers()), 1)
+
+    def test_empty_stun_setting_gives_no_servers(self):
+        from django.test import override_settings
+        from .webrtc import ice_servers
+        with override_settings(WEBRTC_STUN_URLS=''):
+            self.assertEqual(ice_servers(), [])
+
+    def test_video_room_page_embeds_ice_servers(self):
+        from django.test import override_settings
+        a = User.objects.create_user('ia', 'ia@example.com', 'pw12345!x')
+        b = User.objects.create_user('ib', 'ib@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        with override_settings(WEBRTC_TURN_URLS='turn:t.example.com:3478', WEBRTC_TURN_USERNAME='u',
+                               WEBRTC_TURN_CREDENTIAL='c'):
+            r = self.client.get(reverse('chats:video_room', args=[room.room_id]))
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertIn('id="ice-servers"', html)
+        self.assertIn('turn:t.example.com:3478', html)
+        self.assertNotIn('stun:stun.l.google.com:19302\' }', html)

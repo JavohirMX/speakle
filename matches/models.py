@@ -29,6 +29,7 @@ class Match(models.Model):
         ('active', 'Active'),
         ('inactive', 'Inactive'),
         ('ended', 'Ended'),
+        ('trial', 'Quick match trial'),
     ]
     
     user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='matches_as_user1')
@@ -44,6 +45,11 @@ class Match(models.Model):
     ended_at = models.DateTimeField(blank=True, null=True)
     ended_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ended_matches')
     end_reason = models.TextField(blank=True, help_text="Reason for ending the match")
+
+    # Quick match: timed first call, then both choose keep or skip
+    trial_ends_at = models.DateTimeField(blank=True, null=True)
+    user1_keep = models.BooleanField(null=True, blank=True)
+    user2_keep = models.BooleanField(null=True, blank=True)
     
     class Meta:
         unique_together = ['user1', 'user2']
@@ -92,3 +98,35 @@ class MatchRequest(models.Model):
     
     def __str__(self):
         return f"Request: {self.sender.username} → {self.receiver.username} ({self.status})"
+
+
+class MatchFeedback(models.Model):
+    """Private post-call feedback from one partner about a match.
+
+    Only the author (and staff, via admin) can see it. It is not shown to the
+    partner, so people can be honest.
+    """
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='feedback')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='match_feedback_given')
+    rating = models.PositiveSmallIntegerField(help_text="1 (poor) to 5 (great)")
+    helpful = models.BooleanField(default=True, help_text="Was the partner a good practice fit?")
+    comment = models.TextField(blank=True, max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['match', 'author']
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Feedback {self.author.username} on match {self.match_id}: {self.rating}/5"
+class QuickMatchEntry(models.Model):
+    """A user waiting for a quick match. `match` is set when someone pairs with them."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='quick_match_entry')
+    teaches = models.ForeignKey(Language, on_delete=models.CASCADE, related_name='+')
+    learns = models.ForeignKey(Language, on_delete=models.CASCADE, related_name='+')
+    match = models.ForeignKey(Match, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} waiting ({self.teaches} -> {self.learns})"

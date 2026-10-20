@@ -1,312 +1,121 @@
-# Speakle Docker Deployment Guide
+# Deployment
 
-This guide provides comprehensive instructions for deploying the Speakle language exchange platform using Docker.
+Speakle runs as three containers from `docker-compose.yml`:
 
-## 📋 Prerequisites
+| Service | Image | Host port | Role |
+|---|---|---|---|
+| `web` | built from `Dockerfile` (Python 3.11) | 8001 | Daphne serving HTTP and WebSockets |
+| `db` | `postgres:15-alpine` | 5433 | Postgres |
+| `redis` | `redis:7-alpine` | 6380 | Channels layer, cache, sessions |
 
-- Docker (v20.10+)
-- Docker Compose (v2.0+)
-- Git
-- Domain name (for production)
-- SSL certificates (for HTTPS)
+There is no reverse proxy in this repository. Put one (nginx, Caddy, a load balancer) in front for HTTPS, `/static/` and `/media/`. See [Reverse proxy](#reverse-proxy).
 
-## 🏗️ Architecture Overview
+This guide was checked against the repo files. The Docker stack itself was not built or run while writing it, so test it on a staging host first.
 
-The Docker setup includes:
-- **Django Application**: Main web server with WebSocket support
-- **PostgreSQL**: Primary database
-- **Redis**: Channel layer for real-time features
-- **Nginx**: Reverse proxy and static file server
+## Prerequisites
 
-## 🚀 Quick Start
+- Docker with Compose v2 (`docker compose`).
+- A domain and an HTTPS terminator for anything public. Camera and microphone access needs HTTPS outside `localhost`.
+- An SMTP account if you want real verification and password-reset emails.
 
-### Development Environment
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd speakle
-   ```
-
-2. **Start development environment**:
-   ```bash
-   docker-compose -f docker-compose.dev.yml up --build
-   ```
-
-3. **Access the application**:
-   - Web app: http://localhost:8001
-   - Database: localhost:5433
-   - Redis: localhost:6380
-
-### Production Environment
-
-1. **Prepare environment variables**:
-   ```bash
-   cp env.example .env
-   # Edit .env with your production values
-   ```
-
-2. **Build and start services**:
-   ```bash
-   docker-compose up --build -d
-   ```
-
-3. **Access the application**:
-   - Web app: http://localhost (via Nginx)
-   - Direct Django: http://localhost:8001
-   - Database: localhost:5433
-   - Redis: localhost:6380
-
-## 📁 File Structure
-
-```
-speakle/
-├── Dockerfile              # Production Django container
-├── Dockerfile.dev          # Development Django container
-├── docker-compose.yml      # Production stack
-├── docker-compose.dev.yml  # Development stack
-├── nginx.conf              # Nginx configuration
-├── entrypoint.sh           # Container initialization script
-├── .dockerignore           # Docker build context exclusions
-├── env.example             # Environment variables template
-└── config/
-    └── settings_prod.py    # Production Django settings
-```
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-Key variables in `.env`:
+## First deploy
 
 ```bash
-# Security
-SECRET_KEY=your-production-secret-key
+git clone https://github.com/JavohirMX/speakle.git
+cd speakle
+cp env.example .env
+```
+
+Edit `.env`. At minimum:
+
+```bash
+SECRET_KEY=<long random value>          # python -c "import secrets; print(secrets.token_urlsafe(64))"
 DEBUG=False
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-
-# Database
-DATABASE_URL=postgres://speakle_user:speakle_password@db:5432/speakle
-
-# Redis
-REDIS_URL=redis://redis:6379/0
-
-# Email (optional)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
+ALLOWED_HOSTS=speakle.example.com
+CSRF_TRUSTED_ORIGINS=https://speakle.example.com
+SITE_URL=https://speakle.example.com
+DJANGO_SETTINGS_MODULE=config.settings_prod
+POSTGRES_PASSWORD=<strong password>
+DATABASE_URL=postgres://speakle_user:<same password>@db:5432/speakle
+DJANGO_SUPERUSER_PASSWORD=<strong password>
 ```
 
-### SSL/HTTPS Setup
+`DJANGO_SETTINGS_MODULE=config.settings_prod` matters. Without it the app runs the development settings: in-memory channel layer, console email, SQLite, and no HTTPS or HSTS settings. `env.example` already sets it.
 
-1. **Obtain SSL certificates** (Let's Encrypt recommended):
-   ```bash
-   mkdir ssl
-   # Copy your certificates to ssl/cert.pem and ssl/key.pem
-   ```
-
-2. **Update nginx.conf**:
-   - Uncomment HTTPS server block
-   - Update domain names
-   - Configure certificate paths
-
-3. **Update environment variables**:
-   ```bash
-   SECURE_SSL_REDIRECT=True
-   CSRF_COOKIE_SECURE=True
-   SESSION_COOKIE_SECURE=True
-   ```
-
-## 🛠️ Management Commands
-
-### Start Services
+Then:
 
 ```bash
-# Development
-docker-compose -f docker-compose.dev.yml up
-
-# Production
-docker-compose up -d
+docker compose up -d --build
+docker compose exec web python manage.py populate_languages   # once; migrations do not create the language list
+docker compose ps
 ```
 
-### Database Operations
+The entrypoint waits for Postgres and Redis, runs `migrate` and `collectstatic`, and creates the admin user only when `DJANGO_SUPERUSER_PASSWORD` is set. Check the app at `http://<host>:8001/health/`, which returns `{"status": "healthy"}`.
+
+All variables are described in the [README configuration table](README.md#configuration).
+
+## Reverse proxy
+
+The proxy must:
+
+1. Terminate HTTPS and forward to `web:8000` (host port 8001).
+2. Pass WebSocket upgrades for `/ws/` (video signaling, notifications, text chat). Without this, calls and chat do not work.
+3. Serve `/static/` from `./staticfiles` and `/media/` from `./media`. `docker-compose.yml` mounts both folders into the `web` container. Daphne does not serve them when `DEBUG=False`.
+4. Send `X-Forwarded-*` headers as usual. `SIGNUPS_PER_HOUR_PER_IP` and the login throttle use the client address Django sees, so leave `SIGNUPS_PER_HOUR_PER_IP=0` if your proxy hides it.
+
+Static files use content-hashed URLs for the app CSS (`?v=...`), so you can send long `Cache-Control` headers for `/static/`.
+
+Once HTTPS works, turn on the hardening flags in `.env`:
 
 ```bash
-# Run migrations
-docker-compose exec web python manage.py migrate
-
-# Create superuser
-docker-compose exec web python manage.py createsuperuser
-
-# Database backup
-docker-compose exec db pg_dump -U speakle_user speakle > backup.sql
-
-# Database restore
-docker-compose exec -T db psql -U speakle_user speakle < backup.sql
+SECURE_SSL_REDIRECT=True
+CSRF_COOKIE_SECURE=True
+SESSION_COOKIE_SECURE=True
 ```
 
-### Application Management
+HSTS is on by default in `settings_prod.py` (one year, with subdomains and preload), so only deploy this settings module on a host that will keep serving HTTPS.
+
+## Everyday commands
 
 ```bash
-# View logs
-docker-compose logs -f web
-
-# Execute Django commands
-docker-compose exec web python manage.py collectstatic
-docker-compose exec web python manage.py shell
-
-# Restart services
-docker-compose restart web
+docker compose logs -f web                              # app logs (email links too, while EMAIL_BACKEND is the console backend)
+docker compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py duplicate_emails   # read-only report of accounts sharing an email
+docker compose restart web
 ```
 
-### Scaling and Performance
+Backup and restore of the database:
 
 ```bash
-# Scale Django workers
-docker-compose up --scale web=3
-
-# Monitor resource usage
-docker stats
-
-# Update containers
-docker-compose pull
-docker-compose up --build -d
+docker compose exec -T db pg_dump -U speakle_user speakle > backup.sql
+docker compose exec -T db psql -U speakle_user speakle < backup.sql
 ```
 
-## 🔧 Troubleshooting
+Use the `POSTGRES_USER` and `POSTGRES_DB` from your `.env` if you changed them. Uploaded profile pictures live in `./media`, so back that folder up too.
 
-### Common Issues
-
-1. **Database connection errors**:
-   ```bash
-   # Check database status
-   docker-compose exec db pg_isready -U speakle_user
-   
-   # View database logs
-   docker-compose logs db
-   ```
-
-2. **WebSocket connection issues**:
-   ```bash
-   # Check Redis connectivity
-   docker-compose exec redis redis-cli ping
-   
-   # View application logs
-   docker-compose logs web
-   ```
-
-3. **Static files not loading**:
-   ```bash
-   # Rebuild with fresh static files
-   docker-compose exec web python manage.py collectstatic --clear
-   docker-compose restart nginx
-   ```
-
-4. **Permission issues**:
-   ```bash
-   # Fix volume permissions
-   docker-compose exec web chown -R appuser:appuser /app/media
-   ```
-
-### Health Checks
+## Updating
 
 ```bash
-# Check service health
-docker-compose ps
-
-# Test application endpoints
-curl http://localhost/health/
-
-# Test WebSocket connectivity
-wscat -c ws://localhost/ws/notifications/
-```
-
-## 📊 Monitoring
-
-### Logs
-
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f web
-docker-compose logs -f nginx
-docker-compose logs -f db
-docker-compose logs -f redis
-```
-
-### Performance Metrics
-
-```bash
-# Container resource usage
-docker stats
-
-# Database performance
-docker-compose exec db psql -U speakle_user -d speakle -c "SELECT * FROM pg_stat_activity;"
-
-# Redis info
-docker-compose exec redis redis-cli info
-```
-
-## 🔒 Security Considerations
-
-1. **Change default passwords** in production
-2. **Use environment variables** for sensitive data
-3. **Enable SSL/HTTPS** for production
-4. **Regular security updates**:
-   ```bash
-   docker-compose pull
-   docker-compose up -d
-   ```
-5. **Backup strategy** for data persistence
-6. **Firewall configuration** for exposed ports
-
-## 🚀 Production Deployment Checklist
-
-- [ ] Update `env.example` with production values
-- [ ] Configure SSL certificates
-- [ ] Update domain names in nginx.conf
-- [ ] Set up regular database backups
-- [ ] Configure monitoring and alerting
-- [ ] Test WebSocket functionality
-- [ ] Verify email configuration
-- [ ] Load test the application
-- [ ] Set up log rotation
-- [ ] Configure firewall rules
-
-## 📞 Support
-
-For deployment issues:
-1. Check this guide first
-2. Review Docker logs
-3. Verify environment configuration
-4. Test individual services
-5. Check network connectivity
-
-## 🔄 Updates and Maintenance
-
-### Regular Updates
-
-```bash
-# Update containers
-docker-compose pull
-docker-compose up -d
-
-# Update application code
 git pull
-docker-compose build web
-docker-compose up -d web
+docker compose up -d --build
 ```
 
-### Database Maintenance
+The entrypoint applies new migrations on start. Read the Unreleased section of [CHANGELOG.md](CHANGELOG.md) first.
 
-```bash
-# Vacuum and analyze
-docker-compose exec db psql -U speakle_user -d speakle -c "VACUUM ANALYZE;"
+## Automatic deploy
 
-# Check database size
-docker-compose exec db psql -U speakle_user -d speakle -c "SELECT pg_size_pretty(pg_database_size('speakle'));"
-```
+`.github/workflows/deploy.yml` runs on every push to `main` or `master`. It connects over SSH using the repository secrets `DO_HOST`, `DO_USERNAME`, `DO_SSH_KEY` and `DO_PORT`, pulls `main` in a fixed folder on the server, rebuilds the containers with `docker-compose`, and checks that port 8001 answers. Treat a merge to `main` as a production release. `.github/workflows/ci.yml` runs the tests on pull requests and on pushes to `dev`.
 
-This deployment setup provides a robust, scalable foundation for the Speakle platform with proper separation of concerns and production-ready configurations. 
+## Troubleshooting
+
+| Symptom | Likely cause |
+|---|---|
+| `web` exits at start with "SECRET_KEY is not set" | `SECRET_KEY` is missing or still a placeholder in `.env`. |
+| "CSRF verification failed" on forms | `CSRF_TRUSTED_ORIGINS` is missing your `https://` origin, or the proxy is not sending the right host. |
+| Pages work but calls, chat or notifications do not | The proxy does not pass WebSocket upgrades for `/ws/`, or `REDIS_URL` is wrong. |
+| Styles or fonts missing | The proxy is not serving `./staticfiles` at `/static/`, or `collectstatic` did not run. |
+| No users appear in matching, language list is empty | `populate_languages` was not run. |
+| Verification and reset emails never arrive | `EMAIL_BACKEND` is still the console backend. Set the `EMAIL_*` variables to a real SMTP server. |
+| Cannot reach the admin | `DJANGO_SUPERUSER_PASSWORD` was empty on first start. Run `createsuperuser`. |
+| Calls connect on some networks and not others | There is no TURN relay, only public STUN servers. |

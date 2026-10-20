@@ -11,8 +11,8 @@ from .settings import *  # noqa: F403
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='change-me-in-production')
+# SECRET_KEY is read and validated in config/settings.py (it refuses to start without a real one).
+SECRET_KEY = config('SECRET_KEY', default=SECRET_KEY)
 
 # Allowed hosts
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
@@ -147,3 +147,13 @@ LANGUAGE_CODE = config('LANGUAGE_CODE', default='en-us')
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB 
+
+# Email verification (needed for Quick match). Set the EMAIL_* variables above to a real SMTP
+# server in production, otherwise verification links only print to the container log.
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Speakle <noreply@localhost>')
+SITE_URL = config('SITE_URL', default='')  # e.g. https://speakle.example.com, used in emails
+QUICK_MATCH_REQUIRE_VERIFIED_EMAIL = config('QUICK_MATCH_REQUIRE_VERIFIED_EMAIL', default=True, cast=bool)
+
+# Cap sign-ups per client address per hour. 0 disables it. Leave it off behind a proxy
+# that hides the client address (REMOTE_ADDR would be the proxy).
+SIGNUPS_PER_HOUR_PER_IP = config('SIGNUPS_PER_HOUR_PER_IP', default=0, cast=int)

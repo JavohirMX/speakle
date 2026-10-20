@@ -1,3 +1,4 @@
+from django.db import transaction
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User, Language, UserLanguage
@@ -52,6 +53,12 @@ class UserRegistrationForm(UserCreationForm):
         # Add autofocus to first_name field
         self.fields['first_name'].widget.attrs['autofocus'] = True
     
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('That email already has an account. Sign in, or reset your password.')
+        return email
+
     def clean(self):
         cleaned_data = super().clean()
         native_language = cleaned_data.get('native_language')
@@ -75,24 +82,21 @@ class UserRegistrationForm(UserCreationForm):
         user.proficiency = self.cleaned_data['target_proficiency']
         
         if commit:
-            user.save()
-            
-            # Create UserLanguage entries for the new system
-            # Add native language
-            UserLanguage.objects.create(
-                user=user,
-                language=self.cleaned_data['native_language'],
-                proficiency='native',
-                language_type='native'
-            )
-            
-            # Add target language
-            UserLanguage.objects.create(
-                user=user,
-                language=self.cleaned_data['target_language'],
-                proficiency=self.cleaned_data['target_proficiency'],
-                language_type='learning'
-            )
+            # All or nothing: never leave an account without its languages.
+            with transaction.atomic():
+                user.save()
+                UserLanguage.objects.create(
+                    user=user,
+                    language=self.cleaned_data['native_language'],
+                    proficiency='native',
+                    language_type='native'
+                )
+                UserLanguage.objects.create(
+                    user=user,
+                    language=self.cleaned_data['target_language'],
+                    proficiency=self.cleaned_data['target_proficiency'],
+                    language_type='learning'
+                )
             
         return user
 
@@ -101,16 +105,63 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'bio', 'profile_picture', 'interests']
+        fields = ['first_name', 'last_name', 'email', 'share_email_with_matches', 'bio', 'profile_picture', 'interests']
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
             'interests': forms.Textarea(attrs={'rows': 3}),
         }
     
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip()
+        if email and User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('That email is already used by another account.')
+        return email
+
+    MAX_BIO = 1000
+    MAX_INTERESTS = 500
+    MAX_PICTURE_BYTES = 5 * 1024 * 1024
+
+    def clean_bio(self):
+        bio = self.cleaned_data.get('bio', '')
+        if len(bio) > self.MAX_BIO:
+            raise forms.ValidationError(f'Keep your bio under {self.MAX_BIO} characters.')
+        return bio
+
+    def clean_interests(self):
+        text = self.cleaned_data.get('interests', '')
+        if len(text) > self.MAX_INTERESTS:
+            raise forms.ValidationError(f'Keep interests under {self.MAX_INTERESTS} characters.')
+        return text
+
+    def clean_profile_picture(self):
+        pic = self.cleaned_data.get('profile_picture')
+        size = getattr(pic, 'size', None)
+        if pic and hasattr(pic, 'content_type') and size and size > self.MAX_PICTURE_BYTES:
+            raise forms.ValidationError('Pick a picture under 5 MB.')
+        return pic
+
+    def save(self, commit=True):
+        old_picture = None
+        if 'profile_picture' in self.changed_data:
+            old_picture = User.objects.filter(pk=self.instance.pk).values_list(
+                'profile_picture', flat=True).first()
+        user = super().save(commit=False)
+        # A changed address is unverified until the new one is confirmed.
+        if 'email' in self.changed_data:
+            user.email_verified = False
+        if commit:
+            user.save()
+            if old_picture and old_picture != (user.profile_picture.name or ''):
+                # The replaced (or cleared) picture is no longer referenced.
+                user.profile_picture.storage.delete(old_picture)
+        return user
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Add CSS classes for styling
         for field_name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                continue
             if isinstance(field.widget, forms.Textarea):
                 field.widget.attrs['class'] = 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
             elif isinstance(field.widget, forms.FileInput):
