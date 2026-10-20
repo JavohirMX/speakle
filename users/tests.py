@@ -332,6 +332,19 @@ class PasswordResetFlowTests(TestCase):
         self.assertTrue(self.client.login(username='pr_user', password='BrandNew-98765!'))
         self.assertFalse(self.client.login(username='pr_user', password='OldPw12345!'))
 
+    def test_reset_pages_use_speakle_templates_not_admin(self):
+        # django.contrib.admin ships templates with the same names; ours must win.
+        from django.core import mail
+        r = self.client.get('/users/password-reset/')
+        self.assertNotContains(r, 'Django site admin')
+        self.assertContains(r, 'Reset your password')
+        self.assertTemplateUsed(r, 'users/password_reset_form.html')
+        self.client.post('/users/password-reset/', {'email': 'pr@x.com'})
+        self.assertEqual(mail.outbox[0].subject, 'Reset your Speakle password')
+        r = self.client.get('/users/password-reset/sent/')
+        self.assertNotContains(r, 'Django site admin')
+        self.assertTemplateUsed(r, 'users/password_reset_done.html')
+
     def test_deactivated_account_gets_no_reset_email(self):
         from django.core import mail
         self.U.objects.filter(pk=self.u.pk).update(is_active=False)
@@ -405,3 +418,10 @@ class LogoutPostOnlyTests(TestCase):
         html = self.client.get('/users/profile/').content.decode()
         self.assertIn('method="post" action="/users/logout/"', html)
         self.assertNotIn('href="/users/logout/"', html)
+
+
+class PublicPageHeadingTests(TestCase):
+    def test_each_public_form_page_has_one_h1(self):
+        for url in ('/users/login/', '/users/register/', '/users/password-reset/', '/users/password-reset/sent/'):
+            body = self.client.get(url).content.decode()
+            self.assertEqual(body.count('<h1'), 1, url)

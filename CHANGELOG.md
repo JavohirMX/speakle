@@ -9,6 +9,7 @@
 - Quick match: timed trial call with keep or skip.
 - Conversation prompts and private post-call feedback on matches.
 - Block and report users, with admin review.
+- Password reset pages and email subject now use the Speakle templates (Django admin ones were shadowing them). Accessibility: one h1 on sign-in, sign-up and reset pages, valid heading order on Find, closed mobile menu no longer takes keyboard focus.
 - Match detail page restyled to the design system (overview, stats, settings); quick match spacing and long-word wrapping fixes.
 - SEO: canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, `noindex` on non-public pages.
 - Favicons, web manifest, custom 404 and 500 pages.
