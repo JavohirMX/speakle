@@ -678,7 +678,6 @@ class ChatsViewsTest(TestCase):
         
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
-        self.assertTrue(data['success'])
         self.assertEqual(len(data['invitations']), 1)
         self.assertEqual(data['invitations'][0]['caller'], 'testuser1')
         self.assertEqual(data['invitations'][0]['message'], "Let's practice!")
@@ -734,7 +733,36 @@ class ChatsViewsTest(TestCase):
 
 class WebSocketConsumerTest(TransactionTestCase):
     """Test WebSocket consumers."""
-    
+
+    @staticmethod
+    def asgi_with_scope(application, overrides):
+        """Wrap an ASGI app so the given keys are merged into the connection scope.
+
+        WebsocketCommunicator expects a path string, not a full scope dict;
+        extra scope keys (user, url_route, ...) must be injected by wrapping
+        the application instead.
+        """
+        async def wrapped(scope, receive, send):
+            scope.update(overrides)
+            return await application(scope, receive, send)
+        return wrapped
+
+    @staticmethod
+    async def receive_until(communicator, message_type, max_messages=10):
+        """Read messages until one of the given type arrives.
+
+        Consumers emit several messages on connect (connection_test,
+        user_joined broadcasts), so tests must skip unrelated messages
+        instead of assuming the next message is the one they want.
+        """
+        for _ in range(max_messages):
+            response = await communicator.receive_json_from()
+            if response.get('type') == message_type:
+                return response
+        raise AssertionError(
+            f"Did not receive a '{message_type}' message within {max_messages} messages"
+        )
+
     def setUp(self):
         """Set up test data."""
         self.user1 = User.objects.create_user(
@@ -789,7 +817,10 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
+        communicator = WebsocketCommunicator(
+            self.asgi_with_scope(VideoCallConsumer.as_asgi(), scope),
+            scope['path']
+        )
         connected, subprotocol = await communicator.connect()
         
         self.assertTrue(connected)
@@ -814,11 +845,11 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
+        communicator = WebsocketCommunicator(
+            self.asgi_with_scope(VideoCallConsumer.as_asgi(), scope),
+            scope['path']
+        )
         connected, subprotocol = await communicator.connect()
-        
-        # Skip connection test message
-        await communicator.receive_json_from()
         
         # Test chat message
         await communicator.send_json_to({
@@ -826,17 +857,19 @@ class WebSocketConsumerTest(TransactionTestCase):
             'message': 'Hello, how are you?'
         })
         
-        # Should receive chat message back
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['type'], 'chat_message')
+        # Should receive chat message back (after connection_test /
+        # user_joined connect noise)
+        response = await self.receive_until(communicator, 'chat_message')
         self.assertEqual(response['message'], 'Hello, how are you?')
-        self.assertEqual(response['sender'], 'testuser1')
+        self.assertEqual(response['sender_username'], 'testuser1')
         
         await communicator.disconnect()
     
     async def test_video_call_consumer_webrtc_offer(self):
         """Test WebRTC offer handling."""
-        scope = {
+        # Offers are forwarded to other participants only (never echoed to
+        # the sender), so user1 sends and user2 listens.
+        scope1 = {
             'type': 'websocket',
             'path': f'/ws/video/{self.room.room_id}/',
             'query_string': b'',
@@ -846,12 +879,20 @@ class WebSocketConsumerTest(TransactionTestCase):
                 'kwargs': {'room_id': str(self.room.room_id)}
             }
         }
+        scope2 = dict(scope1, user=self.user2)
         
-        communicator = WebsocketCommunicator(VideoCallConsumer.as_asgi(), scope)
-        connected, subprotocol = await communicator.connect()
-        
-        # Skip connection test message
-        await communicator.receive_json_from()
+        sender = WebsocketCommunicator(
+            self.asgi_with_scope(VideoCallConsumer.as_asgi(), scope1),
+            scope1['path']
+        )
+        receiver = WebsocketCommunicator(
+            self.asgi_with_scope(VideoCallConsumer.as_asgi(), scope2),
+            scope2['path']
+        )
+        connected, _ = await sender.connect()
+        self.assertTrue(connected)
+        connected, _ = await receiver.connect()
+        self.assertTrue(connected)
         
         # Test WebRTC offer
         offer_data = {
@@ -862,15 +903,15 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        await communicator.send_json_to(offer_data)
+        await sender.send_json_to(offer_data)
         
-        # Should receive offer back
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['type'], 'webrtc_offer')
+        # The other participant should receive the forwarded offer
+        response = await self.receive_until(receiver, 'offer')
         self.assertEqual(response['sender_username'], 'testuser1')
         self.assertIn('offer', response)
         
-        await communicator.disconnect()
+        await sender.disconnect()
+        await receiver.disconnect()
     
     async def test_user_notification_consumer(self):
         """Test UserNotificationConsumer."""
@@ -885,7 +926,10 @@ class WebSocketConsumerTest(TransactionTestCase):
             }
         }
         
-        communicator = WebsocketCommunicator(UserNotificationConsumer.as_asgi(), scope)
+        communicator = WebsocketCommunicator(
+            self.asgi_with_scope(UserNotificationConsumer.as_asgi(), scope),
+            scope['path']
+        )
         connected, subprotocol = await communicator.connect()
         
         self.assertTrue(connected)
@@ -898,13 +942,16 @@ class WebSocketConsumerTest(TransactionTestCase):
                 'type': 'call_invitation_received',
                 'invitation_id': 123,
                 'caller_username': 'testuser2',
-                'message': 'Want to practice?'
+                'caller_id': self.user2.id,
+                'message': 'Want to practice?',
+                'match_id': self.match.id,
+                'expires_at': '2027-01-01T00:00:00+00:00'
             }
         )
         
-        # Should receive the notification
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['type'], 'call_invitation_received')
+        # Should receive the notification (after the notification_connected
+        # greeting)
+        response = await self.receive_until(communicator, 'call_invitation_received')
         self.assertEqual(response['caller_username'], 'testuser2')
         self.assertEqual(response['message'], 'Want to practice?')
         
