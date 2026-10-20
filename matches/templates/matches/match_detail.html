@@ -166,7 +166,7 @@
           <div class="md-meta">
             <h1>{{ partner.username }}</h1>
             <p class="md-sub"><span class="chip chip-teach">you teach {{ user_teaches.name }}</span> <span class="chip chip-learn">you learn {{ user_learns.name }}</span></p>
-            <p class="md-since">Matched {{ match.created_at|timesince }} ago{% with t=partner.local_time_label %}{% if t %} &middot; their time {{ t }}{% endif %}{% endwith %} <span id="onlineText" class="sr-only"></span></p>
+            <p class="md-since">Matched {{ match.created_at|timesince }} ago{% with t=partner.local_time_label %}{% if t %} &middot; <span title="Local time when this page loaded">their time {{ t }}</span>{% endif %}{% endwith %} <span id="onlineText" class="sr-only"></span></p>
           </div>
         </div>
         <div class="md-cta">
