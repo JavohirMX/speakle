@@ -937,6 +937,7 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
 </div>
 
 <!-- Enhanced WebRTC JavaScript -->
+{{ ice_servers|json_script:"ice-servers" }}
 <script>
 class VideoChat {
     constructor(roomId, userId) {
@@ -965,15 +966,9 @@ class VideoChat {
         this.isMobile = this.detectMobile(); // Detect mobile device
         this.orientationChanged = false; // Track orientation changes
         
-        // WebRTC configuration with more STUN servers
+        // WebRTC configuration. The ICE servers come from settings (WEBRTC_* variables).
         this.pcConfig = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' }
-            ]
+            iceServers: JSON.parse(document.getElementById('ice-servers').textContent)
         };
         
         this.initializeElements();

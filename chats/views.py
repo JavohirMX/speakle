@@ -10,6 +10,7 @@ from django.core.cache import cache
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from matches.models import Match
+from .webrtc import ice_servers
 from .models import pair_is_blocked, VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
 import uuid
 from django.db import transaction
@@ -288,6 +289,7 @@ def video_room(request, room_id):
         'recent_messages': recent_messages,
         'call_history': call_history,
         'room_id_str': str(room.room_id),
+        'ice_servers': ice_servers(),
     }
     
     return render(request, 'chats/video_room.html', context)

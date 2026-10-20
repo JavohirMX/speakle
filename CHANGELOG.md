@@ -4,6 +4,7 @@
 
 ### Added
 - Docs: README rewritten with screenshots, accurate quickstart (including `populate_languages`), configuration table, deploy summary and known limits. DEPLOYMENT.md rewritten to match `docker-compose.yml`. New `docs/ARCHITECTURE.md` replaces the stale `PROJECT_CONTEXT.md`.
+- Video calls: ICE servers are configurable (`WEBRTC_STUN_URLS`, `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL`) so a TURN relay can be added. Default stays the five Google STUN servers. No credentials are committed.
 - Login and sign-up pages get their own description and OG/Twitter titles instead of repeating the home page ones.
 - Performance: the ~140 KB of inline CSS in every page moved into cacheable static files (`app.css`, `design.css`) linked with a content hash. Pages drop from ~100 KB to ~38 KB of HTML with identical rendering (pixel-compared).
 - Redesign: "sticker pop" design system, app shell with side rail and mobile tab bar, new landing page.
