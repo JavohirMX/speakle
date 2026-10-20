@@ -1522,3 +1522,17 @@ class VideoRoomAssetsTests(TestCase):
         html = r.content.decode()
         self.assertNotIn('cdn.tailwindcss.com', html)
         self.assertRegex(html, r'/static/css/tailwind\.css\?v=[0-9a-f]{10}')
+
+
+class VideoRoomLandmarkTests(TestCase):
+    def test_video_room_has_one_h1_and_a_main_landmark(self):
+        a = User.objects.create_user('la', 'la@example.com', 'pw12345!x')
+        b = User.objects.create_user('lb', 'lb@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        html = self.client.get(reverse('chats:video_room', args=[room.room_id])).content.decode()
+        self.assertEqual(html.count('<h1'), 1)
+        self.assertEqual(html.count('<main'), 1)
+        self.assertNotIn('<h3 class="text-lg font-semibold">', html)
