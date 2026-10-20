@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load assets %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,8 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Video Chat with {{ partner.username }} - Speakle</title>
     
-    <!-- Tailwind CSS CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Compiled Tailwind (see tailwind.config.js), same file the rest of the site uses -->
+    <link rel="stylesheet" href="{% versioned_static 'css/tailwind.css' %}">
     
     <!-- CSRF Token for AJAX requests -->
     <meta name="csrf-token" content="{{ csrf_token }}">
