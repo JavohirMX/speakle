@@ -158,6 +158,9 @@ class MatchingService:
         if UserBlock.either_way(sender, receiver):
             return None, False
         with transaction.atomic():
+            # Serialise this sender's requests so the daily-cap count below cannot be raced
+            # by two parallel sends (a row lock on PostgreSQL; SQLite already locks the file).
+            User.objects.select_for_update().filter(pk=sender.pk).first()
             if Match.objects.filter(
                 Q(user1=sender, user2=receiver) | Q(user1=receiver, user2=sender),
                 status__in=['active', 'pending', 'accepted'],
