@@ -25,7 +25,7 @@
             <button id="qm-start" type="button" class="btn btn-coral px-6">Find a partner now <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></button>
             <button id="qm-cancel" type="button" class="btn btn-outline px-6 hidden">Cancel search</button>
         </div>
-        <p id="qm-msg" class="mt-4 text-gray-700 min-h-[1.5rem]" role="status" aria-live="polite"></p>
+        <p id="qm-msg" class="qm-msg mt-4 text-gray-700" role="status" aria-live="polite"></p>
     </div>
     {% elif can_use %}
     <div class="sticker p-6">
@@ -42,6 +42,7 @@
         <li><span class="font-semibold text-gray-900 block">You decide after</span>Keep or skip. Nothing is automatic.</li>
     </ul>
 </div>
+<style>.qm-msg:empty{margin:0}</style>
 <script>
 (function () {
     var rs = document.getElementById('qm-resend');
