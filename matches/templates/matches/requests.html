@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Requests - Speakle{% endblock %}
 
@@ -25,7 +26,7 @@
             <p class="pm-pair"><span class="chip chip-teach">teaches {{ request.sender_teaches.name }}</span> <span class="chip chip-learn">learns {{ request.sender_learns.name }}</span></p>
           </div>
         </div>
-        <p class="pm-swap">Sent {{ request.created_at|timesince }} ago{% with t=request.sender.local_time_label %}{% if t %} &middot; <span title="Local time when this page loaded">their time {{ t }}</span>{% endif %}{% endwith %}</p>
+        <p class="pm-swap">Sent {{ request.created_at|timesince }} ago{% with t=request.sender.local_time_label %}{% if t %} &middot; <span class="partner-time" data-tz="{{ request.sender.timezone }}">their time {{ t }}</span>{% endif %}{% endwith %}</p>
         {% if request.message %}<blockquote class="pm-bio" style="-webkit-line-clamp:none">&ldquo;{{ request.message }}&rdquo;</blockquote>{% endif %}
         <div class="pm-act flex gap-2">
           <button type="button" class="btn btn-outline flex-1" data-respond="decline" data-id="{{ request.id }}" aria-label="Decline request from {{ request.sender.username }}">Decline</button>
@@ -113,4 +114,5 @@
   });
 })();
 </script>
+<script src="{% static 'js/partner-time.js' %}" defer></script>
 {% endblock %}
