@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-{% load static %}
+{% load static assets %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +34,7 @@
     <link rel="manifest" href="{% url 'main:manifest' %}">
 
     <!-- Compiled Tailwind (see tailwind.config.js) -->
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="stylesheet" href="{% versioned_static 'css/tailwind.css' %}">
     {% include 'partials/design_head.html' %}
     {% block jsonld %}{% endblock %}
 
@@ -1085,6 +1085,9 @@
         {% block extra_css %}{% endblock %}
     </style>
     {% include 'partials/design_css.html' %}
+    <link rel="stylesheet" href="{% versioned_static 'css/app.css' %}">
+    <style>{% block extra_css %}{% endblock %}</style>
+    <link rel="stylesheet" href="{% versioned_static 'css/design.css' %}">
 </head>
 <body class="antialiased{% if user.is_authenticated %} app-shell{% endif %}{% if request.resolver_match.url_name == 'text_chat' %} immersive{% endif %}">
     {% include "partials/icons.html" %}
