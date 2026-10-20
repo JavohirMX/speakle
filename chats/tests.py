@@ -1507,3 +1507,77 @@ class ListQueryCountTests(TestCase):
         self.assertContains(r, 'latest 0')
         self.assertNotContains(r, 'first 0')
         self.assertEqual(r.context['total_unread'], 2)
+
+
+class VideoRoomAssetsTests(TestCase):
+    def test_video_room_uses_compiled_css_not_a_cdn(self):
+        a = User.objects.create_user('va', 'va@example.com', 'pw12345!x')
+        b = User.objects.create_user('vb', 'vb@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        r = self.client.get(reverse('chats:video_room', args=[room.room_id]))
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertNotIn('cdn.tailwindcss.com', html)
+        self.assertRegex(html, r'/static/css/tailwind\.css\?v=[0-9a-f]{10}')
+
+
+class VideoRoomLandmarkTests(TestCase):
+    def test_video_room_has_one_h1_and_a_main_landmark(self):
+        a = User.objects.create_user('la', 'la@example.com', 'pw12345!x')
+        b = User.objects.create_user('lb', 'lb@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        html = self.client.get(reverse('chats:video_room', args=[room.room_id])).content.decode()
+        self.assertEqual(html.count('<h1'), 1)
+        self.assertEqual(html.count('<main'), 1)
+        self.assertNotIn('<h3 class="text-lg font-semibold">', html)
+
+
+class IceServersTests(TestCase):
+    def test_default_is_google_stun_only(self):
+        from .webrtc import ice_servers
+        servers = ice_servers()
+        self.assertEqual(len(servers), 1)
+        self.assertEqual(len(servers[0]['urls']), 5)
+        self.assertTrue(all(u.startswith('stun:') for u in servers[0]['urls']))
+        self.assertNotIn('credential', servers[0])
+
+    def test_turn_added_only_when_fully_configured(self):
+        from django.test import override_settings
+        from .webrtc import ice_servers
+        with override_settings(WEBRTC_TURN_URLS='turn:t.example.com:3478, turns:t.example.com:5349',
+                               WEBRTC_TURN_USERNAME='u', WEBRTC_TURN_CREDENTIAL='c'):
+            servers = ice_servers()
+        self.assertEqual(servers[1], {'urls': ['turn:t.example.com:3478', 'turns:t.example.com:5349'],
+                                      'username': 'u', 'credential': 'c'})
+        with override_settings(WEBRTC_TURN_URLS='turn:t.example.com:3478', WEBRTC_TURN_USERNAME='u',
+                               WEBRTC_TURN_CREDENTIAL=''):
+            self.assertEqual(len(ice_servers()), 1)
+
+    def test_empty_stun_setting_gives_no_servers(self):
+        from django.test import override_settings
+        from .webrtc import ice_servers
+        with override_settings(WEBRTC_STUN_URLS=''):
+            self.assertEqual(ice_servers(), [])
+
+    def test_video_room_page_embeds_ice_servers(self):
+        from django.test import override_settings
+        a = User.objects.create_user('ia', 'ia@example.com', 'pw12345!x')
+        b = User.objects.create_user('ib', 'ib@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        with override_settings(WEBRTC_TURN_URLS='turn:t.example.com:3478', WEBRTC_TURN_USERNAME='u',
+                               WEBRTC_TURN_CREDENTIAL='c'):
+            r = self.client.get(reverse('chats:video_room', args=[room.room_id]))
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertIn('id="ice-servers"', html)
+        self.assertIn('turn:t.example.com:3478', html)
+        self.assertNotIn('stun:stun.l.google.com:19302\' }', html)

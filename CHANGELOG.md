@@ -3,6 +3,8 @@
 ## Unreleased (dev)
 
 ### Added
+- Docs: README rewritten with screenshots, accurate quickstart (including `populate_languages`), configuration table, deploy summary and known limits. DEPLOYMENT.md rewritten to match `docker-compose.yml`. New `docs/ARCHITECTURE.md` replaces the stale `PROJECT_CONTEXT.md`.
+- Video calls: ICE servers are configurable (`WEBRTC_STUN_URLS`, `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL`) so a TURN relay can be added. Default stays the five Google STUN servers. No credentials are committed.
 - Login and sign-up pages get their own description and OG/Twitter titles instead of repeating the home page ones.
 - Performance: the ~140 KB of inline CSS in every page moved into cacheable static files (`app.css`, `design.css`) linked with a content hash. Pages drop from ~100 KB to ~38 KB of HTML with identical rendering (pixel-compared).
 - Redesign: "sticker pop" design system, app shell with side rail and mobile tab bar, new landing page.
@@ -22,6 +24,9 @@
 - Privacy-first analytics: per-day counters by page name, referrer host and `?utm_source=` on landing, sign-up and login pages. No IPs, cookies, user ids, URLs with ids or chat content. Staff-only dashboard at `/stats/` with sign-ups, matches, calls and message counts. Turn off with `ANALYTICS_ENABLED = False`.
 
 ### Fixed
+- Docker: the `web` healthcheck called `curl`, which the Python base image does not include, so the container could never report healthy. It now uses Python, with a 60 second start period for migrations.
+- Video room: one h1, a main landmark, h2 section headings and a readable empty-chat hint (axe-core clean).
+- Video room: no longer loads Tailwind from `cdn.tailwindcss.com` (a third-party script that needed internet access). It uses the compiled `tailwind.css` like the other pages.
 - Mobile: sign out was unreachable on phones (header menu and footer are hidden in the app shell). The profile page now has a Sign out button. Removed two dead "#" links (Statistics, Settings) from the user menus, stopped the skip link peeking in at the top of the page, and stacked the empty-state buttons on narrow screens.
 - Video room on phones: the control bar no longer covers the partner name and timer, "Start call" wraps instead of being cut, the waiting icon is centred, and the Share button is hidden when the browser cannot share a screen.
 - Quick match showed Find and Cancel buttons at the same time.

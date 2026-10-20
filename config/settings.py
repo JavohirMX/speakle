@@ -188,3 +188,14 @@ DEFAULT_FROM_EMAIL = 'Speakle <noreply@localhost>'
 
 # Public origin used for canonical URLs, sitemap and share images. Falls back to the request host.
 SITE_URL = __import__('os').environ.get('SITE_URL', '')
+
+
+# WebRTC ICE servers for video calls. STUN alone connects most people. A TURN relay is
+# needed for strict NATs and some mobile networks. Comma-separated URL lists; leave the
+# TURN ones empty to use STUN only. The TURN username and credential are sent to signed-in
+# call participants' browsers, so use a dedicated TURN user (ideally with limited access).
+_DEFAULT_STUN = ','.join(f'stun:stun{n}.l.google.com:19302' for n in ('', '1', '2', '3', '4'))
+WEBRTC_STUN_URLS = config('WEBRTC_STUN_URLS', default=_DEFAULT_STUN)
+WEBRTC_TURN_URLS = config('WEBRTC_TURN_URLS', default='')
+WEBRTC_TURN_USERNAME = config('WEBRTC_TURN_USERNAME', default='')
+WEBRTC_TURN_CREDENTIAL = config('WEBRTC_TURN_CREDENTIAL', default='')
