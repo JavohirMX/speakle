@@ -48,3 +48,34 @@ class SeoTests(TestCase):
     def test_manifest(self):
         r = self.client.get('/manifest.webmanifest')
         self.assertEqual(r.json()['short_name'], 'Speakle')
+
+
+class StaticCssTests(TestCase):
+    def test_base_css_is_linked_with_content_hash_not_inlined(self):
+        import re
+        r = self.client.get('/users/login/')
+        html = r.content.decode()
+        for name in ('tailwind', 'app', 'design', 'fonts'):
+            self.assertRegex(html, r'/static/css/%s\.css\?v=[0-9a-f]{10}' % name)
+        self.assertLess(len(html), 60000)
+        self.assertNotIn('sticker pop', html)
+
+    def test_linked_css_files_exist_and_have_content(self):
+        from django.contrib.staticfiles import finders
+        for name in ('app', 'design'):
+            path = finders.find('css/%s.css' % name)
+            self.assertTrue(path)
+            self.assertGreater(len(open(path).read()), 10000)
+
+
+class AuthPageMetaTests(TestCase):
+    def test_login_and_register_have_their_own_meta(self):
+        seen = set()
+        for path, word in (('/users/login/', 'Sign In'), ('/users/register/', 'Sign Up')):
+            html = self.client.get(path).content.decode()
+            self.assertIn('<meta property="og:title" content="%s - Speakle">' % word, html)
+            self.assertIn('<meta name="twitter:title" content="%s - Speakle">' % word, html)
+            import re
+            desc = re.search(r'<meta name="description" content="([^"]+)"', html).group(1)
+            self.assertNotIn(desc, seen)
+            seen.add(desc)

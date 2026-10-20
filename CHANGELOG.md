@@ -3,12 +3,18 @@
 ## Unreleased (dev)
 
 ### Added
+- Login and sign-up pages get their own description and OG/Twitter titles instead of repeating the home page ones.
+- Performance: the ~140 KB of inline CSS in every page moved into cacheable static files (`app.css`, `design.css`) linked with a content hash. Pages drop from ~100 KB to ~38 KB of HTML with identical rendering (pixel-compared).
 - Redesign: "sticker pop" design system, app shell with side rail and mobile tab bar, new landing page.
 - UX pass: toasts for server messages, inline sign-up validation, auto-login after sign-up, working password reset, safe `?next=` redirect, nav badges and correct active states.
 - Email verification (signed, expiring tokens). Quick match can require a verified email.
 - Quick match: timed trial call with keep or skip.
 - Conversation prompts and private post-call feedback on matches.
 - Block and report users, with admin review.
+- Sign-up is all-or-nothing (no account without its languages); replaced profile pictures are deleted from storage.
+- Profile page shows a "Finish your profile" checklist until the account is complete.
+- List pages (chats, matches, requests) use a fixed number of queries instead of several per row.
+- Password reset pages and email subject now use the Speakle templates (Django admin ones were shadowing them). Accessibility: one h1 on sign-in, sign-up and reset pages, valid heading order on Find, closed mobile menu no longer takes keyboard focus.
 - Match detail page restyled to the design system (overview, stats, settings); quick match spacing and long-word wrapping fixes.
 - SEO: canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, `noindex` on non-public pages.
 - Favicons, web manifest, custom 404 and 500 pages.

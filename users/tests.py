@@ -332,6 +332,19 @@ class PasswordResetFlowTests(TestCase):
         self.assertTrue(self.client.login(username='pr_user', password='BrandNew-98765!'))
         self.assertFalse(self.client.login(username='pr_user', password='OldPw12345!'))
 
+    def test_reset_pages_use_speakle_templates_not_admin(self):
+        # django.contrib.admin ships templates with the same names; ours must win.
+        from django.core import mail
+        r = self.client.get('/users/password-reset/')
+        self.assertNotContains(r, 'Django site admin')
+        self.assertContains(r, 'Reset your password')
+        self.assertTemplateUsed(r, 'users/password_reset_form.html')
+        self.client.post('/users/password-reset/', {'email': 'pr@x.com'})
+        self.assertEqual(mail.outbox[0].subject, 'Reset your Speakle password')
+        r = self.client.get('/users/password-reset/sent/')
+        self.assertNotContains(r, 'Django site admin')
+        self.assertTemplateUsed(r, 'users/password_reset_done.html')
+
     def test_deactivated_account_gets_no_reset_email(self):
         from django.core import mail
         self.U.objects.filter(pk=self.u.pk).update(is_active=False)
@@ -405,3 +418,73 @@ class LogoutPostOnlyTests(TestCase):
         html = self.client.get('/users/profile/').content.decode()
         self.assertIn('method="post" action="/users/logout/"', html)
         self.assertNotIn('href="/users/logout/"', html)
+
+
+class RegistrationAtomicTests(TestCase):
+    def test_failed_language_creation_leaves_no_half_account(self):
+        from unittest import mock
+        from users.forms import UserRegistrationForm
+        en = Language.objects.create(name='English', code='en')
+        es = Language.objects.create(name='Spanish', code='es')
+        form = UserRegistrationForm({
+            'username': 'atomic1', 'first_name': 'A', 'email': 'atomic1@example.com',
+            'native_language': en.pk, 'target_language': es.pk, 'target_proficiency': 'beginner',
+            'password1': 'Str0ng-pass-123', 'password2': 'Str0ng-pass-123',
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        with mock.patch.object(UserLanguage.objects, 'create', side_effect=RuntimeError('boom')):
+            with self.assertRaises(RuntimeError):
+                form.save()
+        self.assertFalse(get_user_model().objects.filter(username='atomic1').exists())
+
+
+class ProfilePictureCleanupTests(TestCase):
+    def test_replaced_picture_file_is_deleted(self):
+        import io, shutil, tempfile
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from PIL import Image
+
+        def png(name):
+            buf = io.BytesIO(); Image.new('RGB', (4, 4), 'red').save(buf, 'PNG')
+            return SimpleUploadedFile(name, buf.getvalue(), content_type='image/png')
+
+        media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media, True)
+        with override_settings(MEDIA_ROOT=media):
+            user = get_user_model().objects.create_user('pic1', 'pic1@example.com', 'pw12345!x')
+            self.client.force_login(user)
+            base = {'first_name': 'P', 'last_name': '', 'email': 'pic1@example.com',
+                    'bio': '', 'interests': ''}
+            self.client.post('/users/profile/', {**base, 'profile_picture': png('a.png')})
+            user.refresh_from_db()
+            first = user.profile_picture.path
+            self.assertTrue(__import__('os').path.exists(first))
+            self.client.post('/users/profile/', {**base, 'profile_picture': png('b.png')})
+            user.refresh_from_db()
+            self.assertNotEqual(user.profile_picture.path, first)
+            self.assertFalse(__import__('os').path.exists(first))
+            self.assertTrue(__import__('os').path.exists(user.profile_picture.path))
+class ProfileChecklistTests(TestCase):
+    def test_new_account_shows_checklist_and_completes(self):
+        from users.views import profile_checklist
+        U = get_user_model()
+        u = U.objects.create_user('chk', 'chk@x.com', 'pw12345!')
+        c = Client(); c.force_login(u)
+        r = c.get(reverse('users:profile'))
+        self.assertContains(r, 'Finish your profile')
+        self.assertContains(r, '0 of 6 done')
+        en = Language.objects.create(name='English', code='en')
+        es = Language.objects.create(name='Spanish', code='es')
+        UserLanguage.objects.create(user=u, language=en, proficiency='native', language_type='native')
+        UserLanguage.objects.create(user=u, language=es, proficiency='beginner', language_type='learning')
+        U.objects.filter(pk=u.pk).update(email_verified=True, bio='Hi', interests='tea', profile_picture='profile_pictures/x.png')
+        u.refresh_from_db()
+        steps, done = profile_checklist(u, u.userlanguage_set.all())
+        self.assertEqual(done, len(steps))
+        self.assertNotContains(c.get(reverse('users:profile')), 'Finish your profile')
+class PublicPageHeadingTests(TestCase):
+    def test_each_public_form_page_has_one_h1(self):
+        for url in ('/users/login/', '/users/register/', '/users/password-reset/', '/users/password-reset/sent/'):
+            body = self.client.get(url).content.decode()
+            self.assertEqual(body.count('<h1'), 1, url)

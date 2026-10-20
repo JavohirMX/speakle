@@ -13,7 +13,7 @@ from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 
 from users.models import Language, UserLanguage
-from matches.models import Match
+from matches.models import Match, MatchRequest
 from .models import VideoRoom, CallInvitation, UserPresence, CallSession, RoomMessage
 from .consumers import VideoCallConsumer, UserNotificationConsumer
 
@@ -1455,3 +1455,55 @@ class CleanupCommandTests(TestCase):
 
         stale.refresh_from_db()
         self.assertTrue(stale.is_online)
+
+
+from .models import ChatRoom, ChatMessage
+
+
+class ListQueryCountTests(TestCase):
+    """List pages must not issue queries per row."""
+
+    def _setup(self, partners):
+        from django.contrib.auth import get_user_model
+        from users.models import Language
+        U = get_user_model()
+        me = U.objects.filter(username='qme').first() or U.objects.create_user('qme', 'qme@x.com', 'pw12345!')
+        en, _ = Language.objects.get_or_create(name='English', defaults={'code': 'en'})
+        ko, _ = Language.objects.get_or_create(name='Korean', defaults={'code': 'ko'})
+        rooms = []
+        for i in range(partners):
+            other = U.objects.create_user(f'qp{partners}_{i}', f'qp{partners}_{i}@x.com', 'pw12345!')
+            m = Match.objects.create(user1=me, user2=other, user1_teaches=en, user1_learns=ko, status='active')
+            room = ChatRoom.objects.create(match=m)
+            ChatMessage.objects.create(room=room, sender=other, content=f'first {i}')
+            ChatMessage.objects.create(room=room, sender=other, content=f'latest {i}')
+            MatchRequest.objects.create(sender=other, receiver=me, sender_teaches=ko, sender_learns=en)
+            rooms.append(room)
+        self.client.force_login(me)
+        return me, rooms
+
+    def _count(self, url):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        with CaptureQueriesContext(connection) as q:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        return len(q)
+
+    def test_list_pages_use_constant_queries(self):
+        from django.urls import reverse
+        self._setup(2)
+        urls = [reverse('chats:chat_list'), reverse('matches:my_matches'), reverse('matches:requests')]
+        for u in urls:
+            self.client.get(u)  # warm one-time caches
+        small = [self._count(u) for u in urls]
+        self._setup(8)
+        big = [self._count(u) for u in urls]
+        self.assertEqual(small, big)
+
+    def test_chat_list_shows_unread_and_latest_message(self):
+        from django.urls import reverse
+        me, rooms = self._setup(1)
+        r = self.client.get(reverse('chats:chat_list'))
+        self.assertContains(r, 'latest 0')
+        self.assertNotContains(r, 'first 0')
+        self.assertEqual(r.context['total_unread'], 2)

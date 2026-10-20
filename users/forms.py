@@ -1,3 +1,4 @@
+from django.db import transaction
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User, Language, UserLanguage
@@ -81,24 +82,21 @@ class UserRegistrationForm(UserCreationForm):
         user.proficiency = self.cleaned_data['target_proficiency']
         
         if commit:
-            user.save()
-            
-            # Create UserLanguage entries for the new system
-            # Add native language
-            UserLanguage.objects.create(
-                user=user,
-                language=self.cleaned_data['native_language'],
-                proficiency='native',
-                language_type='native'
-            )
-            
-            # Add target language
-            UserLanguage.objects.create(
-                user=user,
-                language=self.cleaned_data['target_language'],
-                proficiency=self.cleaned_data['target_proficiency'],
-                language_type='learning'
-            )
+            # All or nothing: never leave an account without its languages.
+            with transaction.atomic():
+                user.save()
+                UserLanguage.objects.create(
+                    user=user,
+                    language=self.cleaned_data['native_language'],
+                    proficiency='native',
+                    language_type='native'
+                )
+                UserLanguage.objects.create(
+                    user=user,
+                    language=self.cleaned_data['target_language'],
+                    proficiency=self.cleaned_data['target_proficiency'],
+                    language_type='learning'
+                )
             
         return user
 
@@ -143,12 +141,19 @@ class UserProfileForm(forms.ModelForm):
         return pic
 
     def save(self, commit=True):
+        old_picture = None
+        if 'profile_picture' in self.changed_data:
+            old_picture = User.objects.filter(pk=self.instance.pk).values_list(
+                'profile_picture', flat=True).first()
         user = super().save(commit=False)
         # A changed address is unverified until the new one is confirmed.
         if 'email' in self.changed_data:
             user.email_verified = False
         if commit:
             user.save()
+            if old_picture and old_picture != (user.profile_picture.name or ''):
+                # The replaced (or cleared) picture is no longer referenced.
+                user.profile_picture.storage.delete(old_picture)
         return user
 
     def __init__(self, *args, **kwargs):
