@@ -48,6 +48,9 @@ class User(AbstractUser):
     email_verified = models.BooleanField(default=False)
     share_email_with_matches = models.BooleanField(
         default=False, help_text='Let people you are matched with see your email address.')
+    timezone = models.CharField(
+        max_length=64, blank=True,
+        help_text='Optional. Shown to people you have a request or match with, as your local time.')
     bio = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     interests = models.TextField(blank=True)
@@ -58,6 +61,22 @@ class User(AbstractUser):
     target_language = models.CharField(max_length=100, blank=True)
     proficiency = models.CharField(max_length=50, blank=True)
     
+    def local_time_label(self):
+        """Their current local time like '14:05 (UTC+9)', or '' when no valid zone is set."""
+        from datetime import datetime, timezone as dt_tz
+        from zoneinfo import ZoneInfo
+        if not self.timezone:
+            return ''
+        try:
+            now = datetime.now(dt_tz.utc).astimezone(ZoneInfo(self.timezone))
+        except Exception:
+            return ''
+        off = now.utcoffset()
+        mins = int(off.total_seconds() // 60) if off else 0
+        sign = '+' if mins >= 0 else '-'
+        h, m = divmod(abs(mins), 60)
+        return '%s (UTC%s%d%s)' % (now.strftime('%H:%M'), sign, h, ':%02d' % m if m else '')
+
     def get_native_languages(self):
         """Get user's native languages."""
         return self.userlanguage_set.filter(language_type='native')
