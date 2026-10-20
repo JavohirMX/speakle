@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from users.models import Language, UserLanguage
 from .models import Match, MatchRequest
+from .services import MatchingService
 
 User = get_user_model()
 
@@ -223,3 +224,53 @@ class PartnerEmailOptInTests(TestCase):
         get_user_model().objects.filter(pk=self.p.pk).update(share_email_with_matches=True)
         for partner in self._both():
             self.assertEqual(partner['email'], 'partner@x.com')
+
+
+class RequestDailyCapTests(TestCase):
+    def setUp(self):
+        from users.models import Language
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.me = User.objects.create_user('capme', 'capme@example.com', 'pw12345!x')
+        self.others = [User.objects.create_user('cap%d' % i, 'cap%d@example.com' % i, 'pw12345!x')
+                       for i in range(4)]
+
+    def _send(self, to):
+        return MatchingService.send_match_request(self.me, to, self.en, self.ko, 'hi')
+
+    def test_cap_blocks_new_requests_after_the_limit(self):
+        from django.test import override_settings
+        from .services import RequestLimitReached
+        with override_settings(MATCH_REQUESTS_PER_DAY=2):
+            self.assertTrue(self._send(self.others[0])[1])
+            self.assertTrue(self._send(self.others[1])[1])
+            with self.assertRaises(RequestLimitReached):
+                self._send(self.others[2])
+            # an already pending request is not a new one
+            self.assertFalse(self._send(self.others[0])[1])
+        self.assertEqual(MatchRequest.objects.filter(sender=self.me).count(), 2)
+
+    def test_old_requests_do_not_count_and_zero_means_off(self):
+        from datetime import timedelta
+        from django.test import override_settings
+        from django.utils import timezone
+        with override_settings(MATCH_REQUESTS_PER_DAY=1):
+            self._send(self.others[0])
+            MatchRequest.objects.filter(sender=self.me).update(created_at=timezone.now() - timedelta(hours=25))
+            self.assertTrue(self._send(self.others[1])[1])
+        with override_settings(MATCH_REQUESTS_PER_DAY=0):
+            for o in self.others[2:]:
+                self.assertTrue(self._send(o)[1])
+
+    def test_api_answers_429_with_a_readable_message(self):
+        from django.test import override_settings
+        from .models import PotentialMatch
+        pms = [PotentialMatch.objects.create(user=self.me, potential_partner=o, user_teaches=self.en,
+                                             user_learns=self.ko, compatibility_score=50) for o in self.others[:2]]
+        self.client.force_login(self.me)
+        with override_settings(MATCH_REQUESTS_PER_DAY=1):
+            ok = self.client.post('/matches/api/send-request/%d/' % pms[0].id, {'message': 'hi'})
+            blocked = self.client.post('/matches/api/send-request/%d/' % pms[1].id, {'message': 'hi'})
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(blocked.status_code, 429)
+        self.assertIn('tomorrow', blocked.json()['error'])

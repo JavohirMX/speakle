@@ -8,7 +8,9 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.urls import reverse
 from .models import PotentialMatch, Match, MatchRequest, MatchFeedback, QuickMatchEntry
-from .services import MatchingService
+from .services import MatchingService, RequestLimitReached
+
+REQUEST_LIMIT_TEXT = "You've sent a lot of requests today. Wait for replies, then try again tomorrow."
 from . import quick
 from users.models import Language
 
@@ -78,13 +80,17 @@ def send_match_request(request, potential_match_id):
     if request.method == 'POST':
         message = request.POST.get('message', '')
         
-        match_request, created = MatchingService.send_match_request(
-            sender=request.user,
-            receiver=potential_match.potential_partner,
-            sender_teaches_lang=potential_match.user_teaches,
-            sender_learns_lang=potential_match.user_learns,
-            message=message
-        )
+        try:
+            match_request, created = MatchingService.send_match_request(
+                sender=request.user,
+                receiver=potential_match.potential_partner,
+                sender_teaches_lang=potential_match.user_teaches,
+                sender_learns_lang=potential_match.user_learns,
+                message=message
+            )
+        except RequestLimitReached:
+            messages.error(request, REQUEST_LIMIT_TEXT)
+            return redirect('matches:find_matches')
         
         if created:
             messages.success(request, f'Match request sent to {potential_match.potential_partner.username}!')
@@ -203,13 +209,16 @@ def send_match_request_api(request, potential_match_id):
     
     message = request.POST.get('message', '')
     
-    match_request, created = MatchingService.send_match_request(
-        sender=request.user,
-        receiver=potential_match.potential_partner,
-        sender_teaches_lang=potential_match.user_teaches,
-        sender_learns_lang=potential_match.user_learns,
-        message=message
-    )
+    try:
+        match_request, created = MatchingService.send_match_request(
+            sender=request.user,
+            receiver=potential_match.potential_partner,
+            sender_teaches_lang=potential_match.user_teaches,
+            sender_learns_lang=potential_match.user_learns,
+            message=message
+        )
+    except RequestLimitReached:
+        return JsonResponse({'success': False, 'error': REQUEST_LIMIT_TEXT}, status=429)
     
     if created:
         return JsonResponse({
