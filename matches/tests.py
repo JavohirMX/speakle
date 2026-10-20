@@ -266,6 +266,12 @@ class MatchesAPITestCase(TestCase):
             status='active',
             created_at=timezone.now() - timezone.timedelta(days=10)
         )
+        # created_at is auto_now_add=True, so the constructor value is
+        # ignored; set the historical timestamp with update() instead.
+        Match.objects.filter(pk=match.pk).update(
+            created_at=timezone.now() - timezone.timedelta(days=10)
+        )
+        match.refresh_from_db()
         
         self.client.login(username='user1', password='testpass123')
         response = self.client.get(f'/matches/api/match-statistics/{match.id}/')
