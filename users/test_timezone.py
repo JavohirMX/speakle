@@ -50,3 +50,50 @@ class PartnerTimezoneTests(TestCase):
         self.other.timezone = 'Asia/Seoul'
         self.other.save()
         self.assertContains(self.client.get(url), 'their time')
+
+
+class PartnerTimezoneMatchAndPrivacyTests(TestCase):
+    def setUp(self):
+        from matches.models import Match
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.me = User.objects.create_user('pme', 'pme@example.com', 'pw12345!x')
+        self.partner = User.objects.create_user('ppart', 'ppart@example.com', 'pw12345!x', timezone='Asia/Seoul')
+        self.stranger = User.objects.create_user('pstr', 'pstr@example.com', 'pw12345!x')
+        self.match = Match.objects.create(user1=self.me, user2=self.partner, status='active',
+                                          user1_teaches=self.en, user1_learns=self.ko)
+
+    def test_match_page_shows_partner_time_to_a_participant(self):
+        self.client.force_login(self.me)
+        r = self.client.get(reverse('matches:match_detail', args=[self.match.id]))
+        self.assertContains(r, 'their time')
+        self.assertContains(r, 'UTC+9')
+
+    def test_stranger_cannot_see_it_and_blank_zone_shows_nothing(self):
+        self.client.force_login(self.stranger)
+        r = self.client.get(reverse('matches:match_detail', args=[self.match.id]), follow=True)
+        self.assertNotContains(r, 'UTC+9')
+        self.partner.timezone = ''
+        self.partner.save()
+        self.client.force_login(self.me)
+        r = self.client.get(reverse('matches:match_detail', args=[self.match.id]))
+        self.assertNotContains(r, 'their time')
+
+    def test_offset_follows_daylight_saving(self):
+        from datetime import datetime, timezone as tz
+        u = User(username='dst', timezone='Europe/Berlin')
+        for when, expect in ((datetime(2026, 1, 15, 12, 0, tzinfo=tz.utc), '13:00 (UTC+1)'),
+                             (datetime(2026, 7, 15, 12, 0, tzinfo=tz.utc), '14:00 (UTC+2)')):
+            with mock.patch('datetime.datetime') as dt:
+                dt.now.return_value = when
+                self.assertEqual(u.local_time_label(), expect)
+
+    def test_time_is_computed_at_render_not_stored(self):
+        from datetime import datetime, timezone as tz
+        u = User(username='clk', timezone='Asia/Seoul')
+        with mock.patch('datetime.datetime') as dt:
+            dt.now.return_value = datetime(2026, 1, 1, 0, 0, tzinfo=tz.utc)
+            a = u.local_time_label()
+            dt.now.return_value = datetime(2026, 1, 1, 1, 30, tzinfo=tz.utc)
+            b = u.local_time_label()
+        self.assertEqual((a, b), ('09:00 (UTC+9)', '10:30 (UTC+9)'))
