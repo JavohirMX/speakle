@@ -157,3 +157,6 @@ QUICK_MATCH_REQUIRE_VERIFIED_EMAIL = config('QUICK_MATCH_REQUIRE_VERIFIED_EMAIL'
 # Cap sign-ups per client address per hour. 0 disables it. Leave it off behind a proxy
 # that hides the client address (REMOTE_ADDR would be the proxy).
 SIGNUPS_PER_HOUR_PER_IP = config('SIGNUPS_PER_HOUR_PER_IP', default=0, cast=int)
+
+# New match requests one account can send per rolling 24 hours. 0 disables the cap.
+MATCH_REQUESTS_PER_DAY = config('MATCH_REQUESTS_PER_DAY', default=20, cast=int)

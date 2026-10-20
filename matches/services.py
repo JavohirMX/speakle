@@ -2,11 +2,16 @@ import re
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from users.models import UserLanguage, Language
 from .models import PotentialMatch, Match, MatchRequest
 
 User = get_user_model()
+
+
+class RequestLimitReached(Exception):
+    """The sender has used up today's allowance of new match requests."""
 
 class MatchingService:
     """Service class to handle user matching logic."""
@@ -153,6 +158,9 @@ class MatchingService:
         if UserBlock.either_way(sender, receiver):
             return None, False
         with transaction.atomic():
+            # Serialise this sender's requests so the daily-cap count below cannot be raced
+            # by two parallel sends (a row lock on PostgreSQL; SQLite already locks the file).
+            User.objects.select_for_update().filter(pk=sender.pk).first()
             if Match.objects.filter(
                 Q(user1=sender, user2=receiver) | Q(user1=receiver, user2=sender),
                 status__in=['active', 'pending', 'accepted'],
@@ -165,6 +173,17 @@ class MatchingService:
             if reverse:
                 return reverse, False
 
+            # Cap new requests per sender per rolling 24 hours, so one account cannot flood
+            # everyone. Only requests that would be created or re-opened count against it.
+            cap = getattr(settings, 'MATCH_REQUESTS_PER_DAY', 20)
+            pending_here = MatchRequest.objects.filter(
+                sender=sender, receiver=receiver, status='pending'
+            ).exists()
+            if cap and not pending_here:
+                since = timezone.now() - timezone.timedelta(hours=24)
+                if MatchRequest.objects.filter(sender=sender, created_at__gte=since).count() >= cap:
+                    raise RequestLimitReached()
+
             existing = MatchRequest.objects.select_for_update().filter(
                 sender=sender, receiver=receiver
             ).first()
@@ -176,6 +195,7 @@ class MatchingService:
                 existing.sender_learns = sender_learns_lang
                 existing.message = message
                 existing.responded_at = None
+                existing.created_at = timezone.now()  # a re-opened request counts as new
                 existing.save()
                 return existing, True
 

@@ -100,6 +100,7 @@ Local development works without any config beyond `DEBUG=True`. Docker and produ
 | `WEBRTC_STUN_URLS` | Comma-separated STUN URLs for video calls. Defaults to five public Google STUN servers. Empty means none. |
 | `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL` | Optional TURN relay for networks where direct calls fail. A TURN entry is used only when all three are set. |
 | `QUICK_MATCH_REQUIRE_VERIFIED_EMAIL` | Require a verified email for quick match. Default `True`. |
+| `MATCH_REQUESTS_PER_DAY` | New match requests one account can send per rolling 24 hours. Default `20`; `0` turns the cap off. |
 | `SIGNUPS_PER_HOUR_PER_IP` | Cap sign-ups per client address per hour. `0` (default) is off. Leave it off behind a proxy that hides client addresses. |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_*`, `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_SECURE`, `X_FRAME_OPTIONS` | HTTPS hardening. Cookie and redirect flags default to off, so turn them on once HTTPS works. HSTS defaults to one year, so only deploy with HTTPS. |
 | `TIME_ZONE`, `LANGUAGE_CODE` | Default `Asia/Seoul` and `en-us`. |
