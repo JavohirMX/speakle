@@ -405,3 +405,50 @@ class LogoutPostOnlyTests(TestCase):
         html = self.client.get('/users/profile/').content.decode()
         self.assertIn('method="post" action="/users/logout/"', html)
         self.assertNotIn('href="/users/logout/"', html)
+
+
+class RegistrationAtomicTests(TestCase):
+    def test_failed_language_creation_leaves_no_half_account(self):
+        from unittest import mock
+        from users.forms import UserRegistrationForm
+        en = Language.objects.create(name='English', code='en')
+        es = Language.objects.create(name='Spanish', code='es')
+        form = UserRegistrationForm({
+            'username': 'atomic1', 'first_name': 'A', 'email': 'atomic1@example.com',
+            'native_language': en.pk, 'target_language': es.pk, 'target_proficiency': 'beginner',
+            'password1': 'Str0ng-pass-123', 'password2': 'Str0ng-pass-123',
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        with mock.patch.object(UserLanguage.objects, 'create', side_effect=RuntimeError('boom')):
+            with self.assertRaises(RuntimeError):
+                form.save()
+        self.assertFalse(get_user_model().objects.filter(username='atomic1').exists())
+
+
+class ProfilePictureCleanupTests(TestCase):
+    def test_replaced_picture_file_is_deleted(self):
+        import io, shutil, tempfile
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+        from PIL import Image
+
+        def png(name):
+            buf = io.BytesIO(); Image.new('RGB', (4, 4), 'red').save(buf, 'PNG')
+            return SimpleUploadedFile(name, buf.getvalue(), content_type='image/png')
+
+        media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media, True)
+        with override_settings(MEDIA_ROOT=media):
+            user = get_user_model().objects.create_user('pic1', 'pic1@example.com', 'pw12345!x')
+            self.client.force_login(user)
+            base = {'first_name': 'P', 'last_name': '', 'email': 'pic1@example.com',
+                    'bio': '', 'interests': ''}
+            self.client.post('/users/profile/', {**base, 'profile_picture': png('a.png')})
+            user.refresh_from_db()
+            first = user.profile_picture.path
+            self.assertTrue(__import__('os').path.exists(first))
+            self.client.post('/users/profile/', {**base, 'profile_picture': png('b.png')})
+            user.refresh_from_db()
+            self.assertNotEqual(user.profile_picture.path, first)
+            self.assertFalse(__import__('os').path.exists(first))
+            self.assertTrue(__import__('os').path.exists(user.profile_picture.path))

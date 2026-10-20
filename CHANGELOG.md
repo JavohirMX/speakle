@@ -9,6 +9,7 @@
 - Quick match: timed trial call with keep or skip.
 - Conversation prompts and private post-call feedback on matches.
 - Block and report users, with admin review.
+- Sign-up is all-or-nothing (no account without its languages); replaced profile pictures are deleted from storage.
 - Match detail page restyled to the design system (overview, stats, settings); quick match spacing and long-word wrapping fixes.
 - SEO: canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, `noindex` on non-public pages.
 - Favicons, web manifest, custom 404 and 500 pages.
