@@ -1509,6 +1509,21 @@ class ListQueryCountTests(TestCase):
         self.assertEqual(r.context['total_unread'], 2)
 
 
+class VideoRoomAssetsTests(TestCase):
+    def test_video_room_uses_compiled_css_not_a_cdn(self):
+        a = User.objects.create_user('va', 'va@example.com', 'pw12345!x')
+        b = User.objects.create_user('vb', 'vb@example.com', 'pw12345!x')
+        en, ko = Language.objects.create(name='English', code='en'), Language.objects.create(name='Korean', code='ko')
+        m = Match.objects.create(user1=a, user2=b, user1_teaches=en, user1_learns=ko, status='active')
+        room = VideoRoom.objects.create(match=m)
+        self.client.force_login(a)
+        r = self.client.get(reverse('chats:video_room', args=[room.room_id]))
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertNotIn('cdn.tailwindcss.com', html)
+        self.assertRegex(html, r'/static/css/tailwind\.css\?v=[0-9a-f]{10}')
+
+
 class IceServersTests(TestCase):
     def test_default_is_google_stun_only(self):
         from .webrtc import ice_servers

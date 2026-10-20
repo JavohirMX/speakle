@@ -25,6 +25,7 @@
 
 ### Fixed
 - Docker: the `web` healthcheck called `curl`, which the Python base image does not include, so the container could never report healthy. It now uses Python, with a 60 second start period for migrations.
+- Video room: no longer loads Tailwind from `cdn.tailwindcss.com` (a third-party script that needed internet access). It uses the compiled `tailwind.css` like the other pages.
 - Mobile: sign out was unreachable on phones (header menu and footer are hidden in the app shell). The profile page now has a Sign out button. Removed two dead "#" links (Statistics, Settings) from the user menus, stopped the skip link peeking in at the top of the page, and stacked the empty-state buttons on narrow screens.
 - Video room on phones: the control bar no longer covers the partner name and timer, "Start call" wraps instead of being cut, the waiting icon is centred, and the Share button is hidden when the browser cannot share a screen.
 - Quick match showed Find and Cancel buttons at the same time.
