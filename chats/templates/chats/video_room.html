@@ -721,7 +721,7 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
 .media-error h3 { font-weight: 800; font-size: 1.15rem; margin-bottom: .3rem; } .media-error .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
 .media-error .b { padding: .55rem 1rem; border: 2px solid #1a1510; border-radius: 12px; font-weight: 700; background: #ffc61a; text-decoration: none; color: #1a1510; min-height: 44px; display: inline-flex; align-items: center; }
 .media-error .b.o { background: #fff; }
-@media (max-width: 640px) { .controls-bar { gap: .3rem !important; padding: .4rem !important; max-width: 96vw; } .control-btn { min-width: 0; flex: 1; height: 58px !important; padding: .25rem .2rem; } .control-btn .cb-label { font-size: .6rem; } }
+@media (max-width: 640px) { .controls-bar { gap: .3rem !important; padding: .4rem !important; max-width: 96vw; } .control-btn { min-width: 0; flex: 1; height: 58px !important; padding: .25rem .2rem; } .control-btn .cb-label { font-size: .6rem; white-space: normal; text-align: center; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 96px; } }
 </style>
 </head>
 <body>
@@ -733,7 +733,7 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
         <div class="video-container remote-video-container">
             <div id="remoteVideoPlaceholder" class="video-placeholder">
                 <div class="text-center">
-                    <div class="text-6xl mb-4"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></div>
+                    <div class="text-6xl mb-4 flex justify-center"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></div>
                     <div class="text-xl font-semibold">{{ partner.username }}</div>
                     <div class="text-sm opacity-75 mt-2" role="status">Waiting for {{ partner.username }} to join. Keep this tab open.</div>
                 </div>
@@ -1013,6 +1013,7 @@ class VideoChat {
         this.toggleVideoBtn.addEventListener('click', () => this.toggleVideo());
         this.toggleAudioBtn.addEventListener('click', () => this.toggleAudio());
         this.toggleChatBtn.addEventListener('click', () => this.toggleChat());
+        if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) { this.shareScreenBtn.style.display = 'none'; }
         this.shareScreenBtn.addEventListener('click', () => this.shareScreen());
         this.sendChatBtn.addEventListener('click', () => this.sendChatMessage());
         this.chatInput.addEventListener('keypress', (e) => {

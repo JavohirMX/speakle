@@ -16,6 +16,7 @@
 
 ### Fixed
 - Mobile: sign out was unreachable on phones (header menu and footer are hidden in the app shell). The profile page now has a Sign out button. Removed two dead "#" links (Statistics, Settings) from the user menus, stopped the skip link peeking in at the top of the page, and stacked the empty-state buttons on narrow screens.
+- Video room on phones: the control bar no longer covers the partner name and timer, "Start call" wraps instead of being cut, the waiting icon is centred, and the Share button is hidden when the browser cannot share a screen.
 - Quick match showed Find and Cancel buttons at the same time.
 - Call summary showed the other person's private star rating (it was stored in the shared call notes). Ratings are now hidden from the partner.
 - Call history showed the latest call as total time and a made-up 5m average. Both are now computed from real calls.
