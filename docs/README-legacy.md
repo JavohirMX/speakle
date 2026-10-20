@@ -1,3 +1,5 @@
+> **Outdated.** This is the original long README, kept for history. Parts of it no longer match the code (for example the MIT badge, the "AI-powered" matching wording, the Tailwind CDN setup and the project layout). Use [README.md](../README.md), [DEPLOYMENT.md](../DEPLOYMENT.md) and [ARCHITECTURE.md](ARCHITECTURE.md) instead.
+
 # 🗣️ Speakle - Global Language Exchange Platform
 
 [![Django](https://img.shields.io/badge/Django-5.2.1-blue?style=flat-square&logo=django)](https://djangoproject.com/)
