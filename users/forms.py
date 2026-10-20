@@ -105,12 +105,19 @@ class UserProfileForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'share_email_with_matches', 'bio', 'profile_picture', 'interests']
+        fields = ['first_name', 'last_name', 'email', 'share_email_with_matches', 'timezone', 'bio', 'profile_picture', 'interests']
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
             'interests': forms.Textarea(attrs={'rows': 3}),
         }
     
+    def clean_timezone(self):
+        from zoneinfo import available_timezones
+        tz = (self.cleaned_data.get('timezone') or '').strip()
+        if tz and tz not in available_timezones():
+            raise forms.ValidationError('Pick a time zone from the list.')
+        return tz
+
     def clean_email(self):
         email = (self.cleaned_data.get('email') or '').strip()
         if email and User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
@@ -158,6 +165,12 @@ class UserProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        from zoneinfo import available_timezones
+        zones = sorted(z for z in available_timezones() if '/' in z and not z.startswith(('Etc/', 'posix/', 'right/')))
+        self.fields['timezone'] = forms.ChoiceField(
+            required=False, label='Time zone',
+            choices=[('', 'Not set')] + [(z, z.replace('_', ' ')) for z in zones],
+            help_text=self.fields['timezone'].help_text)
         # Add CSS classes for styling
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
