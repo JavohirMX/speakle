@@ -22,6 +22,7 @@
 - Privacy-first analytics: per-day counters by page name, referrer host and `?utm_source=` on landing, sign-up and login pages. No IPs, cookies, user ids, URLs with ids or chat content. Staff-only dashboard at `/stats/` with sign-ups, matches, calls and message counts. Turn off with `ANALYTICS_ENABLED = False`.
 
 ### Fixed
+- Docker: the `web` healthcheck called `curl`, which the Python base image does not include, so the container could never report healthy. It now uses Python, with a 60 second start period for migrations.
 - Mobile: sign out was unreachable on phones (header menu and footer are hidden in the app shell). The profile page now has a Sign out button. Removed two dead "#" links (Statistics, Settings) from the user menus, stopped the skip link peeking in at the top of the page, and stacked the empty-state buttons on narrow screens.
 - Video room on phones: the control bar no longer covers the partner name and timer, "Start call" wraps instead of being cut, the waiting icon is centred, and the Share button is hidden when the browser cannot share a screen.
 - Quick match showed Find and Cancel buttons at the same time.
