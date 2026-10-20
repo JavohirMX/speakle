@@ -99,5 +99,11 @@
       </div>
     </form>
   </section>
+  <section aria-labelledby="acct-h">
+    <h2 id="acct-h" class="text-2xl">Account</h2>
+    <form method="post" action="{% url 'users:logout' %}" class="mt-3">{% csrf_token %}
+      <button type="submit" class="btn btn-outline w-full sm:w-auto">Sign out</button>
+    </form>
+  </section>
 </div>
 {% endblock %}

@@ -157,6 +157,18 @@ class ProfilePageTests(TestCase):
         u.refresh_from_db()
         self.assertEqual((u.first_name, u.bio), ('Pat', 'hello'))
 
+    def test_profile_has_sign_out_form(self):
+        # On phones the header menu and footer are hidden, so the profile page
+        # must carry a working POST sign-out.
+        U = get_user_model()
+        u = U.objects.create_user('so', 'so@x.com', 'pw12345!')
+        c = Client(); c.force_login(u)
+        r = c.get(reverse('users:profile'))
+        self.assertContains(r, 'id="acct-h"')
+        r = c.post(reverse('users:logout'))
+        self.assertEqual(r.status_code, 302)
+        self.assertNotIn('_auth_user_id', c.session)
+
 
 class LanguagePagesTests(TestCase):
     def setUp(self):

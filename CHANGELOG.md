@@ -16,6 +16,7 @@
 - Privacy-first analytics: per-day counters by page name, referrer host and `?utm_source=` on landing, sign-up and login pages. No IPs, cookies, user ids, URLs with ids or chat content. Staff-only dashboard at `/stats/` with sign-ups, matches, calls and message counts. Turn off with `ANALYTICS_ENABLED = False`.
 
 ### Fixed
+- Mobile: sign out was unreachable on phones (header menu and footer are hidden in the app shell). The profile page now has a Sign out button. Removed two dead "#" links (Statistics, Settings) from the user menus, stopped the skip link peeking in at the top of the page, and stacked the empty-state buttons on narrow screens.
 - Quick match showed Find and Cancel buttons at the same time.
 - Call summary showed the other person's private star rating (it was stored in the shared call notes). Ratings are now hidden from the partner.
 - Call history showed the latest call as total time and a made-up 5m average. Both are now computed from real calls.
