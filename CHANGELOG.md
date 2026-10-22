@@ -3,6 +3,7 @@
 ## Unreleased (dev)
 
 ### Added
+- Partner practice streaks and a shared weekly goal: the match page shows the pair's consecutive-week streak and this week's progress. A week counts when the partners complete `weekly_goal` scheduled sessions (1-5, either partner can set it); a session counts when an ended call of at least 5 minutes overlaps its window. Computed on read, Monday-start weeks in the project timezone (labeled in the UI); no scheduler needed.
 - Scheduled practice sessions: either partner proposes a time on the match page, the other accepts or declines, and either can cancel. The `send_session_reminders` management command emails both partners 24 hours and 1 hour before an accepted session (run it on a schedule; see README known limits).
 - Docs: README rewritten with screenshots, accurate quickstart (including `populate_languages`), configuration table, deploy summary and known limits. DEPLOYMENT.md rewritten to match `docker-compose.yml`. New `docs/ARCHITECTURE.md` replaces the stale `PROJECT_CONTEXT.md`.
 - Video calls: ICE servers are configurable (`WEBRTC_STUN_URLS`, `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL`) so a TURN relay can be added. Default stays the five Google STUN servers. No credentials are committed.

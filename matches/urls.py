@@ -11,6 +11,7 @@ urlpatterns = [
     path('match/<int:match_id>/sessions/propose/', views.propose_session, name='propose_session'),
     path('sessions/<int:session_id>/respond/', views.respond_session, name='respond_session'),
     path('sessions/<int:session_id>/cancel/', views.cancel_session, name='cancel_session'),
+    path('match/<int:match_id>/weekly-goal/', views.set_weekly_goal, name='set_weekly_goal'),
     
     # Quick match
     path('quick/', views.quick_match_page, name='quick_match'),

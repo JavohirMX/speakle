@@ -206,6 +206,27 @@
                     <!-- Scheduled sessions -->
                     <section class="md-sec" id="sessions" aria-labelledby="mdSessionsH">
                         <h2 id="mdSessionsH" class="md-h">Practice sessions</h2>
+                        <div class="md-lang" style="grid-template-columns: 1fr" aria-live="polite">
+                            <span class="md-lang-meta">
+                                {% if streak > 0 %}
+                                <span class="chip chip-native">{{ streak }}-week streak</span>
+                                {% endif %}
+                                <span class="md-lang-lvl">This week: {{ week_done }}/{{ weekly_goal }} scheduled call{{ weekly_goal|pluralize }} together (weeks start Monday, {{ tz_label }})</span>
+                            </span>
+                            <form method="post" action="{% url 'matches:set_weekly_goal' match.id %}" class="md-lang-meta">
+                                {% csrf_token %}
+                                <label for="weekly-goal" class="md-lang-lvl">Shared weekly goal</label>
+                                <select id="weekly-goal" name="weekly_goal" class="rounded-xl border border-gray-300 px-2 py-1">
+                                    {% for g in weekly_goal_choices %}
+                                    <option value="{{ g }}" {% if g == weekly_goal %}selected{% endif %}>{{ g }} call{{ g|pluralize }} / week</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-outline">Save</button>
+                            </form>
+                            {% if streak == 0 and week_done == 0 %}
+                            <p class="md-note">Finish a scheduled call together to start your streak. No pressure - it simply counts the weeks you both show up.</p>
+                            {% endif %}
+                        </div>
                         {% if upcoming_sessions %}
                         <ul class="md-langs" style="grid-template-columns: 1fr">
                             {% for session in upcoming_sessions %}

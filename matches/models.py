@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 from users.models import Language
@@ -45,6 +46,13 @@ class Match(models.Model):
     ended_at = models.DateTimeField(blank=True, null=True)
     ended_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ended_matches')
     end_reason = models.TextField(blank=True, help_text="Reason for ending the match")
+
+    # Shared weekly practice goal: scheduled calls the partners aim to
+    # complete together each week; drives the practice streak.
+    weekly_goal = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    )
 
     # Quick match: timed first call, then both choose keep or skip
     trial_ends_at = models.DateTimeField(blank=True, null=True)

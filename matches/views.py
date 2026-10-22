@@ -9,6 +9,7 @@ import datetime
 from django.utils import timezone
 from django.urls import reverse
 from .models import PotentialMatch, Match, MatchRequest, MatchFeedback, QuickMatchEntry, MatchSession
+from .streaks import current_streak, weekly_progress
 from .services import MatchingService
 from . import quick
 from users.models import Language
@@ -197,6 +198,10 @@ def match_detail(request, match_id):
         'duration_choices': MatchSession.DURATION_CHOICES,
         'min_session_start': (now + timezone.timedelta(minutes=15)).strftime('%Y-%m-%dT%H:%M'),
         'tz_label': timezone.get_current_timezone_name(),
+        'streak': current_streak(match),
+        'week_done': weekly_progress(match)[0],
+        'weekly_goal': match.weekly_goal,
+        'weekly_goal_choices': range(1, 6),
     }
     
     return render(request, 'matches/match_detail.html', context)
@@ -245,6 +250,28 @@ def propose_session(request, match_id):
         note=request.POST.get('note', '').strip()[:200],
     )
     messages.success(request, 'Session proposed! Your partner can accept or decline it.')
+    return redirect('matches:match_detail', match_id=match.id)
+
+
+@login_required
+@require_POST
+def set_weekly_goal(request, match_id):
+    """Set the pair's shared weekly practice goal (1-5 scheduled calls)."""
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    try:
+        goal = int(request.POST.get('weekly_goal', ''))
+    except ValueError:
+        goal = 0
+    if not 1 <= goal <= 5:
+        messages.error(request, 'Pick a weekly goal between 1 and 5.')
+        return redirect('matches:match_detail', match_id=match.id)
+    if goal != match.weekly_goal:
+        match.weekly_goal = goal
+        match.save(update_fields=['weekly_goal', 'updated_at'])
+        messages.success(request, f'Weekly goal set to {goal} for both of you.')
     return redirect('matches:match_detail', match_id=match.id)
 
 
