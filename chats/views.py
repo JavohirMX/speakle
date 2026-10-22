@@ -290,6 +290,7 @@ def video_room(request, room_id):
         'call_history': call_history,
         'room_id_str': str(room.room_id),
         'ice_servers': ice_servers(),
+        'call_prompts': conversation_prompts(),
     }
     
     return render(request, 'chats/video_room.html', context)
@@ -316,6 +317,7 @@ def room_status(request, room_id):
         return JsonResponse({'error': 'Room not found'}, status=404)
 
 from datetime import timedelta
+from matches.prompts import conversation_prompts
 
 
 def _format_minutes(delta):
