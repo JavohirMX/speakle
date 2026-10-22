@@ -224,10 +224,12 @@
                                         <button type="submit" name="action" value="decline" class="btn btn-outline">Decline</button>
                                     </form>
                                     {% endif %}
+                                    {% if session.status == 'accepted' or session.proposed_by == user %}
                                     <form method="post" action="{% url 'matches:cancel_session' session.id %}">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-coral">Cancel</button>
                                     </form>
+                                    {% endif %}
                                 </span>
                             </li>
                             {% endfor %}

@@ -142,6 +142,38 @@ class SessionViewTests(TestCase):
         session.refresh_from_db()
         self.assertEqual(session.status, 'cancelled')
 
+    def test_responder_cannot_cancel_proposal(self):
+        session = MatchSession.objects.create(
+            match=self.match, proposed_by=self.u1, starts_at=future(), status='proposed')
+        self.client.force_login(self.u2)
+        self.client.post(reverse('matches:cancel_session', args=[session.id]))
+        session.refresh_from_db()
+        self.assertEqual(session.status, 'proposed')
+
+    def test_role_state_action_matrix(self):
+        proposed = MatchSession.objects.create(
+            match=self.match, proposed_by=self.u1, starts_at=future(), status='proposed')
+        # responder: Accept/Decline visible, no Cancel
+        self.client.force_login(self.u2)
+        resp = self.client.get(reverse('matches:match_detail', args=[self.match.id]))
+        body = resp.content.decode()
+        self.assertIn('value="accept"', body)
+        self.assertIn('value="decline"', body)
+        self.assertNotIn(f'/sessions/{proposed.id}/cancel/', body)
+        # proposer: Cancel visible, no Accept/Decline
+        self.client.force_login(self.u1)
+        resp = self.client.get(reverse('matches:match_detail', args=[self.match.id]))
+        body = resp.content.decode()
+        self.assertNotIn('value="accept"', body)
+        self.assertNotIn('value="decline"', body)
+        self.assertIn(f'/sessions/{proposed.id}/cancel/', body)
+        # accepted session: either partner sees Cancel
+        proposed.status = 'accepted'
+        proposed.save()
+        self.client.force_login(self.u2)
+        resp = self.client.get(reverse('matches:match_detail', args=[self.match.id]))
+        self.assertIn(f'/sessions/{proposed.id}/cancel/', resp.content.decode())
+
     def test_match_detail_shows_upcoming(self):
         MatchSession.objects.create(match=self.match, proposed_by=self.u1, starts_at=future())
         self.client.force_login(self.u2)

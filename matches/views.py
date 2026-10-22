@@ -288,6 +288,9 @@ def cancel_session(request, session_id):
     if session.status not in ('proposed', 'accepted'):
         messages.error(request, 'This session cannot be cancelled.')
         return redirect('matches:match_detail', match_id=session.match_id)
+    if session.status == 'proposed' and request.user != session.proposed_by:
+        messages.error(request, 'Decline the proposal instead of cancelling it.')
+        return redirect('matches:match_detail', match_id=session.match_id)
 
     session.status = 'cancelled'
     session.save(update_fields=['status', 'updated_at'])

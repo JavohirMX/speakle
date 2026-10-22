@@ -108,7 +108,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/app/django.log',
+            'filename': config('DJANGO_LOG_FILE', default='/app/django.log'),
             'formatter': 'verbose',
         },
         'console': {
