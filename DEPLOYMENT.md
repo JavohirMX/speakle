@@ -74,7 +74,7 @@ CSRF_COOKIE_SECURE=True
 SESSION_COOKIE_SECURE=True
 ```
 
-`TRUST_X_FORWARDED_PROTO=True` makes Django trust the proxy's `X-Forwarded-Proto` header. Only set it if your proxy sets or overwrites that header on every request. Without it, `SECURE_SSL_REDIRECT=True` behind a TLS-terminating proxy redirects every request to https again, and HSTS is never sent.
+`TRUST_X_FORWARDED_PROTO=True` makes Django trust the proxy's `X-Forwarded-Proto` header. Only set it if your proxy sets or overwrites that header on every request, and clients cannot reach port 8001 directly (`docker-compose.yml` publishes it on all interfaces, so firewall it or bind it to 127.0.0.1). Otherwise a client can send its own header and pass as https. Without the flag, `SECURE_SSL_REDIRECT=True` redirects every request to https again when the proxy forwards plain http to Django (the usual setup), and HSTS is not sent.
 
 HSTS is on by default in `settings_prod.py` (one year, with subdomains and preload), so only deploy this settings module on a host that will keep serving HTTPS.
 
