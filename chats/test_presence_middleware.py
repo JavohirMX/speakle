@@ -51,3 +51,27 @@ class PresenceMiddlewareTests(TestCase):
             self.assertIn(self.client.get(self.url).status_code, (200, 302))
         self.client.get(self.url)
         self.assertTrue(UserPresence.objects.filter(user=self.u, is_online=True).exists())
+
+    def test_simulated_lost_creation_race_applies_the_update_and_request_survives(self):
+        """Simulated race (not real concurrent Postgres): the first UPDATE matches 0 rows, then
+        get_or_create finds a row another request created, so the update is re-applied."""
+        from unittest import mock
+        from django.db.models.query import QuerySet
+        old = timezone.now() - dt.timedelta(minutes=10)
+        UserPresence.objects.create(user=self.u)
+        UserPresence.objects.filter(user=self.u).update(is_online=False, last_seen=old, last_activity=old)
+        real_update = QuerySet.update
+        calls = []
+
+        def update(qs, **kw):
+            calls.append(kw)
+            return 0 if len(calls) == 1 else real_update(qs, **kw)
+
+        with mock.patch.object(QuerySet, 'update', update):
+            resp = self.client.get(self.url)
+        self.assertLess(resp.status_code, 500)
+        self.assertEqual(len(calls), 2, 'initial UPDATE (0 rows) plus the re-apply')
+        p = UserPresence.objects.get(user=self.u)
+        self.assertTrue(p.is_online)
+        self.assertGreater(p.last_seen, old + dt.timedelta(minutes=9))
+        self.assertEqual(p.last_activity, old)
