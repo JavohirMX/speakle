@@ -10,6 +10,13 @@ from users.throttle import chat_allowed
 
 logger = logging.getLogger(__name__)
 
+
+def _loggable_type(message_type):
+    """Client-chosen frame type, safe to log: short plain identifiers only."""
+    if isinstance(message_type, str) and len(message_type) <= 24 and message_type.replace('_', '').isalnum() and message_type.islower():
+        return message_type
+    return f'<unrecognised, {len(str(message_type))} chars>'
+
 class VideoCallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_id = self.scope['url_route']['kwargs']['room_id']
@@ -104,7 +111,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get('type')
             
-            logger.debug(f"Received message type: {message_type} from user: {self.user.username}")
+            logger.debug(f"Received message type: {_loggable_type(message_type)} from user: {self.user.username}")
 
             # Re-check access on the low-volume frames (not on every ICE candidate), so a
             # block made during a call stops chat, offers and call control.
@@ -146,7 +153,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             elif message_type == 'typing_stop':
                 await self.handle_typing_stop(data)
             else:
-                logger.warning(f"Unknown message type: {message_type}")
+                logger.warning(f"Unknown message type: {_loggable_type(message_type)}")
                 await self.send(text_data=json.dumps({
                     'type': 'error',
                     'message': f'Unknown message type: {message_type}'
@@ -1032,7 +1039,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get('type')
             
-            logger.debug(f"Received message type: {message_type} from user: {self.user.username}")
+            logger.debug(f"Received message type: {_loggable_type(message_type)} from user: {self.user.username}")
             
             if message_type == 'send_message':
                 await self.handle_send_message(data)
@@ -1052,7 +1059,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': data.get('timestamp')
                 }))
             else:
-                logger.warning(f"Unknown message type: {message_type}")
+                logger.warning(f"Unknown message type: {_loggable_type(message_type)}")
                 await self.send(text_data=json.dumps({
                     'type': 'error',
                     'message': f'Unknown message type: {message_type}'
@@ -1392,6 +1399,10 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             return False
             
         except ChatMessage.DoesNotExist:
+            return False
+        except (ValueError, TypeError) as e:
+            # Malformed client-supplied id: its text is echoed in the exception message, so log the type only.
+            logger.warning(f"Edit rejected: bad message id ({type(e).__name__})")
             return False
         except Exception as e:
             logger.exception(f"Error editing chat message: {e}")
