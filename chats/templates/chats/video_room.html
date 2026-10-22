@@ -91,7 +91,7 @@
         bottom: 110px;
         left: 50%;
         transform: translateX(-50%);
-        max-width: min(480px, calc(100vw - 32px));
+        width: min(480px, calc(100vw - 32px));
         background: #fff9ec;
         color: #1a1510;
         border: 3px solid #1a1510;
@@ -119,6 +119,7 @@
         background: #ffc61a;
         color: #1a1510;
         cursor: pointer;
+        white-space: nowrap;
     }
     .topic-card .topic-actions button.topic-close { background: transparent; }
     .topic-card .topic-actions button:focus-visible { outline: 3px solid #1a1510; outline-offset: 2px; }
@@ -758,7 +759,7 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
 .media-error h3 { font-weight: 800; font-size: 1.15rem; margin-bottom: .3rem; } .media-error .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
 .media-error .b { padding: .55rem 1rem; border: 2px solid #1a1510; border-radius: 12px; font-weight: 700; background: #ffc61a; text-decoration: none; color: #1a1510; min-height: 44px; display: inline-flex; align-items: center; }
 .media-error .b.o { background: #fff; }
-@media (max-width: 640px) { .controls-bar { gap: .3rem !important; padding: .4rem !important; max-width: 96vw; } .control-btn { min-width: 0; flex: 1; height: 58px !important; padding: .25rem .2rem; } .control-btn .cb-label { font-size: .6rem; white-space: normal; text-align: center; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 96px; } }
+@media (max-width: 640px) { .controls-bar { gap: .35rem !important; padding: .45rem !important; width: 96vw; flex-wrap: wrap; justify-content: center; } .control-btn { min-width: 58px; flex: 0 0 auto; height: 54px !important; padding: .25rem .35rem; } .control-btn .cb-label { font-size: .62rem; white-space: nowrap; } .topic-card { bottom: 170px; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 170px; } }
 </style>
 </head>
 <body>
