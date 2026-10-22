@@ -759,6 +759,10 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
 .media-error h3 { font-weight: 800; font-size: 1.15rem; margin-bottom: .3rem; } .media-error .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
 .media-error .b { padding: .55rem 1rem; border: 2px solid #1a1510; border-radius: 12px; font-weight: 700; background: #ffc61a; text-decoration: none; color: #1a1510; min-height: 44px; display: inline-flex; align-items: center; }
 .media-error .b.o { background: #fff; }
+@media (min-width: 769px) {
+body:has(.chat-sidebar.open) .controls-bar, body:has(.chat-sidebar.open) .topic-card { left: calc(50% - 210px); }
+body:has(.chat-sidebar.open) .controls-bar { max-width: calc(100vw - 460px); }
+}
 @media (max-width: 640px) { body.topic-open .video-container:not(.local-video-container) .video-overlay { top: 76px; bottom: auto; right: auto; padding: 8px 12px; border-radius: 12px; background: rgba(0,0,0,0.55); } .controls-bar { gap: .35rem !important; padding: .45rem !important; width: 96vw; flex-wrap: wrap; justify-content: center; } .control-btn { min-width: 58px; flex: 0 0 auto; height: 54px !important; padding: .25rem .35rem; } .control-btn .cb-label { font-size: .62rem; white-space: nowrap; } .topic-card { bottom: 170px; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 170px; } }
 </style>
 </head>
@@ -1183,6 +1187,9 @@ class VideoChat {
             });
             
             this.isMediaReady = true;
+            this.toggleVideoBtn.classList.add('active'); this.toggleVideoBtn.classList.remove('inactive');
+            this.toggleAudioBtn.classList.add('active'); this.toggleAudioBtn.classList.remove('inactive');
+            this.localVideoStatus.textContent = 'Video On';
 
             this.loadingStatus.textContent = 'Video chat ready!';
             
@@ -1209,6 +1216,9 @@ class VideoChat {
         if (name === 'NotAllowedError' || name === 'PermissionDeniedError') { title = 'Camera and microphone are blocked'; body = 'Click the lock icon next to the web address, set Camera and Microphone to Allow, then press Try again.'; }
         else if (name === 'NotFoundError') { title = 'No camera or microphone found'; body = 'Plug one in or switch device, then press Try again. You can still use text chat meanwhile.'; }
         else if (name === 'NotReadableError') { title = 'Your camera is busy'; body = 'Another app or tab is using it. Close that, then press Try again.'; }
+        this.toggleVideoBtn.classList.remove('active'); this.toggleVideoBtn.classList.add('inactive');
+        this.toggleAudioBtn.classList.remove('active'); this.toggleAudioBtn.classList.add('inactive');
+        this.localVideoStatus.textContent = 'No camera';
         const ov = this.loadingOverlay; ov.style.display = 'flex'; ov.style.alignItems = 'center'; ov.style.justifyContent = 'center'; Array.from(ov.children).forEach(c => { if (!c.classList.contains('media-error')) c.style.display = 'none'; });
         const old = ov.querySelector('.media-error'); if (old) old.remove();
         const box = document.createElement('div'); box.className = 'media-error'; box.setAttribute('role', 'alert');
