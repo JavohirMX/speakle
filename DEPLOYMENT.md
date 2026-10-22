@@ -116,6 +116,6 @@ The entrypoint applies new migrations on start. Read the Unreleased section of [
 | Pages work but calls, chat or notifications do not | The proxy does not pass WebSocket upgrades for `/ws/`, or `REDIS_URL` is wrong. |
 | Styles or fonts missing | The proxy is not serving `./staticfiles` at `/static/`, or `collectstatic` did not run. |
 | No users appear in matching, language list is empty | `populate_languages` was not run. |
-| Verification and reset emails never arrive | `EMAIL_BACKEND` is still the console backend. Set the `EMAIL_*` variables to a real SMTP server. |
+| Verification and reset emails never arrive | `EMAIL_BACKEND` is still the console backend. Set the `EMAIL_*` variables to a real SMTP server. The container's startup `migrate` prints warning `users.W001` in `docker compose logs web` when this is the case, and `python manage.py check` shows it too. The web server itself does not run checks. |
 | Cannot reach the admin | `DJANGO_SUPERUSER_PASSWORD` was empty on first start. Run `createsuperuser`. |
 | Calls connect on some networks and not others | There is no TURN relay, only public STUN servers. |
