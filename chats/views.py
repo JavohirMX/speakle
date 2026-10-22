@@ -12,8 +12,11 @@ from asgiref.sync import async_to_sync
 from matches.models import Match
 from .webrtc import ice_servers
 from .models import pair_is_blocked, VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
+import logging
 import uuid
 from django.db import transaction
+
+logger = logging.getLogger(__name__)
 
 # Utility function for sending WebSocket notifications
 def send_user_notification(user_id, notification_type, data):
@@ -216,7 +219,7 @@ def get_pending_invitations(request):
         ).update(status='expired')
         
         if expired_count > 0:
-            print(f"Marked {expired_count} expired invitations for user {request.user.username}")
+            logger.debug(f"Marked {expired_count} expired invitations for user {request.user.username}")
             # Clear cache if we updated any invitations
             cache.delete(cache_key)
         

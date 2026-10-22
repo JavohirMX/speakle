@@ -1,6 +1,10 @@
+import logging
+
 from django.utils import timezone
 from django.contrib.auth.models import User
 from .models import UserPresence
+
+logger = logging.getLogger(__name__)
 
 
 class UserActivityMiddleware:
@@ -42,4 +46,4 @@ class UserActivityMiddleware:
             
         except Exception as e:
             # Silently handle any database errors to avoid breaking requests
-            print(f"Error updating user presence for {user.username}: {e}") 
+            logger.exception(f"Error updating user presence for {user.username}: {e}")

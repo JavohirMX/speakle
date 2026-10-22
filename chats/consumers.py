@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -7,19 +8,21 @@ from django.db import models
 from django.urls import reverse
 from users.throttle import chat_allowed
 
+logger = logging.getLogger(__name__)
+
 class VideoCallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = f'video_call_{self.room_id}'
         self.user = self.scope['user']
         
-        print(f"WebSocket connection attempt for room: {self.room_id}")
-        print(f"User: {self.user}")
-        print(f"User authenticated: {self.user.is_authenticated}")
+        logger.debug(f"WebSocket connection attempt for room: {self.room_id}")
+        logger.debug(f"User: {self.user}")
+        logger.debug(f"User authenticated: {self.user.is_authenticated}")
         
         # Accept connection first
         await self.accept()
-        print(f"WebSocket connection accepted")
+        logger.debug(f"WebSocket connection accepted")
         
         # Send connection test message
         await self.send(text_data=json.dumps({
@@ -31,7 +34,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         
         # Check authentication
         if not self.user.is_authenticated:
-            print("User not authenticated")
+            logger.debug("User not authenticated")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Authentication required'
@@ -41,9 +44,9 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         
         # Verify user has access to this room
         has_access = await self.check_room_access()
-        print(f"User has room access: {has_access}")
+        logger.debug(f"User has room access: {has_access}")
         if not has_access:
-            print("User doesn't have room access")
+            logger.debug("User doesn't have room access")
             await self.send(text_data=json.dumps({
                 'type': 'error', 
                 'message': 'Room access denied'
@@ -57,7 +60,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         
-        print(f"User {self.user.username} joined room group")
+        logger.debug(f"User {self.user.username} joined room group")
         
         # Notify room that user joined
         await self.channel_layer.group_send(
@@ -71,7 +74,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         )
 
     async def disconnect(self, close_code):
-        print(f"WebSocket disconnected with code: {close_code}")
+        logger.debug(f"WebSocket disconnected with code: {close_code}")
         
         # Close any open presence interval for this user on this room
         if hasattr(self, 'user') and hasattr(self, 'room_id') and self.user.is_authenticated:
@@ -101,7 +104,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get('type')
             
-            print(f"Received message type: {message_type} from user: {self.user.username}")
+            logger.debug(f"Received message type: {message_type} from user: {self.user.username}")
 
             # Re-check access on the low-volume frames (not on every ICE candidate), so a
             # block made during a call stops chat, offers and call control.
@@ -143,20 +146,20 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             elif message_type == 'typing_stop':
                 await self.handle_typing_stop(data)
             else:
-                print(f"Unknown message type: {message_type}")
+                logger.warning(f"Unknown message type: {message_type}")
                 await self.send(text_data=json.dumps({
                     'type': 'error',
                     'message': f'Unknown message type: {message_type}'
                 }))
                 
         except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
+            logger.warning(f"JSON decode error: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Invalid JSON data'
             }))
         except Exception as e:
-            print(f"Error in receive: {e}")
+            logger.exception(f"Error in receive: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f'Server error: {str(e)}'
@@ -172,7 +175,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             }))
             return
         
-        print(f"Broadcasting offer from {self.user.username}")
+        logger.debug(f"Broadcasting offer from {self.user.username}")
         
         # Add this user as a participant to any active session (they're accepting the call)
         await self.add_participant_to_session()
@@ -198,7 +201,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             }))
             return
         
-        print(f"Broadcasting answer from {self.user.username}")
+        logger.debug(f"Broadcasting answer from {self.user.username}")
         
         # Add this user as a participant to any active session
         await self.add_participant_to_session()
@@ -224,7 +227,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             }))
             return
             
-        print(f"Broadcasting ICE candidate from {self.user.username}")
+        logger.debug(f"Broadcasting ICE candidate from {self.user.username}")
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -238,7 +241,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_peer_ready(self, data):
         """Handle peer ready notification"""
-        print(f"Peer ready notification from {self.user.username}")
+        logger.debug(f"Peer ready notification from {self.user.username}")
         
         # Add this user as a participant to any active session
         await self.add_participant_to_session()
@@ -256,7 +259,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def handle_video_status(self, data):
         """Handle video status change"""
         video_enabled = data.get('video_enabled', True)
-        print(f"Video status change from {self.user.username}: {video_enabled}")
+        logger.debug(f"Video status change from {self.user.username}: {video_enabled}")
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -271,7 +274,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def handle_audio_status(self, data):
         """Handle audio status change"""
         audio_enabled = data.get('audio_enabled', True)
-        print(f"Audio status change from {self.user.username}: {audio_enabled}")
+        logger.debug(f"Audio status change from {self.user.username}: {audio_enabled}")
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -301,7 +304,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             }))
             return
             
-        print(f"Chat message from {self.user.username}: {message_content}")
+        logger.debug(f"Chat message from {self.user.username} ({len(message_content)} chars)")
         
         try:
             # Save message to database
@@ -326,7 +329,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             )
             
         except Exception as e:
-            print(f"Error handling chat message: {e}")
+            logger.exception(f"Error handling chat message: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Failed to send message'
@@ -334,7 +337,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_call_start(self, data):
         """Handle call session start"""
-        print(f"Call start from {self.user.username}")
+        logger.debug(f"Call start from {self.user.username}")
         
         # Create or get existing call session and ensure user is a participant
         session = await self.create_call_session(data)
@@ -356,7 +359,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_call_end(self, data):
         """Handle call session end with enhanced tracking"""
-        print(f"Call end from {self.user.username}")
+        logger.debug(f"Call end from {self.user.username}")
         
         # Extract end reason and notes from data
         end_reason = data.get('end_reason', 'user_hangup')
@@ -403,7 +406,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_typing_start(self, data):
         """Handle typing start notification"""
-        print(f"Typing start from {self.user.username}")
+        logger.debug(f"Typing start from {self.user.username}")
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -416,7 +419,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_typing_stop(self, data):
         """Handle typing stop notification"""
-        print(f"Typing stop from {self.user.username}")
+        logger.debug(f"Typing stop from {self.user.username}")
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -449,7 +452,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def webrtc_offer(self, event):
         """Forward WebRTC offer to other users (not sender)"""
         if hasattr(self, 'user') and event['sender_id'] != self.user.id:
-            print(f"Forwarding offer to {self.user.username}")
+            logger.debug(f"Forwarding offer to {self.user.username}")
             await self.send(text_data=json.dumps({
                 'type': 'offer',
                 'offer': event['offer'],
@@ -461,7 +464,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def webrtc_answer(self, event):
         """Forward WebRTC answer to other users (not sender)"""
         if hasattr(self, 'user') and event['sender_id'] != self.user.id:
-            print(f"Forwarding answer to {self.user.username}")
+            logger.debug(f"Forwarding answer to {self.user.username}")
             await self.send(text_data=json.dumps({
                 'type': 'answer',
                 'answer': event['answer'],
@@ -473,7 +476,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def webrtc_ice_candidate(self, event):
         """Forward ICE candidate to other users (not sender)"""
         if hasattr(self, 'user') and event['sender_id'] != self.user.id:
-            print(f"Forwarding ICE candidate to {self.user.username}")
+            logger.debug(f"Forwarding ICE candidate to {self.user.username}")
             await self.send(text_data=json.dumps({
                 'type': 'ice_candidate',
                 'candidate': event['candidate'],
@@ -604,7 +607,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 return False
 
         except Exception as e:
-            print(f"Error checking room access: {e}")
+            logger.exception(f"Error checking room access: {e}")
             return False
 
     @database_sync_to_async
@@ -620,7 +623,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             )
             
             if created:
-                print(f"Created new room: {self.room_id}")
+                logger.debug(f"Created new room: {self.room_id}")
             
             # Create message
             message = RoomMessage.objects.create(
@@ -628,11 +631,11 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 sender=self.user,
                 content=content
             )
-            print(f"Saved chat message: {message.id}")
+            logger.debug(f"Saved chat message: {message.id}")
             return message
             
         except Exception as e:
-            print(f"Error saving chat message: {e}")
+            logger.exception(f"Error saving chat message: {e}")
             return None
 
     @database_sync_to_async
@@ -664,7 +667,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             )
             
             if created:
-                print(f"Created new room: {self.room_id}")
+                logger.debug(f"Created new room: {self.room_id}")
             
             # Check if there's already an active session
             existing_session = room.sessions.filter(status='active').first()
@@ -672,7 +675,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 # Add this user as a participant if not already added
                 if not existing_session.participants.filter(id=self.user.id).exists():
                     existing_session.participants.add(self.user)
-                    print(f"Added {self.user.username} to existing session: {existing_session.id}")
+                    logger.debug(f"Added {self.user.username} to existing session: {existing_session.id}")
                 if not CallParticipantInterval.objects.filter(
                         session=existing_session, user=self.user, left_at__isnull=True).exists():
                     CallParticipantInterval.objects.create(
@@ -694,11 +697,11 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             room.is_active = True
             room.save()
             
-            print(f"Created call session: {session.id}")
+            logger.debug(f"Created call session: {session.id}")
             return session
             
         except Exception as e:
-            print(f"Error creating call session: {e}")
+            logger.exception(f"Error creating call session: {e}")
             return None
 
     @database_sync_to_async
@@ -715,14 +718,14 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             for session in active_sessions:
                 if not session.participants.filter(id=self.user.id).exists():
                     session.participants.add(self.user)
-                    print(f"Added {self.user.username} as participant to session: {session.id}")
+                    logger.debug(f"Added {self.user.username} as participant to session: {session.id}")
                 if not CallParticipantInterval.objects.filter(
                         session=session, user=self.user, left_at__isnull=True).exists():
                     CallParticipantInterval.objects.create(
                         session=session, user=self.user, joined_at=timezone.now())
             
         except Exception as e:
-            print(f"Error adding participant to session: {e}")
+            logger.exception(f"Error adding participant to session: {e}")
 
     @database_sync_to_async
     def end_call_session(self):
@@ -743,14 +746,14 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                     session=session, left_at__isnull=True).update(left_at=session.ended_at)
                 session.calculate_duration()
                 session.save()
-                print(f"Ended call session: {session.id}")
+                logger.debug(f"Ended call session: {session.id}")
             
             # Update room status
             room.is_active = False
             room.save()
             
         except Exception as e:
-            print(f"Error ending call session: {e}")
+            logger.exception(f"Error ending call session: {e}")
 
     @database_sync_to_async
     def end_call_session_enhanced(self, ended_by, end_reason, end_notes, connection_quality, network_issues):
@@ -782,7 +785,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 session.calculate_duration()
                 session.save()
                 
-                print(f"Ended call session: {session.id} - Reason: {end_reason}")
+                logger.debug(f"Ended call session: {session.id} - Reason: {end_reason}")
                 
                 # Get all participants for the summary
                 participants = list(session.participants.values_list('username', flat=True))
@@ -810,7 +813,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             return session_summary
             
         except Exception as e:
-            print(f"Error ending call session: {e}")
+            logger.exception(f"Error ending call session: {e}")
             return None
 
 class UserNotificationConsumer(AsyncWebsocketConsumer):
@@ -820,7 +823,7 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
         self.user = self.scope['user']
         
         if not self.user.is_authenticated:
-            print("User not authenticated for notification websocket")
+            logger.debug("User not authenticated for notification websocket")
             await self.close()
             return
         
@@ -829,7 +832,7 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
         
         # Accept connection
         await self.accept()
-        print(f"User {self.user.username} connected to notification websocket")
+        logger.debug(f"User {self.user.username} connected to notification websocket")
         
         # Join user's notification group
         await self.channel_layer.group_add(
@@ -850,7 +853,7 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
                 self.user_group_name,
                 self.channel_name
             )
-        print(f"User {self.user.username} disconnected from notification websocket")
+        logger.debug(f"User {self.user.username} disconnected from notification websocket")
     
     async def receive(self, text_data):
         # This consumer is mainly for receiving notifications, but we can handle basic messages
@@ -864,7 +867,7 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
                     'message': 'Notification websocket alive'
                 }))
         except Exception as e:
-            print(f"Error in notification consumer receive: {e}")
+            logger.exception(f"Error in notification consumer receive: {e}")
     
     # Event handlers for different types of notifications
     async def call_invitation_received(self, event):
@@ -943,8 +946,8 @@ class TextChatConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f'text_chat_{self.room_id}'
         self.user = self.scope['user']
         
-        print(f"Text chat connection attempt for room: {self.room_id}")
-        print(f"User: {self.user}")
+        logger.debug(f"Text chat connection attempt for room: {self.room_id}")
+        logger.debug(f"User: {self.user}")
         
         # Accept connection first
         await self.accept()
@@ -974,7 +977,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
         
-        print(f"User {self.user.username} joined text chat room group")
+        logger.debug(f"User {self.user.username} joined text chat room group")
         
         # Update user's online status for this room
         await self.set_user_online()
@@ -999,7 +1002,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def disconnect(self, close_code):
-        print(f"Text chat disconnected with code: {close_code}")
+        logger.debug(f"Text chat disconnected with code: {close_code}")
         
         # Set user offline and stop typing
         await self.set_user_offline()
@@ -1029,7 +1032,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get('type')
             
-            print(f"Received message type: {message_type} from user: {self.user.username}")
+            logger.debug(f"Received message type: {message_type} from user: {self.user.username}")
             
             if message_type == 'send_message':
                 await self.handle_send_message(data)
@@ -1049,20 +1052,20 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': data.get('timestamp')
                 }))
             else:
-                print(f"Unknown message type: {message_type}")
+                logger.warning(f"Unknown message type: {message_type}")
                 await self.send(text_data=json.dumps({
                     'type': 'error',
                     'message': f'Unknown message type: {message_type}'
                 }))
                 
         except json.JSONDecodeError as e:
-            print(f"JSON decode error: {e}")
+            logger.warning(f"JSON decode error: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Invalid JSON data'
             }))
         except Exception as e:
-            print(f"Error in receive: {e}")
+            logger.exception(f"Error in receive: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f'Server error: {str(e)}'
@@ -1134,7 +1137,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                 }))
                 
         except Exception as e:
-            print(f"Error handling send message: {e}")
+            logger.exception(f"Error handling send message: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Failed to send message'
@@ -1187,7 +1190,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                     'message': 'Failed to edit message'
                 }))
         except Exception as e:
-            print(f"Error handling edit message: {e}")
+            logger.exception(f"Error handling edit message: {e}")
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': 'Failed to edit message'
@@ -1333,7 +1336,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
         except ChatRoom.DoesNotExist:
             return False
         except Exception as e:
-            print(f"Error checking chat room access: {e}")
+            logger.exception(f"Error checking chat room access: {e}")
             return False
 
     @database_sync_to_async
@@ -1358,7 +1361,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
                 content=content,
                 reply_to=reply_to
             )
-            print(f"Saved chat message: {message.id}")
+            logger.debug(f"Saved chat message: {message.id}")
             # Clients render the quoted message, so send its details, not just the id.
             message.reply_payload = {
                 'id': reply_to.id,
@@ -1368,7 +1371,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             return message
             
         except Exception as e:
-            print(f"Error saving chat message: {e}")
+            logger.exception(f"Error saving chat message: {e}")
             return None
 
     @database_sync_to_async
@@ -1391,7 +1394,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
         except ChatMessage.DoesNotExist:
             return False
         except Exception as e:
-            print(f"Error editing chat message: {e}")
+            logger.exception(f"Error editing chat message: {e}")
             return False
 
     @database_sync_to_async
@@ -1406,7 +1409,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             ).exclude(sender=self.user).update(is_read=True)
             
         except Exception as e:
-            print(f"Error marking messages as read: {e}")
+            logger.exception(f"Error marking messages as read: {e}")
 
     @database_sync_to_async
     def get_message_history(self, page=1, page_size=50):
@@ -1443,7 +1446,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             return messages
             
         except Exception as e:
-            print(f"Error getting message history: {e}")
+            logger.exception(f"Error getting message history: {e}")
             return []
 
     @database_sync_to_async
@@ -1456,7 +1459,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             TypingStatus.set_typing(room, self.user, is_typing)
             
         except Exception as e:
-            print(f"Error setting typing status: {e}")
+            logger.exception(f"Error setting typing status: {e}")
 
     @database_sync_to_async
     def stop_typing(self):
@@ -1468,7 +1471,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             TypingStatus.set_typing(room, self.user, False)
             
         except Exception as e:
-            print(f"Error stopping typing: {e}")
+            logger.exception(f"Error stopping typing: {e}")
 
     @database_sync_to_async
     def set_user_online(self):
@@ -1481,7 +1484,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             UserPresence.mark_activity(self.user)
             
         except Exception as e:
-            print(f"Error marking user activity: {e}")
+            logger.exception(f"Error marking user activity: {e}")
 
     @database_sync_to_async
     def set_user_offline(self):
@@ -1494,7 +1497,7 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             UserPresence.cleanup_offline_users()
             
         except Exception as e:
-            print(f"Error cleaning up user presence: {e}")
+            logger.exception(f"Error cleaning up user presence: {e}")
 
     @database_sync_to_async
     def update_room_activity(self):
@@ -1506,4 +1509,4 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             room.update_activity()
             
         except Exception as e:
-            print(f"Error updating room activity: {e}") 
+            logger.exception(f"Error updating room activity: {e}")
