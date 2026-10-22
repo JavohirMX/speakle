@@ -12,6 +12,8 @@ video room:
   same time for that long. Intervals are opened only when a user
   actually signals (call start/offer/answer/peer-ready) and closed on
   disconnect or call end, so they are the provenance for attendance.
+  Note: this proves signaling-connected overlap, not actual audio or
+  video engagement - a muted idle call still counts.
   Calls recorded before interval tracking existed have no intervals and
   never earn credit - legacy rows cannot prove attendance.
 
