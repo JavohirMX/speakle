@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from chats.models import CallSession, VideoRoom
+from chats.models import CallParticipantInterval, CallSession, VideoRoom
 from matches.models import Match, MatchGoalChange, MatchSession
 from matches.streaks import (completed_sessions_in_week, current_streak,
                              goal_for_week, session_completed, week_start,
@@ -36,18 +36,30 @@ class StreakBase(TestCase):
             match=self.match, proposed_by=self.anna,
             starts_at=starts_at, duration_minutes=duration, status=status)
 
-    def add_call(self, started_at, minutes=30, participants='both'):
+    def add_call(self, started_at, minutes=30, participants='both',
+                 intervals='full'):
         # started_at is auto_now_add: create, then set timestamps directly.
         call = CallSession.objects.create(
             room=self.room, status='ended', end_reason='normal')
-        if participants == 'both':
-            call.participants.set([self.anna, self.boris])
-        elif participants == 'anna':
-            call.participants.set([self.anna])
+        end = started_at + dt.timedelta(minutes=minutes)
+        users = {'both': [self.anna, self.boris], 'anna': [self.anna],
+                 'none': []}[participants]
+        call.participants.set(users)
+        # Presence intervals are the provenance the streak rule reads.
+        # 'full': each participant present for the whole call.
+        # 'legacy': no intervals (pre-tracking rows).
+        if intervals == 'full':
+            for u in users:
+                CallParticipantInterval.objects.create(
+                    session=call, user=u, joined_at=started_at, left_at=end)
         CallSession.objects.filter(id=call.id).update(
-            started_at=started_at, ended_at=started_at + dt.timedelta(minutes=minutes))
+            started_at=started_at, ended_at=end)
         call.refresh_from_db()
         return call
+
+    def add_interval(self, call, user, joined_at, left_at):
+        return CallParticipantInterval.objects.create(
+            session=call, user=user, joined_at=joined_at, left_at=left_at)
 
 
 class WeekStartTests(StreakBase):
@@ -160,6 +172,43 @@ class ParticipationTests(StreakBase):
         s = self.add_session(start)
         self.add_call(start, minutes=40, participants='anna')
         self.assertFalse(session_completed(s))
+
+    def test_legacy_call_without_intervals_not_credited(self):
+        # Rows from before presence tracking have participants but no
+        # intervals: they cannot prove attendance and never earn credit.
+        start = aware(2026, 10, 21, 18, 0)
+        s = self.add_session(start)
+        self.add_call(start, minutes=40, participants='both', intervals='legacy')
+        self.assertFalse(session_completed(s))
+
+    def test_disjoint_signaling_is_not_joint_presence(self):
+        # Both signaled during a 10-minute call but never overlapped:
+        # anna 0-3 min, boris 4-10 min.
+        start = aware(2026, 10, 21, 18, 0)
+        s = self.add_session(start)
+        call = self.add_call(start, minutes=10, intervals='legacy')
+        self.add_interval(call, self.anna, start, start + 3 * MIN)
+        self.add_interval(call, self.boris, start + 4 * MIN, start + 10 * MIN)
+        self.assertFalse(session_completed(s))
+
+    def test_joint_overlap_under_five_minutes(self):
+        # Overlap of 3 minutes (boris joins at +1, anna leaves at +4).
+        start = aware(2026, 10, 21, 18, 0)
+        s = self.add_session(start)
+        call = self.add_call(start, minutes=10, intervals='legacy')
+        self.add_interval(call, self.anna, start, start + 4 * MIN)
+        self.add_interval(call, self.boris, start + 1 * MIN, start + 10 * MIN)
+        self.assertFalse(session_completed(s))
+
+    def test_reconnect_intervals_accumulate(self):
+        # anna drops and rejoins: 0-2 and 3-8; boris 0-10. Joint = 7 min.
+        start = aware(2026, 10, 21, 18, 0)
+        s = self.add_session(start)
+        call = self.add_call(start, minutes=10, intervals='legacy')
+        self.add_interval(call, self.anna, start, start + 2 * MIN)
+        self.add_interval(call, self.anna, start + 3 * MIN, start + 8 * MIN)
+        self.add_interval(call, self.boris, start, start + 10 * MIN)
+        self.assertTrue(session_completed(s))
 
     def test_both_partners_credit(self):
         start = aware(2026, 10, 21, 18, 0)

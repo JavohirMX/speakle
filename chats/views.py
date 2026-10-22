@@ -622,16 +622,13 @@ def call_summary(request, room_id, session_id):
             messages.error(request, 'You do not have access to this room.')
             return redirect('matches:my_matches')
         
-        # Check if user was a participant in this session
-        # If they weren't but have room access, add them as a participant (retroactive fix)
+        # Only actual participants may view the call summary. Participants
+        # are recorded when a user signals (offer/answer/peer-ready); never
+        # backfilled here - analytics and practice streaks rely on that
+        # integrity.
         if not session.participants.filter(id=request.user.id).exists():
-            if room.can_user_access(request.user):
-                # User has room access but wasn't marked as participant - fix this
-                session.participants.add(request.user)
-                print(f"Retroactively added {request.user.username} as participant to session {session.id}")
-            else:
-                messages.error(request, 'You were not a participant in this call.')
-                return redirect('matches:my_matches')
+            messages.error(request, 'You were not a participant in this call.')
+            return redirect('matches:my_matches')
         
         # Get partner and language info
         partner = room.match.get_partner(request.user)

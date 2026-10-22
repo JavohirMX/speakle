@@ -73,6 +73,10 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         print(f"WebSocket disconnected with code: {close_code}")
         
+        # Close any open presence interval for this user on this room
+        if hasattr(self, 'user') and hasattr(self, 'room_id') and self.user.is_authenticated:
+            await self.close_presence_intervals(self.room_id, user=self.user)
+        
         # Notify room that user left (before leaving group)
         if hasattr(self, 'user') and hasattr(self, 'room_group_name') and self.user.is_authenticated:
             await self.channel_layer.group_send(
@@ -632,10 +636,26 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             return None
 
     @database_sync_to_async
+    def close_presence_intervals(self, room_id, user=None, at=None):
+        """Close open presence intervals on the room's active sessions."""
+        from django.utils import timezone as tz
+        from .models import CallParticipantInterval, VideoRoom
+        try:
+            room = VideoRoom.objects.get(room_id=room_id)
+        except VideoRoom.DoesNotExist:
+            return
+        qs = CallParticipantInterval.objects.filter(
+            session__room=room, session__status='active', left_at__isnull=True)
+        if user is not None:
+            qs = qs.filter(user=user)
+        qs.update(left_at=at or tz.now())
+
+    @database_sync_to_async
     def create_call_session(self, data):
         """Create a new call session"""
         try:
-            from .models import VideoRoom, CallSession
+            from .models import VideoRoom, CallSession, CallParticipantInterval
+            from django.utils import timezone
             
             # Get or create room
             room, created = VideoRoom.objects.get_or_create(
@@ -653,6 +673,10 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 if not existing_session.participants.filter(id=self.user.id).exists():
                     existing_session.participants.add(self.user)
                     print(f"Added {self.user.username} to existing session: {existing_session.id}")
+                if not CallParticipantInterval.objects.filter(
+                        session=existing_session, user=self.user, left_at__isnull=True).exists():
+                    CallParticipantInterval.objects.create(
+                        session=existing_session, user=self.user, joined_at=timezone.now())
                 return existing_session
             
             # Create new session
@@ -663,6 +687,8 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 status='active'
             )
             session.participants.add(self.user)
+            CallParticipantInterval.objects.create(
+                session=session, user=self.user, joined_at=timezone.now())
             
             # Update room status
             room.is_active = True
@@ -684,10 +710,16 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             room = VideoRoom.objects.get(room_id=self.room_id)
             active_sessions = room.sessions.filter(status='active')
             
+            from .models import CallParticipantInterval
+            from django.utils import timezone
             for session in active_sessions:
                 if not session.participants.filter(id=self.user.id).exists():
                     session.participants.add(self.user)
                     print(f"Added {self.user.username} as participant to session: {session.id}")
+                if not CallParticipantInterval.objects.filter(
+                        session=session, user=self.user, left_at__isnull=True).exists():
+                    CallParticipantInterval.objects.create(
+                        session=session, user=self.user, joined_at=timezone.now())
             
         except Exception as e:
             print(f"Error adding participant to session: {e}")
@@ -703,9 +735,12 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             
             # End all active sessions
             active_sessions = room.sessions.filter(status='active')
+            from .models import CallParticipantInterval
             for session in active_sessions:
                 session.status = 'ended'
                 session.ended_at = timezone.now()
+                CallParticipantInterval.objects.filter(
+                    session=session, left_at__isnull=True).update(left_at=session.ended_at)
                 session.calculate_duration()
                 session.save()
                 print(f"Ended call session: {session.id}")
@@ -722,7 +757,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         """End the current call session with detailed information"""
         try:
             from django.utils import timezone
-            from .models import VideoRoom
+            from .models import VideoRoom, CallParticipantInterval
             
             room = VideoRoom.objects.get(room_id=self.room_id)
             
@@ -736,6 +771,8 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 # analytics and practice streaks rely on that integrity.
                 session.status = 'ended'
                 session.ended_at = timezone.now()
+                CallParticipantInterval.objects.filter(
+                    session=session, left_at__isnull=True).update(left_at=session.ended_at)
                 session.ended_by = ended_by
                 session.end_reason = end_reason
                 session.end_notes = end_notes

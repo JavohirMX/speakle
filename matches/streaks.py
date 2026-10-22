@@ -6,10 +6,14 @@ A scheduled session counts as completed when an ended call on the pair's
 video room:
 
 * overlaps the session window (EARLY_GRACE before start to
-  duration + LATE_GRACE after start),
-* lasted at least MIN_CALL_MINUTES, and
-* has BOTH partners recorded as participants (each is added by the call
-  consumer only when they actually signal: offer/answer/peer-ready).
+  duration + LATE_GRACE after start), and
+* has at least MIN_CALL_MINUTES of JOINT presence: recorded
+  CallParticipantInterval spans show both partners in the call at the
+  same time for that long. Intervals are opened only when a user
+  actually signals (call start/offer/answer/peer-ready) and closed on
+  disconnect or call end, so they are the provenance for attendance.
+  Calls recorded before interval tracking existed have no intervals and
+  never earn credit - legacy rows cannot prove attendance.
 
 Each call credits at most one scheduled session (the earliest still
 uncredited session it overlaps), so one call cannot satisfy two
@@ -69,11 +73,46 @@ def goal_for_week(match, ws):
     return goal
 
 
+def _merge(spans):
+    """Merge [(start, end)] spans into disjoint sorted spans."""
+    merged = []
+    for a, b in sorted(spans):
+        if merged and a <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], b)
+        else:
+            merged.append([a, b])
+    return merged
+
+
+def joint_presence_seconds(call, user_a_id, user_b_id):
+    """Seconds both users were simultaneously present in the call,
+    from recorded CallParticipantInterval spans. Open intervals are
+    treated as ending at the call's end."""
+    spans = {user_a_id: [], user_b_id: []}
+    for iv in call.participant_intervals.all():
+        if iv.user_id in spans:
+            spans[iv.user_id].append((iv.joined_at, iv.left_at or call.ended_at))
+    a, b = _merge(spans[user_a_id]), _merge(spans[user_b_id])
+    total = 0.0
+    i = j = 0
+    while i < len(a) and j < len(b):
+        lo = max(a[i][0], b[j][0])
+        hi = min(a[i][1], b[j][1])
+        if hi > lo:
+            total += (hi - lo).total_seconds()
+        if a[i][1] < b[j][1]:
+            i += 1
+        else:
+            j += 1
+    return total
+
+
 def qualifying_call_for_session(session, used_call_ids):
     """The first unused ended call that qualifies for this session, or None.
 
-    Qualifying: overlaps the session window, lasted >= MIN_CALL_MINUTES,
-    and both partners are recorded participants.
+    Qualifying: overlaps the session window and has >= MIN_CALL_MINUTES
+    of joint presence by both partners, proven by recorded presence
+    intervals. Calls without intervals (legacy rows) never qualify.
     """
     from chats.models import CallSession
     try:
@@ -81,19 +120,19 @@ def qualifying_call_for_session(session, used_call_ids):
     except Exception:
         return None
     start, end = session_window(session)
-    min_len = timedelta(minutes=MIN_CALL_MINUTES)
-    members = {session.match.user1_id, session.match.user2_id}
     calls = (
         CallSession.objects
         .filter(room=room, status='ended', started_at__lt=end, ended_at__gt=start)
         .exclude(id__in=used_call_ids)
-        .prefetch_related('participants')
+        .prefetch_related('participant_intervals')
         .order_by('started_at')
     )
     for call in calls:
-        if call.ended_at - call.started_at < min_len:
+        if call.ended_at is None or call.started_at is None:
             continue
-        if {u.id for u in call.participants.all()} >= members:
+        joint = joint_presence_seconds(
+            call, session.match.user1_id, session.match.user2_id)
+        if joint >= MIN_CALL_MINUTES * 60:
             return call
     return None
 
