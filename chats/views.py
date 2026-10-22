@@ -278,7 +278,8 @@ def video_room(request, room_id):
     user_learns = room.match.get_user_learns(request.user)
     
     # Get recent messages
-    recent_messages = room.messages.all()[:50]
+    # Latest 50, shown oldest-first. The model orders ascending, so a bare [:50] would return the first 50 ever sent.
+    recent_messages = list(reversed(room.messages.select_related('sender').order_by('-timestamp')[:50]))
     
     # Get call history
     call_history = room.sessions.filter(status='ended')[:10]
