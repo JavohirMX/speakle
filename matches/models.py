@@ -155,8 +155,10 @@ class MatchSession(models.Model):
     duration_minutes = models.PositiveSmallIntegerField(choices=DURATION_CHOICES, default=30)
     note = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='proposed')
-    reminder_24h_sent = models.BooleanField(default=False)
-    reminder_1h_sent = models.BooleanField(default=False)
+    # Per-window, per-recipient record: {"24h": [user_id, ...], "1h": [...]}.
+    # A recipient is only marked after their email is actually sent, so a
+    # partial SMTP failure retries just the missing recipient next run.
+    reminders_sent = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

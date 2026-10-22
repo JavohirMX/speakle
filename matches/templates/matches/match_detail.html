@@ -207,10 +207,10 @@
                     <section class="md-sec" id="sessions" aria-labelledby="mdSessionsH">
                         <h2 id="mdSessionsH" class="md-h">Practice sessions</h2>
                         {% if upcoming_sessions %}
-                        <ul class="md-langs">
+                        <ul class="md-langs" style="grid-template-columns: 1fr">
                             {% for session in upcoming_sessions %}
                             <li class="md-lang" style="grid-template-columns: 1fr">
-                                <span class="md-lang-name">{{ session.starts_at|date:"D, M d" }} · {{ session.starts_at|time:"H:i" }} · {{ session.get_duration_minutes_display }}</span>
+                                <span class="md-lang-name">{{ session.starts_at|date:"D, M d" }} · {{ session.starts_at|time:"H:i" }} ({{ tz_label }}) · {{ session.get_duration_minutes_display }}</span>
                                 <span class="md-lang-meta">
                                     <span class="chip {% if session.status == 'accepted' %}chip-native{% else %}chip-teach{% endif %}">{{ session.get_status_display }}</span>
                                     <span class="md-lang-lvl">proposed by {{ session.proposed_by.username }}</span>
@@ -242,7 +242,7 @@
                             {% csrf_token %}
                             <div class="md-two">
                                 <div>
-                                    <label for="session-starts-at" class="md-h3">Date and time</label>
+                                    <label for="session-starts-at" class="md-h3">Date and time ({{ tz_label }})</label>
                                     <input type="datetime-local" id="session-starts-at" name="starts_at" min="{{ min_session_start }}" required class="w-full rounded-xl border border-gray-300 px-3 py-2">
                                 </div>
                                 <div>
@@ -261,7 +261,11 @@
                             <button type="submit" class="btn btn-solid">Propose session</button>
                         </form>
                         {% else %}
-                        <p class="md-note">Waiting for an answer on the proposal above.</p>
+                        {% if upcoming_sessions.0.proposed_by == user %}
+                        <p class="md-note">Waiting for {{ partner.username }} to answer your proposal above.</p>
+                        {% else %}
+                        <p class="md-note">Answer {{ partner.username }}'s proposal above. You can propose a different time once it is answered.</p>
+                        {% endif %}
                         {% endif %}
                         {% endif %}
                     </section>

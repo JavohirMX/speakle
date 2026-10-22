@@ -196,6 +196,7 @@ def match_detail(request, match_id):
         'upcoming_sessions': upcoming_sessions,
         'duration_choices': MatchSession.DURATION_CHOICES,
         'min_session_start': (now + timezone.timedelta(minutes=15)).strftime('%Y-%m-%dT%H:%M'),
+        'tz_label': timezone.get_current_timezone_name(),
     }
     
     return render(request, 'matches/match_detail.html', context)

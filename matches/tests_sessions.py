@@ -5,6 +5,7 @@ from io import StringIO
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.management import call_command
+from unittest import mock
 from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
@@ -148,6 +149,16 @@ class SessionViewTests(TestCase):
         self.assertContains(resp, 'Practice sessions')
         self.assertContains(resp, 'Accept')
 
+    def test_responder_sees_answer_copy_not_waiting(self):
+        MatchSession.objects.create(match=self.match, proposed_by=self.u1, starts_at=future())
+        self.client.force_login(self.u2)
+        resp = self.client.get(reverse('matches:match_detail', args=[self.match.id]))
+        self.assertContains(resp, 'Answer anna')
+        self.assertNotContains(resp, 'Waiting for boris')
+        self.client.force_login(self.u1)
+        resp = self.client.get(reverse('matches:match_detail', args=[self.match.id]))
+        self.assertContains(resp, 'Waiting for boris')
+
 
 class ReminderCommandTests(TestCase):
     def setUp(self):
@@ -167,7 +178,7 @@ class ReminderCommandTests(TestCase):
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual({m.to[0] for m in mail.outbox}, {'anna@example.com', 'boris@example.com'})
         session.refresh_from_db()
-        self.assertTrue(session.reminder_24h_sent)
+        self.assertEqual(set(session.reminders_sent['24h']), {self.u1.id, self.u2.id})
         mail.outbox.clear()
         self.run_command()
         self.assertEqual(len(mail.outbox), 0)
@@ -179,7 +190,7 @@ class ReminderCommandTests(TestCase):
         self.run_command()
         self.assertEqual(len(mail.outbox), 2)
         session.refresh_from_db()
-        self.assertTrue(session.reminder_1h_sent)
+        self.assertEqual(set(session.reminders_sent['1h']), {self.u1.id, self.u2.id})
 
     def test_no_reminder_for_proposed_or_far_future(self):
         MatchSession.objects.create(
@@ -188,6 +199,30 @@ class ReminderCommandTests(TestCase):
             match=self.match, proposed_by=self.u1, starts_at=future(72), status='accepted')
         self.run_command()
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_partial_failure_retries_only_failed_recipient(self):
+        session = MatchSession.objects.create(
+            match=self.match, proposed_by=self.u1, starts_at=future(12), status='accepted')
+        real_send = __import__('django.core.mail', fromlist=['send_mail']).send_mail
+        calls = []
+
+        def flaky(subject, body, from_email, recipients, **kwargs):
+            calls.append(recipients[0])
+            if recipients[0] == 'boris@example.com':
+                raise OSError('SMTP down')
+            return 1
+
+        with mock.patch('matches.management.commands.send_session_reminders.send_mail', flaky):
+            self.run_command()
+        session.refresh_from_db()
+        self.assertEqual(set(session.reminders_sent['24h']), {self.u1.id})
+        mail.outbox.clear()
+
+        with mock.patch('matches.management.commands.send_session_reminders.send_mail', real_send):
+            self.run_command()
+        self.assertEqual([m.to[0] for m in mail.outbox], ['boris@example.com'])
+        session.refresh_from_db()
+        self.assertEqual(set(session.reminders_sent['24h']), {self.u1.id, self.u2.id})
 
     def test_no_reminder_without_email(self):
         self.u1.email = ''
