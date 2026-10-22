@@ -3,6 +3,7 @@
 ## Unreleased (dev)
 
 ### Added
+- Scheduled practice sessions: either partner proposes a time on the match page, the other accepts or declines, and either can cancel. The `send_session_reminders` management command emails both partners 24 hours and 1 hour before an accepted session (run it on a schedule; see README known limits).
 - Docs: README rewritten with screenshots, accurate quickstart (including `populate_languages`), configuration table, deploy summary and known limits. DEPLOYMENT.md rewritten to match `docker-compose.yml`. New `docs/ARCHITECTURE.md` replaces the stale `PROJECT_CONTEXT.md`.
 - Video calls: ICE servers are configurable (`WEBRTC_STUN_URLS`, `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL`) so a TURN relay can be added. Default stays the five Google STUN servers. No credentials are committed.
 - Login and sign-up pages get their own description and OG/Twitter titles instead of repeating the home page ones.

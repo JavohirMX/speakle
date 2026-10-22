@@ -130,3 +130,53 @@ class QuickMatchEntry(models.Model):
 
     def __str__(self):
         return f"{self.user.username} waiting ({self.teaches} -> {self.learns})"
+
+
+class MatchSession(models.Model):
+    """A scheduled practice session between matched partners.
+
+    One partner proposes a time; the other accepts or declines. Reminders are
+    sent by the ``send_session_reminders`` management command (run it on a
+    schedule, e.g. cron every 5 minutes).
+    """
+    STATUS_CHOICES = [
+        ('proposed', 'Proposed'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    ]
+    DURATION_CHOICES = [(15, '15 minutes'), (30, '30 minutes'), (45, '45 minutes'),
+                        (60, '1 hour'), (90, '1.5 hours'), (120, '2 hours')]
+
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='sessions')
+    proposed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposed_sessions')
+    starts_at = models.DateTimeField()
+    duration_minutes = models.PositiveSmallIntegerField(choices=DURATION_CHOICES, default=30)
+    note = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='proposed')
+    reminder_24h_sent = models.BooleanField(default=False)
+    reminder_1h_sent = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['starts_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['match'],
+                condition=models.Q(status='proposed'),
+                name='one_proposed_session_per_match',
+            ),
+        ]
+
+    def is_participant(self, user):
+        return user in (self.match.user1, self.match.user2)
+
+    @property
+    def ends_at(self):
+        from datetime import timedelta
+        return self.starts_at + timedelta(minutes=self.duration_minutes)
+
+    def __str__(self):
+        return f"Session: {self.match} at {self.starts_at:%Y-%m-%d %H:%M} ({self.status})"

@@ -161,7 +161,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for models, WebSocket endpoints
 
 - Calls use public Google STUN servers by default, with no TURN relay. Some networks (strict NATs, some mobile carriers) will not connect. Set the `WEBRTC_TURN_*` variables to add a TURN relay.
 - The video room page loads Tailwind from `cdn.tailwindcss.com`, so it needs internet access to render as designed.
-- No scheduled sessions or reminders yet.
+- Session reminders need a scheduler: `python manage.py send_session_reminders` sends the 24h and 1h emails once each. Run it from cron (every 5 minutes is fine); it is not wired into Docker by default.
 
 ## Contributing
 
