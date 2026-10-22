@@ -34,16 +34,18 @@ class UserActivityMiddleware:
         Update user presence to mark them as online and update last_seen time.
         """
         try:
-            presence, created = UserPresence.objects.get_or_create(
-                user=user,
-                defaults={'is_online': True}
-            )
-            
-            # Always update to online when user makes a request
-            presence.is_online = True
-            presence.last_seen = timezone.now()
-            presence.save(update_fields=['is_online', 'last_seen'])
-            
+            # One UPDATE for the common case (row exists) instead of SELECT + UPDATE. Same end
+            # state as before: online, last_seen now, last_activity untouched.
+            now = timezone.now()
+            updated = UserPresence.objects.filter(user=user).update(is_online=True, last_seen=now)
+            if not updated:
+                presence, created = UserPresence.objects.get_or_create(
+                    user=user,
+                    defaults={'is_online': True}
+                )
+                if not created:  # lost a creation race: apply the same update
+                    UserPresence.objects.filter(pk=presence.pk).update(is_online=True, last_seen=now)
+
         except Exception as e:
             # Silently handle any database errors to avoid breaking requests
             logger.exception(f"Error updating user presence for {user.username}: {e}")
