@@ -1027,17 +1027,34 @@ class TextChat {
         
         // Set up message action listeners
         this.messagesContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('reply-btn')) {
-                this.replyToMessage(e.target.dataset.messageId);
-            } else if (e.target.classList.contains('edit-btn')) {
-                this.editMessage(e.target.dataset.messageId);
+            // closest(): the Edit button holds an <svg>, so a real click/tap lands on the icon, not the button.
+            const replyBtn = e.target.closest('.reply-btn');
+            const editBtn = e.target.closest('.edit-btn');
+            if (replyBtn) {
+                this.replyToMessage(replyBtn.dataset.messageId);
+            } else if (editBtn) {
+                this.editMessage(editBtn.dataset.messageId);
             }
         });
         
         // Escape closes the edit dialog (same convention as the incoming-call dialog)
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.editModal.style.display === 'flex') {
+            if (this.editModal.style.display !== 'flex') return;
+            if (e.key === 'Escape') {
                 this.closeEditModal();
+            } else if (e.key === 'Tab') {
+                // Keep Tab / Shift+Tab inside the open dialog.
+                const items = Array.from(this.editModal.querySelectorAll('button, textarea, [href], input, select'))
+                    .filter((el) => !el.disabled && el.offsetParent !== null);
+                if (!items.length) return;
+                const first = items[0], last = items[items.length - 1];
+                if (!this.editModal.contains(document.activeElement)) {
+                    e.preventDefault(); first.focus();
+                } else if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault(); last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault(); first.focus();
+                }
             }
         });
 

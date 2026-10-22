@@ -35,3 +35,12 @@ class TextChatEditDialogTests(TestCase):
         self.assertIn('.message:focus-within .message-actions', html)
         block = html.split('.message-actions {', 1)[1].split('}', 1)[0]
         self.assertNotIn('display: none', block)
+
+    def test_icon_click_and_tab_trap_are_wired(self):
+        self.client.force_login(self.a)
+        html = self.client.get(reverse('chats:text_chat', args=[self.room.room_id])).content.decode()
+        # The Edit button wraps an <svg>; a real click targets the icon, so match with closest().
+        self.assertIn("e.target.closest('.edit-btn')", html)
+        self.assertIn("e.target.closest('.reply-btn')", html)
+        self.assertNotIn("e.target.classList.contains('edit-btn')", html)
+        self.assertIn("e.key === 'Tab'", html)
