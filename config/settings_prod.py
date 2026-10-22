@@ -67,6 +67,11 @@ SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=True, cast=bool)
 SECURE_CONTENT_TYPE_NOSNIFF = config('SECURE_CONTENT_TYPE_NOSNIFF', default=True, cast=bool)
 SECURE_BROWSER_XSS_FILTER = config('SECURE_BROWSER_XSS_FILTER', default=True, cast=bool)
 X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', default='DENY')
+# Behind a proxy that terminates HTTPS, Django only sees plain http unless it trusts the proxy's
+# X-Forwarded-Proto. Without this, SECURE_SSL_REDIRECT redirects every request forever and HSTS is
+# never sent. Off by default: only enable it when the proxy sets/overwrites that header.
+if config('TRUST_X_FORWARDED_PROTO', default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # CSRF settings
 CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)

@@ -68,10 +68,13 @@ Static files use content-hashed URLs for the app CSS (`?v=...`), so you can send
 Once HTTPS works, turn on the hardening flags in `.env`:
 
 ```bash
+TRUST_X_FORWARDED_PROTO=True
 SECURE_SSL_REDIRECT=True
 CSRF_COOKIE_SECURE=True
 SESSION_COOKIE_SECURE=True
 ```
+
+`TRUST_X_FORWARDED_PROTO=True` makes Django trust the proxy's `X-Forwarded-Proto` header. Only set it if your proxy sets or overwrites that header on every request. Without it, `SECURE_SSL_REDIRECT=True` behind a TLS-terminating proxy redirects every request to https again, and HSTS is never sent.
 
 HSTS is on by default in `settings_prod.py` (one year, with subdomains and preload), so only deploy this settings module on a host that will keep serving HTTPS.
 
