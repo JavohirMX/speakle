@@ -1,11 +1,23 @@
 """Partner practice streaks and shared weekly goals.
 
-A week counts toward the streak when the partners complete at least
-`match.weekly_goal` scheduled sessions in that week. A scheduled session
-counts as completed when an ended call on the pair's video room overlaps
-the session window and lasted at least MIN_CALL_MINUTES. Week boundaries
-follow the project's current timezone (Monday-start ISO weeks); the UI
-labels the timezone next to the streak.
+A week counts toward the streak when the partners complete at least the
+goal in effect for that week (see MatchGoalChange) in scheduled sessions.
+A scheduled session counts as completed when an ended call on the pair's
+video room:
+
+* overlaps the session window (EARLY_GRACE before start to
+  duration + LATE_GRACE after start),
+* lasted at least MIN_CALL_MINUTES, and
+* has BOTH partners recorded as participants (each is added by the call
+  consumer only when they actually signal: offer/answer/peer-ready).
+
+Each call credits at most one scheduled session (the earliest still
+uncredited session it overlaps), so one call cannot satisfy two
+overlapping sessions.
+
+Week boundaries follow the project's current timezone (Monday-start
+weeks); the UI labels the timezone next to the streak. Per-user timezone
+handling is an open product decision.
 
 Everything is computed on read: no scheduler or cron needed.
 """
@@ -36,48 +48,111 @@ def session_window(session):
     return start, end
 
 
-def session_completed(session):
-    """True when a qualifying ended call overlaps the session window."""
+def goal_for_week(match, ws):
+    """The weekly goal in effect for the week starting at ws.
+
+    Uses the latest MatchGoalChange effective on or before that week's
+    Monday; weeks before the first recorded change use that first goal;
+    with no recorded changes, falls back to match.weekly_goal.
+    """
+    changes = list(match.goal_changes.order_by('effective_week')
+                   .values_list('effective_week', 'goal'))
+    if not changes:
+        return match.weekly_goal
+    monday = ws.date()
+    goal = changes[0][1]
+    for effective, value in changes:
+        if effective <= monday:
+            goal = value
+        else:
+            break
+    return goal
+
+
+def qualifying_call_for_session(session, used_call_ids):
+    """The first unused ended call that qualifies for this session, or None.
+
+    Qualifying: overlaps the session window, lasted >= MIN_CALL_MINUTES,
+    and both partners are recorded participants.
+    """
     from chats.models import CallSession
     try:
         room = session.match.video_room
     except Exception:
-        return False
+        return None
     start, end = session_window(session)
     min_len = timedelta(minutes=MIN_CALL_MINUTES)
+    members = {session.match.user1_id, session.match.user2_id}
     calls = (
         CallSession.objects
         .filter(room=room, status='ended', started_at__lt=end, ended_at__gt=start)
-        .values_list('started_at', 'ended_at')
+        .exclude(id__in=used_call_ids)
+        .prefetch_related('participants')
+        .order_by('started_at')
     )
-    return any(e - s >= min_len for s, e in calls)
+    for call in calls:
+        if call.ended_at - call.started_at < min_len:
+            continue
+        if {u.id for u in call.participants.all()} >= members:
+            return call
+    return None
 
 
-def completed_sessions_in_week(match, ws):
-    """Accepted/completed sessions in the given week with a qualifying call."""
+def session_completed(session):
+    """True when a qualifying ended call overlaps the session window."""
+    return qualifying_call_for_session(session, set()) is not None
+
+
+def completed_sessions_in_week(match, ws, used_call_ids=None):
+    """Accepted/completed sessions in the given week with a qualifying call.
+
+    Each call credits at most one session; `used_call_ids` carries credit
+    already given to other weeks/sessions and is updated in place.
+    """
+    if used_call_ids is None:
+        used_call_ids = set()
     we = ws + timedelta(days=7)
     sessions = match.sessions.filter(
         status__in=('accepted', 'completed'),
         starts_at__gte=ws,
         starts_at__lt=we,
-    )
-    return sum(1 for s in sessions if session_completed(s))
+    ).order_by('starts_at')
+    done = 0
+    for s in sessions:
+        call = qualifying_call_for_session(s, used_call_ids)
+        if call is not None:
+            used_call_ids.add(call.id)
+            done += 1
+    return done
 
 
 def weekly_progress(match, ref_dt=None):
     """(done, goal) for the current week."""
     ref_dt = ref_dt or timezone.now()
-    return completed_sessions_in_week(match, week_start(ref_dt)), match.weekly_goal
+    ws = week_start(ref_dt)
+    return (completed_sessions_in_week(match, ws),
+            goal_for_week(match, ws))
 
 
 def current_streak(match, ref_dt=None):
-    """Consecutive Monday-start weeks meeting the weekly goal, including the
-    current week when it is already met."""
+    """Consecutive Monday-start weeks meeting their goal.
+
+    The current week counts when it is already met; when it is not yet
+    met the streak stays alive on the strength of prior weeks (a week
+    that has not ended cannot break the streak). Each week is judged by
+    the goal in effect for that week, so later goal changes never
+    rewrite earned history.
+    """
     ref_dt = ref_dt or timezone.now()
-    streak = 0
     ws = week_start(ref_dt)
+    used_call_ids = set()
+    streak = 0
+    if completed_sessions_in_week(match, ws, used_call_ids) >= goal_for_week(match, ws):
+        streak = 1
+    ws -= timedelta(days=7)
     for _ in range(MAX_LOOKBACK_WEEKS):
-        if completed_sessions_in_week(match, ws) >= match.weekly_goal:
+        done = completed_sessions_in_week(match, ws, used_call_ids)
+        if done >= goal_for_week(match, ws):
             streak += 1
             ws -= timedelta(days=7)
         else:

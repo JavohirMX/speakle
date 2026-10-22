@@ -9,6 +9,7 @@ import datetime
 from django.utils import timezone
 from django.urls import reverse
 from .models import PotentialMatch, Match, MatchRequest, MatchFeedback, QuickMatchEntry, MatchSession
+from .models import MatchGoalChange
 from .streaks import current_streak, weekly_progress
 from .services import MatchingService
 from . import quick
@@ -269,8 +270,26 @@ def set_weekly_goal(request, match_id):
         messages.error(request, 'Pick a weekly goal between 1 and 5.')
         return redirect('matches:match_detail', match_id=match.id)
     if goal != match.weekly_goal:
+        old_goal = match.weekly_goal
         match.weekly_goal = goal
         match.save(update_fields=['weekly_goal', 'updated_at'])
+        # Applies from the current week (Monday, project timezone); weeks
+        # already earned keep the goal that was in effect for them.
+        from .streaks import week_start
+        if not match.goal_changes.exists():
+            # Anchor the goal that applied until now (the value just
+            # replaced) from the match's creation week, so weeks already
+            # earned under it keep it.
+            MatchGoalChange.objects.create(
+                match=match,
+                goal=old_goal,
+                effective_week=week_start(match.created_at).date(),
+            )
+        MatchGoalChange.objects.update_or_create(
+            match=match,
+            effective_week=week_start(timezone.now()).date(),
+            defaults={'goal': goal},
+        )
         messages.success(request, f'Weekly goal set to {goal} for both of you.')
     return redirect('matches:match_detail', match_id=match.id)
 

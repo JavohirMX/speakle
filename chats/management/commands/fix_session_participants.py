@@ -2,7 +2,10 @@ from django.core.management.base import BaseCommand
 from chats.models import CallSession, VideoRoom
 
 class Command(BaseCommand):
-    help = 'Fix existing call sessions that might not have proper participants assigned'
+    help = ('Fix existing call sessions that might not have proper participants assigned. '
+            'WARNING: this marks both partners as having joined every call, which '
+            'destroys the participation signal that practice streaks rely on. Only '
+            'run when analytics-only repair is intended.')
 
     def handle(self, *args, **options):
         fixed_count = 0

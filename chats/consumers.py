@@ -731,13 +731,9 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             session_summary = None
             
             for session in active_sessions:
-                # Ensure all users with room access are participants (retroactive fix)
-                match = room.match
-                for user in [match.user1, match.user2]:
-                    if not session.participants.filter(id=user.id).exists():
-                        session.participants.add(user)
-                        print(f"Retroactively added {user.username} as participant to session {session.id}")
-                
+                # Participants reflect who actually joined (added on
+                # offer/answer/peer-ready); do not backfill absent users here,
+                # analytics and practice streaks rely on that integrity.
                 session.status = 'ended'
                 session.ended_at = timezone.now()
                 session.ended_by = ended_by

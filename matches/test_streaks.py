@@ -6,8 +6,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 from chats.models import CallSession, VideoRoom
-from matches.models import Match, MatchSession
-from matches.streaks import current_streak, session_completed, week_start, weekly_progress
+from matches.models import Match, MatchGoalChange, MatchSession
+from matches.streaks import (completed_sessions_in_week, current_streak,
+                             goal_for_week, session_completed, week_start,
+                             weekly_progress)
 from users.models import Language, User
 
 TZ = timezone.get_current_timezone()
@@ -34,10 +36,14 @@ class StreakBase(TestCase):
             match=self.match, proposed_by=self.anna,
             starts_at=starts_at, duration_minutes=duration, status=status)
 
-    def add_call(self, started_at, minutes=30):
+    def add_call(self, started_at, minutes=30, participants='both'):
         # started_at is auto_now_add: create, then set timestamps directly.
         call = CallSession.objects.create(
             room=self.room, status='ended', end_reason='normal')
+        if participants == 'both':
+            call.participants.set([self.anna, self.boris])
+        elif participants == 'anna':
+            call.participants.set([self.anna])
         CallSession.objects.filter(id=call.id).update(
             started_at=started_at, ended_at=started_at + dt.timedelta(minutes=minutes))
         call.refresh_from_db()
@@ -145,3 +151,121 @@ class WeeklyGoalViewTests(StreakBase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Shared weekly goal')
         self.assertContains(r, 'This week: 0/1')
+
+class ParticipationTests(StreakBase):
+    """A call proves a shared practice only when both partners joined."""
+
+    def test_solo_call_does_not_credit(self):
+        start = aware(2026, 10, 21, 18, 0)
+        s = self.add_session(start)
+        self.add_call(start, minutes=40, participants='anna')
+        self.assertFalse(session_completed(s))
+
+    def test_both_partners_credit(self):
+        start = aware(2026, 10, 21, 18, 0)
+        s = self.add_session(start)
+        self.add_call(start, minutes=40, participants='both')
+        self.assertTrue(session_completed(s))
+
+
+class StreakAliveTests(StreakBase):
+    def test_unmet_current_week_does_not_zero_streak(self):
+        # Last week earned; current week has nothing yet (early Monday
+        # situation). The streak must still show the earned week.
+        last_week = aware(2026, 10, 14, 18, 0)
+        self.add_session(last_week)
+        self.add_call(last_week, minutes=40)
+        now = aware(2026, 10, 21, 9, 0)
+        self.assertEqual(current_streak(self.match, now), 1)
+
+    def test_unmet_last_week_breaks(self):
+        now = aware(2026, 10, 21, 9, 0)
+        self.assertEqual(current_streak(self.match, now), 0)
+
+
+class DoubleCreditTests(StreakBase):
+    def test_one_call_credits_only_one_of_two_overlapping_sessions(self):
+        # Two sessions 20 minutes apart; one 50-minute call overlaps both windows.
+        s1 = self.add_session(aware(2026, 10, 21, 18, 0), duration=30)
+        s2 = self.add_session(aware(2026, 10, 21, 18, 20), duration=30)
+        self.add_call(aware(2026, 10, 21, 18, 5), minutes=50)
+        ws = week_start(aware(2026, 10, 21))
+        self.assertEqual(completed_sessions_in_week(self.match, ws), 1)
+        done, goal = weekly_progress(self.match, aware(2026, 10, 21, 20, 0))
+        self.assertEqual(done, 1)
+
+
+class GoalHistoryTests(StreakBase):
+    def setUp(self):
+        super().setUp()
+        # Age the match so its creation week is distinct from this week
+        # (auto_now_add: set via queryset update).
+        Match.objects.filter(id=self.match.id).update(
+            created_at=aware(2026, 10, 5, 12, 0))
+        self.match.refresh_from_db()
+
+    def _week_monday(self, d):
+        return week_start(d).date()
+
+    def test_no_changes_falls_back_to_current_goal(self):
+        ws = week_start(aware(2026, 10, 19))
+        self.assertEqual(goal_for_week(self.match, ws), 1)
+
+    def test_earned_week_survives_goal_raise(self):
+        # Earn last week under goal 1.
+        last_week = aware(2026, 10, 14, 18, 0)  # Wednesday last week
+        self.add_session(last_week)
+        self.add_call(last_week, minutes=40)
+        # Raise the goal to 3 effective this week; backfill anchors goal 1
+        # from the match creation week (match created "now" in fixtures).
+        now = aware(2026, 10, 21, 12, 0)
+        MatchGoalChange.objects.create(
+            match=self.match, goal=1,
+            effective_week=self._week_monday(self.match.created_at))
+        MatchGoalChange.objects.create(
+            match=self.match, goal=3, effective_week=self._week_monday(now))
+        # Last week keeps goal 1 and stays earned; this week is 0/3.
+        self.assertEqual(current_streak(self.match, now), 1)
+        self.assertEqual(
+            goal_for_week(self.match, week_start(last_week)), 1)
+        self.assertEqual(
+            goal_for_week(self.match, week_start(now)), 3)
+
+    def test_goal_raise_applies_to_current_week(self):
+        now = aware(2026, 10, 21, 18, 0)
+        self.add_session(now)
+        self.add_call(now, minutes=40)
+        MatchGoalChange.objects.create(
+            match=self.match, goal=2, effective_week=self._week_monday(now))
+        done, goal = weekly_progress(self.match, now)
+        self.assertEqual((done, goal), (1, 2))
+        # 1/2 does not meet the raised goal: no streak yet.
+        self.assertEqual(current_streak(self.match, now), 0)
+
+
+class WeeklyGoalViewHistoryTests(StreakBase):
+    def setUp(self):
+        super().setUp()
+        Match.objects.filter(id=self.match.id).update(
+            created_at=aware(2026, 10, 5, 12, 0))
+        self.match.refresh_from_db()
+
+    def test_set_goal_records_change_and_backfill(self):
+        self.client.force_login(self.anna)
+        r = self.client.post(
+            reverse('matches:set_weekly_goal', args=[self.match.id]),
+            {'weekly_goal': '3'})
+        self.assertEqual(r.status_code, 302)
+        changes = list(self.match.goal_changes.order_by('effective_week'))
+        self.assertEqual(len(changes), 2)
+        backfill, current = changes
+        self.assertEqual(backfill.goal, 1)
+        self.assertEqual(
+            backfill.effective_week, self._week_monday(self.match.created_at))
+        self.assertEqual(current.goal, 3)
+        self.assertEqual(
+            current.effective_week, self._week_monday(timezone.now()))
+
+    def _week_monday(self, d):
+        return week_start(d).date()
+
