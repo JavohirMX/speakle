@@ -14,6 +14,7 @@ from unittest import skipUnless
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db import connection
 from django.test import TransactionTestCase
 from django.utils import timezone
 
@@ -45,7 +46,9 @@ class ReminderConcurrencyTests(TransactionTestCase):
                 sent_log.append(recipients[0])
             return 1
 
+        real_send_mail = cmd_mod.send_mail
         cmd_mod.send_mail = fake_send
+        self.addCleanup(setattr, cmd_mod, 'send_mail', real_send_mail)
         barrier = threading.Barrier(2)
         errors = []
 
@@ -55,6 +58,10 @@ class ReminderConcurrencyTests(TransactionTestCase):
                 call_command('send_session_reminders', verbosity=0)
             except Exception as exc:
                 errors.append(repr(exc))
+            finally:
+                # Each thread has its own DB connection; close it so the
+                # test database can be dropped at teardown.
+                connection.close()
 
         t1, t2 = threading.Thread(target=worker), threading.Thread(target=worker)
         t1.start(); t2.start(); t1.join(30); t2.join(30)
