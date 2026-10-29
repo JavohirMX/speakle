@@ -68,10 +68,13 @@ Static files use content-hashed URLs for the app CSS (`?v=...`), so you can send
 Once HTTPS works, turn on the hardening flags in `.env`:
 
 ```bash
+TRUST_X_FORWARDED_PROTO=True
 SECURE_SSL_REDIRECT=True
 CSRF_COOKIE_SECURE=True
 SESSION_COOKIE_SECURE=True
 ```
+
+`TRUST_X_FORWARDED_PROTO=True` makes Django trust the proxy's `X-Forwarded-Proto` header. Only set it if your proxy sets or overwrites that header on every request, and clients cannot reach port 8001 directly (`docker-compose.yml` publishes it on all interfaces, so firewall it or bind it to 127.0.0.1). Otherwise a client can send its own header and pass as https. Without the flag, `SECURE_SSL_REDIRECT=True` redirects every request to https again when the proxy forwards plain http to Django (the usual setup), and HSTS is not sent.
 
 HSTS is on by default in `settings_prod.py` (one year, with subdomains and preload), so only deploy this settings module on a host that will keep serving HTTPS.
 
@@ -116,6 +119,6 @@ The entrypoint applies new migrations on start. Read the Unreleased section of [
 | Pages work but calls, chat or notifications do not | The proxy does not pass WebSocket upgrades for `/ws/`, or `REDIS_URL` is wrong. |
 | Styles or fonts missing | The proxy is not serving `./staticfiles` at `/static/`, or `collectstatic` did not run. |
 | No users appear in matching, language list is empty | `populate_languages` was not run. |
-| Verification and reset emails never arrive | `EMAIL_BACKEND` is still the console backend. Set the `EMAIL_*` variables to a real SMTP server. |
+| Verification and reset emails never arrive | `EMAIL_BACKEND` is still the console backend. Set the `EMAIL_*` variables to a real SMTP server. The container's startup `migrate` prints warning `users.W001` in `docker compose logs web` when this is the case, and `python manage.py check` shows it too. The web server itself does not run checks. |
 | Cannot reach the admin | `DJANGO_SUPERUSER_PASSWORD` was empty on first start. Run `createsuperuser`. |
 | Calls connect on some networks and not others | There is no TURN relay, only public STUN servers. |

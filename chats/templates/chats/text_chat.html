@@ -262,7 +262,10 @@
         border-radius: 16px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         padding: 6px;
-        display: none;
+        display: flex;
+        /* Hidden but still focusable: display:none would make Reply/Edit unreachable by keyboard. */
+        opacity: 0;
+        pointer-events: none;
         gap: 4px;
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
@@ -275,8 +278,10 @@
         right: -80px;
     }
     
-    .message:hover .message-actions {
-        display: flex;
+    .message:hover .message-actions,
+    .message:focus-within .message-actions {
+        opacity: 1;
+        pointer-events: auto;
     }
     
     .action-btn {
@@ -884,13 +889,13 @@
 </div>
 
 <!-- Edit Message Modal -->
-<div id="editModal" class="edit-modal">
+<div id="editModal" class="edit-modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
     <div class="edit-modal-content">
         <div class="edit-modal-header">
-            <h3 class="edit-modal-title">Edit Message</h3>
-            <button class="close-modal" onclick="closeEditModal()">×</button>
+            <h3 class="edit-modal-title" id="editModalTitle">Edit Message</h3>
+            <button type="button" class="close-modal" aria-label="Close" onclick="closeEditModal()">×</button>
         </div>
-        <textarea id="editTextarea" class="edit-textarea" placeholder="Edit your message..."></textarea>
+        <textarea id="editTextarea" class="edit-textarea" aria-label="Message text" placeholder="Edit your message..."></textarea>
         <div class="edit-modal-actions">
             <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
@@ -1022,13 +1027,37 @@ class TextChat {
         
         // Set up message action listeners
         this.messagesContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('reply-btn')) {
-                this.replyToMessage(e.target.dataset.messageId);
-            } else if (e.target.classList.contains('edit-btn')) {
-                this.editMessage(e.target.dataset.messageId);
+            // closest(): the Edit button holds an <svg>, so a real click/tap lands on the icon, not the button.
+            const replyBtn = e.target.closest('.reply-btn');
+            const editBtn = e.target.closest('.edit-btn');
+            if (replyBtn) {
+                this.replyToMessage(replyBtn.dataset.messageId);
+            } else if (editBtn) {
+                this.editMessage(editBtn.dataset.messageId);
             }
         });
         
+        // Escape closes the edit dialog (same convention as the incoming-call dialog)
+        document.addEventListener('keydown', (e) => {
+            if (this.editModal.style.display !== 'flex') return;
+            if (e.key === 'Escape') {
+                this.closeEditModal();
+            } else if (e.key === 'Tab') {
+                // Keep Tab / Shift+Tab inside the open dialog.
+                const items = Array.from(this.editModal.querySelectorAll('button, textarea, [href], input, select'))
+                    .filter((el) => !el.disabled && el.offsetParent !== null);
+                if (!items.length) return;
+                const first = items[0], last = items[items.length - 1];
+                if (!this.editModal.contains(document.activeElement)) {
+                    e.preventDefault(); first.focus();
+                } else if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault(); last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault(); first.focus();
+                }
+            }
+        });
+
         // Close modal on background click
         this.editModal.addEventListener('click', (e) => {
             if (e.target === this.editModal) {
@@ -1225,6 +1254,7 @@ class TextChat {
             };
             
             this.editTextarea.value = messageText;
+            this.editReturnFocus = document.activeElement;
             this.editModal.style.display = 'flex';
             this.editTextarea.focus();
         }
@@ -1233,6 +1263,10 @@ class TextChat {
     closeEditModal() {
         this.editModal.style.display = 'none';
         this.editingMessage = null;
+        if (this.editReturnFocus && this.editReturnFocus.focus) {
+            this.editReturnFocus.focus();
+        }
+        this.editReturnFocus = null;
     }
     
     saveEdit() {

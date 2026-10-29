@@ -8,6 +8,10 @@ urlpatterns = [
     path('', views.find_matches, name='find_matches'),
     path('requests/', views.match_requests, name='requests'),
     path('match/<int:match_id>/', views.match_detail, name='match_detail'),
+    path('match/<int:match_id>/sessions/propose/', views.propose_session, name='propose_session'),
+    path('sessions/<int:session_id>/respond/', views.respond_session, name='respond_session'),
+    path('sessions/<int:session_id>/cancel/', views.cancel_session, name='cancel_session'),
+    path('match/<int:match_id>/weekly-goal/', views.set_weekly_goal, name='set_weekly_goal'),
     
     # Quick match
     path('quick/', views.quick_match_page, name='quick_match'),

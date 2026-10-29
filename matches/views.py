@@ -5,9 +5,12 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+import datetime
 from django.utils import timezone
 from django.urls import reverse
-from .models import PotentialMatch, Match, MatchRequest, MatchFeedback, QuickMatchEntry
+from .models import PotentialMatch, Match, MatchRequest, MatchFeedback, QuickMatchEntry, MatchSession
+from .models import MatchGoalChange
+from .streaks import current_streak, weekly_progress
 from .services import MatchingService
 from . import quick
 from users.models import Language
@@ -179,6 +182,11 @@ def match_detail(request, match_id):
     user_teaches = match.get_user_teaches(request.user)
     user_learns = match.get_user_learns(request.user)
     
+    now = timezone.now()
+    upcoming_sessions = [
+        s for s in match.sessions.filter(starts_at__gte=now)
+        if s.status in ('proposed', 'accepted')
+    ]
     context = {
         'match': match,
         'partner': partner,
@@ -187,9 +195,153 @@ def match_detail(request, match_id):
         'conversation_prompts': conversation_prompts(),
         'swap_tip': swap_tip(),
         'my_feedback': MatchFeedback.objects.filter(match=match, author=request.user).first(),
+        'upcoming_sessions': upcoming_sessions,
+        'duration_choices': MatchSession.DURATION_CHOICES,
+        'min_session_start': (now + timezone.timedelta(minutes=15)).strftime('%Y-%m-%dT%H:%M'),
+        'tz_label': timezone.get_current_timezone_name(),
+        'streak': current_streak(match),
+        'week_done': weekly_progress(match)[0],
+        'weekly_goal': match.weekly_goal,
+        'weekly_goal_choices': range(1, 6),
     }
     
     return render(request, 'matches/match_detail.html', context)
+
+@login_required
+@require_POST
+def propose_session(request, match_id):
+    """Propose a practice session time to the match partner."""
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    if match.status not in ('active', 'trial'):
+        messages.error(request, 'Sessions can only be scheduled on an active match.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    raw = request.POST.get('starts_at', '').strip()
+    try:
+        naive = datetime.datetime.strptime(raw, '%Y-%m-%dT%H:%M')
+        starts_at = timezone.make_aware(naive)
+    except (ValueError, TypeError):
+        messages.error(request, 'Pick a valid date and time for the session.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    if starts_at < timezone.now() + timezone.timedelta(minutes=15):
+        messages.error(request, 'Sessions must start at least 15 minutes from now.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    try:
+        duration = int(request.POST.get('duration_minutes', '30'))
+    except ValueError:
+        duration = 30
+    if duration not in dict(MatchSession.DURATION_CHOICES):
+        messages.error(request, 'Pick a valid session length.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    if match.sessions.filter(status='proposed').exists():
+        messages.error(request, 'There is already a proposed session waiting for an answer.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    MatchSession.objects.create(
+        match=match,
+        proposed_by=request.user,
+        starts_at=starts_at,
+        duration_minutes=duration,
+        note=request.POST.get('note', '').strip()[:200],
+    )
+    messages.success(request, 'Session proposed! Your partner can accept or decline it.')
+    return redirect('matches:match_detail', match_id=match.id)
+
+
+@login_required
+@require_POST
+def set_weekly_goal(request, match_id):
+    """Set the pair's shared weekly practice goal (1-5 scheduled calls)."""
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    try:
+        goal = int(request.POST.get('weekly_goal', ''))
+    except ValueError:
+        goal = 0
+    if not 1 <= goal <= 5:
+        messages.error(request, 'Pick a weekly goal between 1 and 5.')
+        return redirect('matches:match_detail', match_id=match.id)
+    if goal != match.weekly_goal:
+        old_goal = match.weekly_goal
+        match.weekly_goal = goal
+        match.save(update_fields=['weekly_goal', 'updated_at'])
+        # Applies from the current week (Monday, project timezone); weeks
+        # already earned keep the goal that was in effect for them.
+        from .streaks import week_start
+        if not match.goal_changes.exists():
+            # Anchor the goal that applied until now (the value just
+            # replaced) from the match's creation week, so weeks already
+            # earned under it keep it.
+            MatchGoalChange.objects.create(
+                match=match,
+                goal=old_goal,
+                effective_week=week_start(match.created_at).date(),
+            )
+        MatchGoalChange.objects.update_or_create(
+            match=match,
+            effective_week=week_start(timezone.now()).date(),
+            defaults={'goal': goal},
+        )
+        messages.success(request, f'Weekly goal set to {goal} for both of you.')
+    return redirect('matches:match_detail', match_id=match.id)
+
+
+@login_required
+@require_POST
+def respond_session(request, session_id):
+    """Accept or decline a proposed session. Only the non-proposing partner may respond."""
+    session = get_object_or_404(MatchSession, id=session_id)
+    if not session.is_participant(request.user):
+        messages.error(request, 'You do not have access to this session.')
+        return redirect('matches:my_matches')
+    if request.user == session.proposed_by:
+        messages.error(request, 'You cannot answer your own proposal.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+    if session.status != 'proposed':
+        messages.error(request, 'This proposal has already been answered.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+
+    action = request.POST.get('action')
+    if action == 'accept':
+        session.status = 'accepted'
+        messages.success(request, 'Session accepted!')
+    elif action == 'decline':
+        session.status = 'declined'
+        messages.success(request, 'Session declined.')
+    else:
+        messages.error(request, 'Unknown response.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+    session.save(update_fields=['status', 'updated_at'])
+    return redirect('matches:match_detail', match_id=session.match_id)
+
+
+@login_required
+@require_POST
+def cancel_session(request, session_id):
+    """Cancel a proposed or accepted upcoming session. Either partner may cancel."""
+    session = get_object_or_404(MatchSession, id=session_id)
+    if not session.is_participant(request.user):
+        messages.error(request, 'You do not have access to this session.')
+        return redirect('matches:my_matches')
+    if session.status not in ('proposed', 'accepted'):
+        messages.error(request, 'This session cannot be cancelled.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+    if session.status == 'proposed' and request.user != session.proposed_by:
+        messages.error(request, 'Decline the proposal instead of cancelling it.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+
+    session.status = 'cancelled'
+    session.save(update_fields=['status', 'updated_at'])
+    messages.success(request, 'Session cancelled.')
+    return redirect('matches:match_detail', match_id=session.match_id)
 
 # ===============================
 # API ENDPOINTS (JSON Responses)
