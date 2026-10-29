@@ -27,47 +27,57 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         logger.debug(f"User: {self.user}")
         logger.debug(f"User authenticated: {self.user.is_authenticated}")
         
-        # Accept connection first
+        async def reject(message):
+            # Denied clients keep the exact sequence they had before:
+            # accept, connection test frame, error, close.
+            await self.accept()
+            await self.send(text_data=json.dumps({
+                'type': 'connection_test',
+                'message': f'WebSocket connected successfully to room {self.room_id}!',
+                'room_id': self.room_id,
+                'user_id': self.user.id if self.user.is_authenticated else None
+            }))
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': message
+            }))
+            await self.close()
+
+        # Check authentication and access BEFORE accepting: an accepted
+        # client must already be in the room group, or any frame the peer
+        # sends between accept and group membership is silently lost (both
+        # clients signal peer_ready straight from onopen).
+        if not self.user.is_authenticated:
+            logger.debug("User not authenticated")
+            await reject('Authentication required')
+            return
+
+        has_access = await self.check_room_access()
+        logger.debug(f"User has room access: {has_access}")
+        if not has_access:
+            logger.debug("User doesn't have room access")
+            await reject('Room access denied')
+            return
+
+        # Join room group first...
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        logger.debug(f"User {self.user.username} joined room group")
+
+        # ...then accept, so connect() returning means frames reach us.
         await self.accept()
         logger.debug(f"WebSocket connection accepted")
-        
+
         # Send connection test message
         await self.send(text_data=json.dumps({
             'type': 'connection_test',
             'message': f'WebSocket connected successfully to room {self.room_id}!',
             'room_id': self.room_id,
-            'user_id': self.user.id if self.user.is_authenticated else None
+            'user_id': self.user.id
         }))
-        
-        # Check authentication
-        if not self.user.is_authenticated:
-            logger.debug("User not authenticated")
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                'message': 'Authentication required'
-            }))
-            await self.close()
-            return
-        
-        # Verify user has access to this room
-        has_access = await self.check_room_access()
-        logger.debug(f"User has room access: {has_access}")
-        if not has_access:
-            logger.debug("User doesn't have room access")
-            await self.send(text_data=json.dumps({
-                'type': 'error', 
-                'message': 'Room access denied'
-            }))
-            await self.close()
-            return
-        
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-        
-        logger.debug(f"User {self.user.username} joined room group")
         
         # Notify room that user joined
         await self.channel_layer.group_send(

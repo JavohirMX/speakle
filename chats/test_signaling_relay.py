@@ -126,3 +126,41 @@ class SignalingRelayTest(TransactionTestCase):
         self.assertEqual(count, 1)
         await mine.disconnect()
         await other.disconnect()
+
+    async def test_frame_sent_immediately_after_connect_is_not_lost(self):
+        """Regression: connect() used to accept() before group_add, so a
+        frame the peer sent in that window never reached the joiner (both
+        clients signal peer_ready right from onopen, so two fast joiners
+        could deadlock with no offer). Membership must be established
+        before accept() returns. The slowed access check makes the
+        accept->group_add window deterministic."""
+        import time
+        from unittest.mock import patch
+        from channels.db import database_sync_to_async
+        mine = _make_communicator(VideoCallConsumer, self._scope(self.user1))
+        self.assertTrue((await mine.connect())[0])
+
+        # Widen the accept -> group_add window deterministically. The frame
+        # must be one whose handler does NO database work before its
+        # group_send (ice_candidate): database_sync_to_async calls share one
+        # thread-sensitive executor, so a DB-touching handler would queue
+        # behind the slowed check and mask the race in tests. In production
+        # (separate connections/workers) no such shielding exists for any
+        # frame type.
+        orig_sync = VideoCallConsumer.__dict__['check_room_access'].func
+        def slow_sync(consumer):
+            time.sleep(0.3)  # stand-in for real auth/access DB latency
+            return orig_sync(consumer)
+        with patch.object(VideoCallConsumer, 'check_room_access',
+                          database_sync_to_async(slow_sync)):
+            other = _make_communicator(VideoCallConsumer, self._scope(self.user2))
+            self.assertTrue((await other.connect())[0])
+        # No settling wait: send the moment the peer's connect() resolved.
+        await mine.send_json_to({
+            'type': 'ice_candidate',
+            'candidate': {'candidate': 'candidate:1 ...', 'sdpMid': '0'},
+        })
+        got = await _receive_type(other, 'ice_candidate')
+        self.assertEqual(got['sender_username'], 'relayuser1')
+        await mine.disconnect()
+        await other.disconnect()
