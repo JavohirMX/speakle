@@ -270,3 +270,61 @@ main .flex.items-center.space-x-4 { gap: 1rem; }
 .md-rows li { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem .9rem; border: var(--bw) solid var(--ink); border-radius: 12px; background: #fff; }
 .md-tile b { font-size: 1.6rem; } .md-tile span { font-size: .75rem; }
 #recentMessages, #recentMessages * { overflow-wrap: anywhere; min-width: 0; }
+
+/* ---- Unslop: global call modals (globalIncomingCallModal / quickCallModal) ----
+   Scoped to these two modals only; video_room.html's callEndModal/callSummaryModal
+   keep their own .modal-overlay rules. */
+#globalIncomingCallModal.modal-overlay,
+#quickCallModal.modal-overlay {
+  background: rgba(26, 21, 16, .55);
+  backdrop-filter: blur(4px);
+}
+#globalIncomingCallModal .modal-content-enhanced,
+#quickCallModal .modal-content-enhanced {
+  background: var(--paper, #fff);
+  border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--ink);
+  backdrop-filter: none;
+}
+#globalIncomingCallModal .call-icon-container::before,
+#globalIncomingCallModal .call-icon-container::after,
+#quickCallModal .call-icon-container::before,
+#quickCallModal .call-icon-container::after {
+  display: none;
+}
+#globalIncomingCallModal .call-avatar,
+#quickCallModal .call-avatar {
+  background: var(--sun);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+#globalIncomingCallModal .call-avatar svg,
+#quickCallModal .call-avatar svg {
+  color: var(--ink) !important;
+}
+#globalCallerName, #quickCallPartner { color: var(--tomato); }
+#globalIncomingCallModal .btn-enhanced,
+#quickCallModal .btn-enhanced {
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform .15s ease, box-shadow .15s ease;
+  background-image: none;
+}
+#globalIncomingCallModal .btn-enhanced:hover,
+#quickCallModal .btn-enhanced:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+#globalIncomingCallModal .btn-accept, #quickCallModal .btn-accept { background-color: var(--mint); }
+#globalIncomingCallModal .btn-decline, #quickCallModal .btn-decline { background-color: var(--tomato-bright, #ff6b57); }
+#globalIncomingCallModal .cm-neutral, #quickCallModal .cm-neutral { background-color: #fff; }
+#globalIncomingCallModal .cm-timer, #quickCallModal .cm-timer {
+  background: #fff;
+  border: 2px solid var(--ink);
+  box-shadow: none;
+}
+#globalCallerMessage { background: #fff; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+#globalCallerMessage .cm-msg-ico { background: var(--sun); border: 2px solid var(--ink); }
+#globalCallerMessage .cm-msg-ico svg { color: var(--ink) !important; }
+#partnerStatus { background: #fff; border: 2px solid var(--ink); box-shadow: none; }
