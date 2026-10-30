@@ -1491,19 +1491,24 @@
                 document.getElementById('globalIncomingCallModal').classList.add('hidden');
                 stopCallTimer();
                 
+                // Capture invitation fields before it is cleared below; the async
+                // callback runs after currentGlobalIncomingInvitation is null.
+                const quickMessageInvitationId = currentGlobalIncomingInvitation.id;
+                const quickMessageMatchId = currentGlobalIncomingInvitation.match_id;
+                
                 // Decline the call
                 const formData = new FormData();
                 formData.append('response', 'decline');
                 formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
                 
-                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
+                fetch(`/chats/api/respond-invitation/${quickMessageInvitationId}/`, {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
                     // Redirect to chat with the caller - mobile-friendly
-                    const chatUrl = `/chats/match/${currentGlobalIncomingInvitation.match_id}/`;
+                    const chatUrl = `/chats/match/${quickMessageMatchId}/`;
 
                     window.navigateToUrl(chatUrl, true);
                 })
