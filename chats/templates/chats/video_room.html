@@ -1632,6 +1632,15 @@ class VideoChat {
         }
     }
     
+    escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     showCallSummary(sessionSummary, callDetails) {
         const summaryContent = document.getElementById('callSummaryContent');
         
@@ -1691,7 +1700,7 @@ class VideoChat {
                 <div class="summary-stat">
                     <span class="label">📶 Call Quality:</span>
                     <span class="value ${getQualityClass(callDetails.connectionQuality)}">
-                        ${callDetails.connectionQuality.charAt(0).toUpperCase() + callDetails.connectionQuality.slice(1)}
+                        ${this.escapeHtml(callDetails.connectionQuality.charAt(0).toUpperCase() + callDetails.connectionQuality.slice(1))}
                     </span>
                 </div>
                 ` : ''}
@@ -1706,7 +1715,7 @@ class VideoChat {
                 ${callDetails.endNotes ? `
                 <div class="summary-stat">
                     <span class="label">📝 Notes:</span>
-                    <span class="value">${callDetails.endNotes}</span>
+                    <span class="value">${this.escapeHtml(callDetails.endNotes)}</span>
                 </div>
                 ` : ''}
                 
