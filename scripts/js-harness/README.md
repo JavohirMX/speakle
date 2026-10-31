@@ -1,0 +1,54 @@
+# Browser harness for call-flow race fixes
+
+Deterministic CDP (Chrome DevTools Protocol) harnesses proving the async
+race fixes in `main/templates/base.html`, `chats/templates/chats/video_room.html`
+and `chats/templates/chats/text_chat.html`. They are dev tools: they need a
+local runserver with demo fixtures and a headless Chrome. CI coverage for the
+same guards (no browser needed) lives in `chats/test_template_js_guards.py`.
+
+## Setup
+
+1. Run the dev server with demo data:
+
+       SECRET_KEY=devsecret DEBUG=True python manage.py runserver 127.0.0.1:8000
+
+   Fixtures needed (create via `manage.py shell` or admin):
+   - users `a11ydemo` and `fixturepartner`, password `fixture-pass-123`
+   - an active Match (id 2 by default) between them
+   - a VideoRoom and a ChatRoom; put their UUIDs in the scripts below
+   - for incoming_call_message_chip: a pending CallInvitation (id 1) from
+     fixturepartner to a11ydemo with `expires_at` in the future
+
+2. Start headless Chrome with CDP:
+
+       google-chrome --headless=new --remote-debugging-port=9223 \
+         --use-fake-ui-for-media-stream --use-fake-device-for-media-stream about:blank
+
+3. `pip install websocket-client`, then run a scenario, e.g.:
+
+       python scripts/js-harness/user_left_timer.py
+
+## Fixture constants
+
+Each script reads fixture values near the top (login credentials, room UUIDs,
+match/invitation ids). Adjust them to your local fixtures if they differ.
+
+## Scenarios and pass criteria
+
+- `quickcall_async_races.py` - base.html quick-call flow: closing the modal
+  while partner availability is in flight must cancel the orphan invitation
+  (POST to cancel-invitation) and show no error toast; late
+  accepted/declined/expired events after close must throw nothing.
+- `incoming_call_message_chip.py` - Message shortcut on an incoming call must
+  navigate to `/chats/match/<match_id>/`.
+- `user_left_timer.py` - partner leaving the room abruptly must stop the call
+  timer (reset to 00:00, interval cleared), not leave it counting.
+- `typing_ws_guard.py` - typing while the socket is CONNECTING (reconnect
+  window) must not throw InvalidStateError.
+- `mid_negotiation_teardown.py` - teardown during handleOffer's await must
+  bail quietly: no "Error handling call" chat message, no answer sent.
+- `teardown_identity_guard.py` - three scenarios: (A) real teardown handler
+  mid-await bails quietly, (B) a replacement connection mid-await is not
+  touched by the stale continuation, (C) the happy path still completes.
+
+Each prints a JSON line; the values named above are the pass criteria.
