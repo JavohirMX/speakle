@@ -1864,6 +1864,8 @@
             fetch(`/chats/api/partner-availability/${matchId}/`)
             .then(response => response.json())
             .then(data => {
+                // Modal may have been closed while the request was in flight
+                if (!window.currentCallData) return;
                 if (data.is_online) {
                     showPartnerOnline();
                 } else {
@@ -1871,7 +1873,7 @@
                 }
             })
             .catch(error => {
-
+                if (!window.currentCallData) return;
                 showPartnerOffline();
             });
         };
@@ -1950,6 +1952,14 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    if (!window.currentCallData) {
+                        // Modal was closed while sending: cancel the orphaned
+                        // invitation so the partner is not called after all.
+                        const orphanData = new FormData();
+                        orphanData.append('csrfmiddlewaretoken', getCSRFToken());
+                        fetch(`/chats/api/cancel-invitation/${data.invitation_id}/`, { method: 'POST', body: orphanData }).catch(() => {});
+                        return;
+                    }
                     window.currentCallData.invitationId = data.invitation_id;
                     showWaitingForResponse();
                     startInvitationTimer();
@@ -2022,6 +2032,8 @@
         };
 
         window.invitationAccepted = function(roomUrl) {
+            // Late event after the modal was closed: nothing to act on
+            if (!window.currentCallData) return;
             const { partnerUsername, settings } = window.currentCallData;
             closeQuickCallModal();
             
@@ -2053,6 +2065,7 @@
         };
 
         window.invitationDeclined = function() {
+            if (!window.currentCallData) return;
             const { partnerUsername, settings } = window.currentCallData;
             closeQuickCallModal();
             
@@ -2071,6 +2084,7 @@
         };
 
         window.invitationExpired = function() {
+            if (!window.currentCallData) return;
             const { partnerUsername, settings } = window.currentCallData;
             closeQuickCallModal();
             
