@@ -178,3 +178,4 @@ cython_debug/
 # Node tooling (CSS builds)
 node_modules/
 .venv/
+scripts/js-harness/fixtures.json

@@ -24,3 +24,21 @@ jobs:
       - run: python manage.py check
       - run: python manage.py makemigrations --check --dry-run
       - run: python manage.py test
+
+  js-harness:
+    runs-on: ubuntu-latest
+    env:
+      DEBUG: 'True'  # local-style settings; real deployments must set SECRET_KEY
+      SECRET_KEY: 'ci-js-harness'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt websocket-client
+      - run: python manage.py migrate
+      - run: python scripts/js-harness/setup_fixtures.py
+      - run: python manage.py runserver 127.0.0.1:8000 &
+      - run: google-chrome --headless=new --remote-debugging-port=9223 --no-sandbox --use-fake-ui-for-media-stream --use-fake-device-for-media-stream about:blank &
+      - run: sleep 10 && python scripts/js-harness/run_all.py
