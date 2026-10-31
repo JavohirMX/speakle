@@ -83,6 +83,15 @@ class VideoRoomGuardTests(SimpleTestCase):
         # Both handlers must capture identity independently.
         self.assertGreaterEqual(self.src.count('const pc = this.pc;'), 2)
 
+    def test_startcall_captures_connection_identity(self):
+        # Defect: teardown during createOffer/setLocalDescription produced a
+        # bogus 'Error starting call' and emitted a stale offer after the
+        # negotiation had ended.
+        self.assertIn('const offer = await pc.createOffer(', self.src)
+        self.assertIn('await pc.setLocalDescription(offer);', self.src)
+        self.assertIn('// Do not emit an offer for a negotiation that ended while we awaited. if (this.pc !== pc) return;', self.src)
+        self.assertGreaterEqual(self.src.count('const pc = this.pc;'), 3)
+
 
 class TextChatGuardTests(SimpleTestCase):
     """text_chat.html typing-signal WebSocket readyState guards."""

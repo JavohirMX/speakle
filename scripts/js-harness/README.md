@@ -62,5 +62,8 @@ the documented defaults. The fixture credentials are demo-only, never real accou
 - `teardown_identity_guard.py` - three scenarios: (A) real teardown handler
   mid-await bails quietly, (B) a replacement connection mid-await is not
   touched by the stale continuation, (C) the happy path still completes.
+- `startcall_teardown_guard.py` - teardown during startCall's createOffer or
+  setLocalDescription awaits must bail quietly with no stale offer on the
+  wire; the happy path must still send offer + call_start and start the timer.
 
 Each prints a JSON line; the values named above are the pass criteria.

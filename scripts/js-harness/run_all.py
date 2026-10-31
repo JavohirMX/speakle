@@ -62,6 +62,16 @@ def check_teardown_identity_guard(out):
     return ok, 'real-path teardown bails, replacement untouched, happy path intact'
 
 
+def check_startcall_teardown_guard(out):
+    d = last_json(out)
+    if not d: return False, 'scenario produced no result JSON'
+    a, b, c = d.get('A_teardownDuringCreateOffer', {}), d.get('B_teardownDuringSetLocal', {}), d.get('C_happy', {})
+    ok = (a.get('messages') == [] and a.get('sent') == []
+          and b.get('messages') == [] and b.get('sent') == [] and b.get('timerStarted') is False
+          and c.get('sent') == ['offer', 'call_start'] and c.get('isCallActive') is True and c.get('timerStarted') is True)
+    return ok, 'startCall bails quietly on mid-await teardown, stale offer suppressed, happy path intact'
+
+
 SCENARIOS = [
     ('quickcall_async_races.py', check_quickcall_async_races),
     ('incoming_call_message_chip.py', check_incoming_call_message_chip),
@@ -69,6 +79,7 @@ SCENARIOS = [
     ('typing_ws_guard.py', check_typing_ws_guard),
     ('mid_negotiation_teardown.py', check_mid_negotiation_teardown),
     ('teardown_identity_guard.py', check_teardown_identity_guard),
+    ('startcall_teardown_guard.py', check_startcall_teardown_guard),
 ]
 
 
