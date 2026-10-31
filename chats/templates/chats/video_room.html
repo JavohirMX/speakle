@@ -1590,23 +1590,34 @@ class VideoChat {
             
             this.createPeerConnection();
             
+            // Capture the connection this negotiation belongs to; teardown or
+            // a replacement while we await makes this continuation stale.
+            const pc = this.pc;
+            
             // Add local stream tracks to peer connection
             this.localStream.getTracks().forEach(track => {
 
-                this.pc.addTrack(track, this.localStream);
+                pc.addTrack(track, this.localStream);
             });
             
             // Create and send offer
 
-            const offer = await this.pc.createOffer({
+            const offer = await pc.createOffer({
                 offerToReceiveVideo: true,
                 offerToReceiveAudio: true
             });
             
 
-            await this.pc.setLocalDescription(offer);
+            // Torn down or replaced while creating the offer: bail quietly,
+            // teardown already owns the UI state.
+            if (this.pc !== pc) return;
+            
+            await pc.setLocalDescription(offer);
             
 
+            // Do not emit an offer for a negotiation that ended while we awaited.
+            if (this.pc !== pc) return;
+            
             this.ws.send(JSON.stringify({
                 type: 'offer',
                 offer: offer
