@@ -1286,6 +1286,7 @@ class TextChat {
     }
     
     handleTyping() {
+        if (this.ws.readyState !== WebSocket.OPEN) return;
         if (!this.isTyping) {
             this.isTyping = true;
             this.ws.send(JSON.stringify({ type: 'typing_start' }));
@@ -1300,7 +1301,9 @@ class TextChat {
     stopTyping() {
         if (this.isTyping) {
             this.isTyping = false;
-            this.ws.send(JSON.stringify({ type: 'typing_stop' }));
+            if (this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({ type: 'typing_stop' }));
+            }
         }
         clearTimeout(this.typingTimeout);
     }
