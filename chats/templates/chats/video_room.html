@@ -1950,27 +1950,33 @@ class VideoChat {
             }
         }
         
+        // Capture the connection this negotiation belongs to; teardown or a
+        // replacement connection while we await makes this continuation stale.
+        const pc = this.pc;
+        
         try {
 
-            await this.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
             
-            // The call may have been torn down (resetCall) while we awaited;
-            // bail quietly instead of erroring on a null peer connection.
-            if (!this.pc) return;
+            // The call may have been torn down or replaced while we awaited;
+            // bail quietly instead of acting on a stale continuation.
+            if (this.pc !== pc) return;
             
             // Process any queued ICE candidates
-            while (this.pc && this.iceCandidateQueue.length > 0) {
+            while (this.pc === pc && this.iceCandidateQueue.length > 0) {
                 const candidate = this.iceCandidateQueue.shift();
 
-                await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
             }
             
 
-            const answer = await this.pc.createAnswer();
+            const answer = await pc.createAnswer();
             
 
-            if (!this.pc) return;
-            await this.pc.setLocalDescription(answer);
+            if (this.pc !== pc) return;
+            await pc.setLocalDescription(answer);
+            
+            if (this.pc !== pc) return;
             
 
             this.ws.send(JSON.stringify({
@@ -1996,16 +2002,17 @@ class VideoChat {
         if (this.pc && this.pc.signalingState === 'have-local-offer') {
             try {
 
-                await this.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                const pc = this.pc;
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
                 
-                // Bail quietly if the call was torn down mid-negotiation.
-                if (!this.pc) return;
+                // Bail quietly if the call was torn down or replaced mid-negotiation.
+                if (this.pc !== pc) return;
                 
                 // Process any queued ICE candidates
-                while (this.pc && this.iceCandidateQueue.length > 0) {
+                while (this.pc === pc && this.iceCandidateQueue.length > 0) {
                     const candidate = this.iceCandidateQueue.shift();
 
-                    await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
                 }
                 
 
