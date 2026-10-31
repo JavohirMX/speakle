@@ -1954,8 +1954,12 @@ class VideoChat {
 
             await this.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
             
+            // The call may have been torn down (resetCall) while we awaited;
+            // bail quietly instead of erroring on a null peer connection.
+            if (!this.pc) return;
+            
             // Process any queued ICE candidates
-            while (this.iceCandidateQueue.length > 0) {
+            while (this.pc && this.iceCandidateQueue.length > 0) {
                 const candidate = this.iceCandidateQueue.shift();
 
                 await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -1965,6 +1969,7 @@ class VideoChat {
             const answer = await this.pc.createAnswer();
             
 
+            if (!this.pc) return;
             await this.pc.setLocalDescription(answer);
             
 
@@ -1993,8 +1998,11 @@ class VideoChat {
 
                 await this.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
                 
+                // Bail quietly if the call was torn down mid-negotiation.
+                if (!this.pc) return;
+                
                 // Process any queued ICE candidates
-                while (this.iceCandidateQueue.length > 0) {
+                while (this.pc && this.iceCandidateQueue.length > 0) {
                     const candidate = this.iceCandidateQueue.shift();
 
                     await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
