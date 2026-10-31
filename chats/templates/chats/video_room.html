@@ -1324,8 +1324,9 @@ class VideoChat {
             case 'user_left':
                 if (data.user_id !== this.userId) {
                     this.addChatMessage(`${data.username} left the room`, 'system');
-                    this.showRemoteVideoPlaceholder();
-                    this.resetPeerConnection();
+                    // Full call reset: resetPeerConnection alone leaves the call
+                    // timer running and isAutoStarting stuck after an abrupt leave.
+                    this.resetCall();
                 }
                 break;
             case 'peer_ready':
