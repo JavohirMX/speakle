@@ -83,6 +83,17 @@ def check_invitation_lifecycle(out):
     return ok, 'two-context invitation lifecycle: ws receive, cancel closes modal, decline notifies caller'
 
 
+def check_text_chat_keyboard(out):
+    d = last_json(out)
+    if not d: return False, 'scenario produced no result JSON'
+    ok = (d.get('seed') and d.get('focused') and d.get('reveals')
+          and d.get('enterOpens') and d.get('focusTextarea')
+          and d.get('tabWrapsForward') and d.get('shiftTabWrapsBack')
+          and d.get('escapeCloses') and d.get('focusReturned')
+          and d.get('iconClickOpens') and d.get('errors') == [])
+    return ok, 'edit dialog fully keyboard operable: reach, open, trap, escape, focus return, icon click'
+
+
 SCENARIOS = [
     ('quickcall_async_races.py', check_quickcall_async_races),
     ('incoming_call_message_chip.py', check_incoming_call_message_chip),
@@ -92,6 +103,7 @@ SCENARIOS = [
     ('teardown_identity_guard.py', check_teardown_identity_guard),
     ('startcall_teardown_guard.py', check_startcall_teardown_guard),
     ('invitation_lifecycle.py', check_invitation_lifecycle),
+    ('text_chat_keyboard.py', check_text_chat_keyboard),
 ]
 
 

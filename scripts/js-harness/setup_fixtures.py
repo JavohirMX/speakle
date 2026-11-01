@@ -27,7 +27,7 @@ from django.utils import timezone
 User = get_user_model()
 from users.models import Language
 from matches.models import Match
-from chats.models import CallInvitation, ChatRoom, VideoRoom
+from chats.models import CallInvitation, ChatMessage, ChatRoom, VideoRoom
 
 HERE = Path(__file__).resolve().parent
 
@@ -56,6 +56,13 @@ def main():
         )
     room, _ = VideoRoom.objects.get_or_create(match=match)
     chat_room = ChatRoom.objects.filter(match=match).first() or ChatRoom.objects.create(match=match)
+
+    # One own message for the text-chat keyboard scenario (its edit/reply
+    # buttons and dialog are what text_chat_keyboard.py drives).
+    ChatMessage.objects.get_or_create(
+        room=chat_room, sender=user,
+        content='Fixture message for keyboard regression coverage',
+    )
 
     # A live pending invitation from partner to user (message-chip scenario).
     CallInvitation.objects.filter(room=room, caller=partner, receiver=user, status='pending').delete()

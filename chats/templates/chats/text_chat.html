@@ -839,12 +839,12 @@
                         
                         {% if message.sender == user %}
                             <div class="message-actions">
-                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩</button>
-                                <button class="action-btn edit-btn" title="Edit" data-message-id="{{ message.id }}"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></button>
+                                <button type="button" class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩</button>
+                                <button type="button" class="action-btn edit-btn" title="Edit" data-message-id="{{ message.id }}"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></button>
                             </div>
                         {% else %}
                             <div class="message-actions">
-                                <button class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩</button>
+                                <button type="button" class="action-btn reply-btn" title="Reply" data-message-id="{{ message.id }}">↩</button>
                             </div>
                         {% endif %}
                     </div>
@@ -1179,12 +1179,12 @@ class TextChat {
         
         const actionsHtml = isOwn ? `
             <div class="message-actions">
-                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩</button>
-                <button class="action-btn edit-btn" title="Edit" data-message-id="${data.message_id}"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></button>
+                <button type="button" class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩</button>
+                <button type="button" class="action-btn edit-btn" title="Edit" data-message-id="${data.message_id}"><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg></button>
             </div>
         ` : `
             <div class="message-actions">
-                <button class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩</button>
+                <button type="button" class="action-btn reply-btn" title="Reply" data-message-id="${data.message_id}">↩</button>
             </div>
         `;
         
