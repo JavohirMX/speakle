@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Language, UserLanguage
+from .models import User, Language, UserLanguage, UserBlock, UserReport
 
 class UserLanguageInline(admin.TabularInline):
     model = UserLanguage
@@ -37,3 +37,19 @@ class UserLanguageAdmin(admin.ModelAdmin):
 # Unregister the default User admin and register our custom one
 # admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+@admin.register(UserReport)
+class UserReportAdmin(admin.ModelAdmin):
+    list_display = ('reported', 'reporter', 'reason', 'created_at', 'resolved')
+    list_filter = ('resolved', 'reason')
+    search_fields = ('reported__username', 'reporter__username', 'details')
+    actions = ['mark_resolved']
+
+    @admin.action(description='Mark selected reports as resolved')
+    def mark_resolved(self, request, queryset):
+        queryset.update(resolved=True)
+
+@admin.register(UserBlock)
+class UserBlockAdmin(admin.ModelAdmin):
+    list_display = ('blocker', 'blocked', 'created_at')
+    search_fields = ('blocker__username', 'blocked__username')

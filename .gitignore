@@ -174,3 +174,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Node tooling (CSS builds)
+node_modules/
+.venv/

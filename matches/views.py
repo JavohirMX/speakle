@@ -1,12 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from .prompts import conversation_prompts, swap_tip
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
 from django.views.decorators.http import require_POST
+import datetime
 from django.utils import timezone
-from .models import PotentialMatch, Match, MatchRequest
+from django.urls import reverse
+from .models import PotentialMatch, Match, MatchRequest, MatchFeedback, QuickMatchEntry, MatchSession
+from .models import MatchGoalChange
+from .streaks import current_streak, weekly_progress
 from .services import MatchingService
+from . import quick
 from users.models import Language
 
 @login_required
@@ -18,7 +24,13 @@ def find_matches(request):
     has_learning_langs = user_languages.filter(language_type='learning').exists()
     
     if not has_teaching_langs or not has_learning_langs:
-        messages.warning(request, 'Please set up your languages in your profile to find matches.')
+        if not has_teaching_langs and not has_learning_langs:
+            need = 'Add a language you speak and one you want to learn'
+        elif not has_teaching_langs:
+            need = 'Add a language you speak (native or fluent)'
+        else:
+            need = 'Add a language you want to learn'
+        messages.warning(request, f'{need} to start finding matches.')
         return redirect('users:profile')
     
     # Get or generate potential matches
@@ -33,19 +45,21 @@ def find_matches(request):
             MatchingService.find_potential_matches(request.user)
     
     # Get potential matches
-    potential_matches = PotentialMatch.objects.filter(user=request.user)[:20]  # Limit to 20
+    potential_matches = PotentialMatch.objects.filter(user=request.user, potential_partner__is_active=True).select_related(
+        'potential_partner', 'user_teaches', 'user_learns')[:20]  # Limit to 20
     
     # Get existing match requests to avoid duplicates
     sent_requests = MatchRequest.objects.filter(
         sender=request.user,
         status='pending'
     ).values_list('receiver_id', flat=True)
+    sent_requests = set(sent_requests)
     
     # Get confirmed matches to avoid showing them again
     confirmed_matches = Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
         status='active'
-    )
+    ).select_related('user1', 'user2')
     confirmed_partner_ids = []
     for match in confirmed_matches:
         partner = match.get_partner(request.user)
@@ -94,11 +108,11 @@ def match_requests(request):
     incoming_requests = MatchRequest.objects.filter(
         receiver=request.user,
         status='pending'
-    ).order_by('-created_at')
+    ).select_related('sender', 'receiver', 'sender_teaches', 'sender_learns').order_by('-created_at')
     
     outgoing_requests = MatchRequest.objects.filter(
         sender=request.user
-    ).order_by('-created_at')
+    ).select_related('sender', 'receiver', 'sender_teaches', 'sender_learns').order_by('-created_at')
     
     context = {
         'incoming_requests': incoming_requests,
@@ -126,11 +140,8 @@ def respond_to_request(request, request_id):
         
         return redirect('matches:requests')
     
-    context = {
-        'match_request': match_request,
-    }
-    
-    return render(request, 'matches/respond_request.html', context)
+    # There is no standalone confirmation page; accept/decline lives on the requests page.
+    return redirect('matches:requests')
 
 @login_required
 def my_matches(request):
@@ -171,14 +182,166 @@ def match_detail(request, match_id):
     user_teaches = match.get_user_teaches(request.user)
     user_learns = match.get_user_learns(request.user)
     
+    now = timezone.now()
+    upcoming_sessions = [
+        s for s in match.sessions.filter(starts_at__gte=now)
+        if s.status in ('proposed', 'accepted')
+    ]
     context = {
         'match': match,
         'partner': partner,
         'user_teaches': user_teaches,
         'user_learns': user_learns,
+        'conversation_prompts': conversation_prompts(),
+        'swap_tip': swap_tip(),
+        'my_feedback': MatchFeedback.objects.filter(match=match, author=request.user).first(),
+        'upcoming_sessions': upcoming_sessions,
+        'duration_choices': MatchSession.DURATION_CHOICES,
+        'min_session_start': (now + timezone.timedelta(minutes=15)).strftime('%Y-%m-%dT%H:%M'),
+        'tz_label': timezone.get_current_timezone_name(),
+        'streak': current_streak(match),
+        'week_done': weekly_progress(match)[0],
+        'weekly_goal': match.weekly_goal,
+        'weekly_goal_choices': range(1, 6),
     }
     
     return render(request, 'matches/match_detail.html', context)
+
+@login_required
+@require_POST
+def propose_session(request, match_id):
+    """Propose a practice session time to the match partner."""
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    if match.status not in ('active', 'trial'):
+        messages.error(request, 'Sessions can only be scheduled on an active match.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    raw = request.POST.get('starts_at', '').strip()
+    try:
+        naive = datetime.datetime.strptime(raw, '%Y-%m-%dT%H:%M')
+        starts_at = timezone.make_aware(naive)
+    except (ValueError, TypeError):
+        messages.error(request, 'Pick a valid date and time for the session.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    if starts_at < timezone.now() + timezone.timedelta(minutes=15):
+        messages.error(request, 'Sessions must start at least 15 minutes from now.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    try:
+        duration = int(request.POST.get('duration_minutes', '30'))
+    except ValueError:
+        duration = 30
+    if duration not in dict(MatchSession.DURATION_CHOICES):
+        messages.error(request, 'Pick a valid session length.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    if match.sessions.filter(status='proposed').exists():
+        messages.error(request, 'There is already a proposed session waiting for an answer.')
+        return redirect('matches:match_detail', match_id=match.id)
+
+    MatchSession.objects.create(
+        match=match,
+        proposed_by=request.user,
+        starts_at=starts_at,
+        duration_minutes=duration,
+        note=request.POST.get('note', '').strip()[:200],
+    )
+    messages.success(request, 'Session proposed! Your partner can accept or decline it.')
+    return redirect('matches:match_detail', match_id=match.id)
+
+
+@login_required
+@require_POST
+def set_weekly_goal(request, match_id):
+    """Set the pair's shared weekly practice goal (1-5 scheduled calls)."""
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    try:
+        goal = int(request.POST.get('weekly_goal', ''))
+    except ValueError:
+        goal = 0
+    if not 1 <= goal <= 5:
+        messages.error(request, 'Pick a weekly goal between 1 and 5.')
+        return redirect('matches:match_detail', match_id=match.id)
+    if goal != match.weekly_goal:
+        old_goal = match.weekly_goal
+        match.weekly_goal = goal
+        match.save(update_fields=['weekly_goal', 'updated_at'])
+        # Applies from the current week (Monday, project timezone); weeks
+        # already earned keep the goal that was in effect for them.
+        from .streaks import week_start
+        if not match.goal_changes.exists():
+            # Anchor the goal that applied until now (the value just
+            # replaced) from the match's creation week, so weeks already
+            # earned under it keep it.
+            MatchGoalChange.objects.create(
+                match=match,
+                goal=old_goal,
+                effective_week=week_start(match.created_at).date(),
+            )
+        MatchGoalChange.objects.update_or_create(
+            match=match,
+            effective_week=week_start(timezone.now()).date(),
+            defaults={'goal': goal},
+        )
+        messages.success(request, f'Weekly goal set to {goal} for both of you.')
+    return redirect('matches:match_detail', match_id=match.id)
+
+
+@login_required
+@require_POST
+def respond_session(request, session_id):
+    """Accept or decline a proposed session. Only the non-proposing partner may respond."""
+    session = get_object_or_404(MatchSession, id=session_id)
+    if not session.is_participant(request.user):
+        messages.error(request, 'You do not have access to this session.')
+        return redirect('matches:my_matches')
+    if request.user == session.proposed_by:
+        messages.error(request, 'You cannot answer your own proposal.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+    if session.status != 'proposed':
+        messages.error(request, 'This proposal has already been answered.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+
+    action = request.POST.get('action')
+    if action == 'accept':
+        session.status = 'accepted'
+        messages.success(request, 'Session accepted!')
+    elif action == 'decline':
+        session.status = 'declined'
+        messages.success(request, 'Session declined.')
+    else:
+        messages.error(request, 'Unknown response.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+    session.save(update_fields=['status', 'updated_at'])
+    return redirect('matches:match_detail', match_id=session.match_id)
+
+
+@login_required
+@require_POST
+def cancel_session(request, session_id):
+    """Cancel a proposed or accepted upcoming session. Either partner may cancel."""
+    session = get_object_or_404(MatchSession, id=session_id)
+    if not session.is_participant(request.user):
+        messages.error(request, 'You do not have access to this session.')
+        return redirect('matches:my_matches')
+    if session.status not in ('proposed', 'accepted'):
+        messages.error(request, 'This session cannot be cancelled.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+    if session.status == 'proposed' and request.user != session.proposed_by:
+        messages.error(request, 'Decline the proposal instead of cancelling it.')
+        return redirect('matches:match_detail', match_id=session.match_id)
+
+    session.status = 'cancelled'
+    session.save(update_fields=['status', 'updated_at'])
+    messages.success(request, 'Session cancelled.')
+    return redirect('matches:match_detail', match_id=session.match_id)
 
 # ===============================
 # API ENDPOINTS (JSON Responses)
@@ -337,11 +500,7 @@ def get_my_matches(request):
         
         match_data.append({
             'id': match.id,
-            'partner': {
-                'id': partner.id,
-                'username': partner.username,
-                'email': partner.email,
-            },
+            'partner': _partner_payload(partner),
             'user_teaches': user_teaches.name if user_teaches else None,
             'user_learns': user_learns.name if user_learns else None,
             'created_at': match.created_at.isoformat(),
@@ -352,6 +511,14 @@ def get_my_matches(request):
         'success': True,
         'matches': match_data
     })
+
+def _partner_payload(partner):
+    """Public partner fields. The email is included only if the partner opted in."""
+    data = {'id': partner.id, 'username': partner.username}
+    if partner.share_email_with_matches:
+        data['email'] = partner.email
+    return data
+
 
 @login_required
 def get_match_detail(request, match_id):
@@ -370,11 +537,7 @@ def get_match_detail(request, match_id):
         'success': True,
         'match': {
             'id': match.id,
-            'partner': {
-                'id': partner.id,
-                'username': partner.username,
-                'email': partner.email,
-            },
+            'partner': _partner_payload(partner),
             'user_teaches': user_teaches.name if user_teaches else None,
             'user_learns': user_learns.name if user_learns else None,
             'created_at': match.created_at.isoformat(),
@@ -421,19 +584,21 @@ def get_potential_matches(request):
         }, status=400)
     
     # Get potential matches
-    potential_matches = PotentialMatch.objects.filter(user=request.user)[:20]
+    potential_matches = PotentialMatch.objects.filter(user=request.user, potential_partner__is_active=True).select_related(
+        'potential_partner', 'user_teaches', 'user_learns')[:20]
     
     # Get existing match requests to avoid duplicates
     sent_requests = MatchRequest.objects.filter(
         sender=request.user,
         status='pending'
     ).values_list('receiver_id', flat=True)
+    sent_requests = set(sent_requests)
     
     # Get confirmed matches to avoid showing them again
     confirmed_matches = Match.objects.filter(
         Q(user1=request.user) | Q(user2=request.user),
         status='active'
-    )
+    ).select_related('user1', 'user2')
     confirmed_partner_ids = [match.get_partner(request.user).id for match in confirmed_matches]
     
     matches_data = []
@@ -444,7 +609,6 @@ def get_potential_matches(request):
             'partner': {
                 'id': partner.id,
                 'username': partner.username,
-                'email': partner.email,
             },
             'user_teaches': potential_match.user_teaches.name if potential_match.user_teaches else None,
             'user_learns': potential_match.user_learns.name if potential_match.user_learns else None,
@@ -526,3 +690,113 @@ def get_match_statistics(request, match_id):
         'success': True,
         'statistics': statistics
     })
+
+
+@login_required
+@require_POST
+def submit_feedback(request, match_id):
+    """Save (or update) the current user's private feedback for a match."""
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    try:
+        rating = int(request.POST.get('rating', ''))
+    except ValueError:
+        return JsonResponse({'error': 'Rating must be a number from 1 to 5'}, status=400)
+    if not 1 <= rating <= 5:
+        return JsonResponse({'error': 'Rating must be a number from 1 to 5'}, status=400)
+
+    helpful = request.POST.get('helpful', 'true').lower() not in ('false', '0', 'no')
+    comment = request.POST.get('comment', '').strip()[:500]
+
+    fb, created = MatchFeedback.objects.update_or_create(
+        match=match, author=request.user,
+        defaults={'rating': rating, 'helpful': helpful, 'comment': comment},
+    )
+    return JsonResponse({'success': True, 'created': created, 'rating': fb.rating})
+# ===============================
+# QUICK MATCH
+# ===============================
+
+def _quick_payload(match):
+    return {'status': 'matched', 'match_id': match.id,
+            'url': reverse('matches:quick_match_call', args=[match.id])}
+
+
+@login_required
+def quick_match_page(request):
+    pair = quick.default_language_pair(request.user)
+    return render(request, 'matches/quick_match.html', {
+        'pair': pair,
+        'can_use': quick.can_quick_match(request.user),
+        'has_email': bool(request.user.email),
+    })
+
+
+@login_required
+@require_POST
+def quick_match_join(request):
+    try:
+        match = quick.join_queue(request.user)
+    except quick.QuickMatchError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    if match:
+        return JsonResponse({'success': True, **_quick_payload(match)})
+    return JsonResponse({'success': True, 'status': 'waiting'})
+
+
+@login_required
+def quick_match_status(request):
+    match = quick.poll(request.user)
+    if match:
+        return JsonResponse({'success': True, **_quick_payload(match)})
+    waiting = QuickMatchEntry.objects.filter(user=request.user, match__isnull=True).exists()
+    return JsonResponse({'success': True, 'status': 'waiting' if waiting else 'idle'})
+
+
+@login_required
+@require_POST
+def quick_match_leave(request):
+    quick.leave_queue(request.user)
+    return JsonResponse({'success': True})
+
+
+@login_required
+def quick_match_call(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        messages.error(request, 'You do not have access to this match.')
+        return redirect('matches:my_matches')
+    mine = match.user1_keep if request.user == match.user1 else match.user2_keep
+    ends_at = match.trial_ends_at
+    remaining = max(0, int((ends_at - timezone.now()).total_seconds())) if ends_at else 0
+    return render(request, 'matches/quick_match_call.html', {
+        'match': match,
+        'partner': match.get_partner(request.user),
+        'remaining_seconds': remaining,
+        'my_choice': mine,
+    })
+
+
+@login_required
+@require_POST
+def quick_match_decide(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    if request.POST.get('choice') not in ('keep', 'skip'):
+        return JsonResponse({'error': 'choice must be keep or skip'}, status=400)
+    try:
+        match = quick.decide(match, request.user, request.POST['choice'] == 'keep')
+    except quick.QuickMatchError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    return JsonResponse({'success': True, 'status': match.status})
+
+
+@login_required
+def quick_match_result(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    if request.user not in [match.user1, match.user2]:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    return JsonResponse({'status': match.status})

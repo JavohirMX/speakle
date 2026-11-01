@@ -11,8 +11,8 @@ from .settings import *  # noqa: F403
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='change-me-in-production')
+# SECRET_KEY is read and validated in config/settings.py (it refuses to start without a real one).
+SECRET_KEY = config('SECRET_KEY', default=SECRET_KEY)
 
 # Allowed hosts
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
@@ -67,6 +67,11 @@ SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=True, cast=bool)
 SECURE_CONTENT_TYPE_NOSNIFF = config('SECURE_CONTENT_TYPE_NOSNIFF', default=True, cast=bool)
 SECURE_BROWSER_XSS_FILTER = config('SECURE_BROWSER_XSS_FILTER', default=True, cast=bool)
 X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', default='DENY')
+# Behind a proxy that terminates HTTPS, Django only sees plain http unless it trusts the proxy's
+# X-Forwarded-Proto. Without this, SECURE_SSL_REDIRECT redirects every request forever and HSTS is
+# never sent. Off by default: only enable it when the proxy sets/overwrites that header.
+if config('TRUST_X_FORWARDED_PROTO', default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # CSRF settings
 CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
@@ -108,7 +113,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': '/app/django.log',
+            'filename': config('DJANGO_LOG_FILE', default='/app/django.log'),
             'formatter': 'verbose',
         },
         'console': {
@@ -147,3 +152,13 @@ LANGUAGE_CODE = config('LANGUAGE_CODE', default='en-us')
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB 
+
+# Email verification (needed for Quick match). Set the EMAIL_* variables above to a real SMTP
+# server in production, otherwise verification links only print to the container log.
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Speakle <noreply@localhost>')
+SITE_URL = config('SITE_URL', default='')  # e.g. https://speakle.example.com, used in emails
+QUICK_MATCH_REQUIRE_VERIFIED_EMAIL = config('QUICK_MATCH_REQUIRE_VERIFIED_EMAIL', default=True, cast=bool)
+
+# Cap sign-ups per client address per hour. 0 disables it. Leave it off behind a proxy
+# that hides the client address (REMOTE_ADDR would be the proxy).
+SIGNUPS_PER_HOUR_PER_IP = config('SIGNUPS_PER_HOUR_PER_IP', default=0, cast=int)

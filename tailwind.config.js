@@ -1,0 +1,21 @@
+// Used only to build static/css/tailwind.css (see README "Rebuilding CSS").
+
+        var tomato = {50:'#fff1ed',100:'#ffddd4',200:'#ffb9a6',300:'#ff9078',400:'#ff6b4a',500:'#f24a27',600:'#d63a1a',700:'#b02d13',800:'#8a2410',900:'#6d1f0f',950:'#3d0f07'};
+        var stone = {50:'#fff9ec',100:'#fff2d6',200:'#f0e3c3',300:'#d9c9a3',400:'#a8997a',500:'#766a52',600:'#5b513e',700:'#43392a',800:'#2c2519',900:'#1a1510',950:'#0f0b07'};
+        var sun = {50:'#fffbe6',100:'#fff3b8',200:'#ffe680',300:'#ffd84d',400:'#ffc61a',500:'#f5b400',600:'#b37d00',700:'#8a5f00',800:'#6b4a00',900:'#523a00'};
+        var mint = {50:'#e9fbf2',100:'#c8f5de',200:'#92e9bd',300:'#55d99a',400:'#25c27a',500:'#12a862',600:'#0b8a4f',700:'#0a6d40',800:'#0b5733',900:'#0a4629'};
+        module.exports = {content:["./**/templates/**/*.html","./**/*.py"],safelist:[],
+            theme: { extend: {
+                fontFamily: {
+                    sans: ['Figtree', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+                    display: ['Bricolage Grotesque', 'Figtree', 'system-ui', 'sans-serif']
+                },
+                colors: {
+                    blue: tomato, indigo: tomato, purple: tomato, violet: tomato, sky: tomato, cyan: tomato, teal: tomato, brand: tomato, coral: tomato,
+                    gray: stone, slate: stone, zinc: stone, neutral: stone,
+                    yellow: sun, amber: sun, orange: sun, green: mint, emerald: mint,
+                    ink: '#1a1510', cream: '#fff9ec', sun: sun, mint: mint, tomato: tomato
+                },
+                borderRadius: { '2xl': '1.1rem', '3xl': '1.5rem' }
+            } }
+        };

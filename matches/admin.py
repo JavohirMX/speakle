@@ -21,3 +21,13 @@ class MatchRequestAdmin(admin.ModelAdmin):
     list_filter = ['status', 'sender_teaches', 'sender_learns', 'created_at']
     search_fields = ['sender__username', 'receiver__username']
     ordering = ['-created_at']
+
+
+from .models import MatchFeedback
+
+
+@admin.register(MatchFeedback)
+class MatchFeedbackAdmin(admin.ModelAdmin):
+    list_display = ('match', 'author', 'rating', 'helpful', 'updated_at')
+    list_filter = ('rating', 'helpful')
+    search_fields = ('author__username', 'comment')

@@ -54,10 +54,13 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      # The python image has no curl, so use Python. urlopen raises on HTTP errors and
+      # connection failures, which makes the command exit non-zero. Needs "localhost" in ALLOWED_HOSTS.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
     restart: unless-stopped
 
 

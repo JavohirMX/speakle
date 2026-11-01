@@ -1,702 +1,131 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Speakle - Find Your Perfect Language Exchange Partner{% endblock %}
+{% block title %}Speakle - Swap languages, make a friend{% endblock %}
+{% block meta_description %}Practice a language by video with someone who is learning yours. Free two-way language exchange in your browser, with block and report built in.{% endblock %}
 
-{% block meta_description %}Find your perfect language exchange partner on Speakle. Practice speaking with native speakers worldwide through video chat. Join thousands of learners improving their language skills naturally.{% endblock %}
-
-{% block extra_css %}
-
-    /* Hero section enhancements */
-    .hero-bg {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
-        background-size: 300% 300%;
-        animation: gradientShift 8s ease infinite;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .hero-bg::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="a"><stop offset="0" stop-opacity=".1"/><stop offset="1" stop-opacity="0"/></radialGradient></defs><g opacity=".5"><circle fill="url(%23a)" cx="500" cy="300" r="400"/><circle fill="url(%23a)" cx="200" cy="700" r="300"/><circle fill="url(%23a)" cx="800" cy="600" r="350"/></g></svg>') center/cover;
-        opacity: 0.3;
-    }
-    
-    @keyframes gradientShift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-    }
-    
-    /* Card hover effects */
-    .feature-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: translateY(0);
-        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-    }
-    
-    .feature-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-    
-    .feature-icon {
-        transition: transform 0.3s ease;
-    }
-    
-    .feature-card:hover .feature-icon {
-        transform: scale(1.1) rotate(5deg);
-    }
-    
-    /* Language card animations */
-    .language-card {
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .language-card:hover {
-        transform: translateY(-4px) scale(1.05);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
-    
-    .language-flag {
-        font-size: 2rem;
-        transition: all 0.3s ease;
-    }
-    
-    .language-card:hover .language-flag {
-        transform: scale(1.2);
-        filter: brightness(1.1);
-    }
-    
-    /* Step animations */
-    .step-number {
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .step-number::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.5s ease;
-    }
-    
-    .step-number:hover::before {
-        left: 100%;
-    }
-    
-    /* Button enhancements */
-    .cta-button {
-        position: relative;
-        overflow: hidden;
-        transform: translateY(0);
-        transition: all 0.3s ease;
-    }
-    
-    .cta-button::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.5s ease;
-    }
-    
-    .cta-button:hover::before {
-        left: 100%;
-    }
-    
-    .cta-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* Scroll animations */
-    .fade-in-up {
-        opacity: 0;
-        transform: translateY(30px);
-        transition: all 0.6s ease;
-    }
-    
-    .fade-in-up.visible {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    
-    /* Statistics counter */
-    .stat-number {
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    /* Testimonial styles */
-    .testimonial-card {
-        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-        border-left: 4px solid #667eea;
-    }
-    
-    /* Interactive elements */
-    .interactive-demo {
-        background: linear-gradient(135deg, #f6f9fc 0%, #e9ecef 100%);
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 2rem;
-        margin: 2rem 0;
-    }
-    
-    /* Clean design - no animations */
-    .pulse-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #10b981;
-        border-radius: 50%;
-        margin-right: 8px;
-    }
-
+{% block jsonld %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"Organization","@id":"{{ site_origin }}/#org","name":"Speakle","url":"{{ site_origin }}/","logo":"{{ site_origin }}{% static 'img/icon-512.png' %}"},
+ {"@type":"WebSite","@id":"{{ site_origin }}/#website","url":"{{ site_origin }}/","name":"Speakle","publisher":{"@id":"{{ site_origin }}/#org"}}
+]}
+</script>
 {% endblock %}
 
 {% block content %}
-<!-- Enhanced Hero Section -->
-<section class="hero-bg text-white relative">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 relative z-10">
-        <div class="text-center">
-            <div class="mb-8">
-                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white border border-white border-opacity-30 backdrop-blur-sm">
-                    <span class="pulse-dot"></span>
-                    <span id="userCount">10,000+</span> active learners worldwide
-                </span>
-            </div>
-            
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Connect. Learn. <span class="relative">
-                    <span class="text-yellow-300">Speak.</span>
-                    <svg class="absolute -bottom-2 left-0 w-full h-3" viewBox="0 0 200 12" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5 8c66-6 131-6 190 0" stroke="#fde047" stroke-width="3" fill="none" stroke-linecap="round"/>
-                    </svg>
-                </span>
-            </h1>
-            
-            <p class="text-lg sm:text-xl lg:text-2xl mb-8 max-w-4xl mx-auto leading-relaxed text-blue-50">
-                Join thousands of language learners worldwide. Find your perfect language exchange partner 
-                and practice speaking through real conversations via video chat.
-            </p>
-            
-            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                <a href="{% url 'users:register' %}" 
-                   class="cta-button bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-semibold hover:bg-yellow-300 transition text-lg w-full sm:w-auto focus-ring">
-                    Start Learning Today
-                    <span class="ml-2">🚀</span>
-                </a>
-                <a href="#how-it-works" 
-                   class="cta-button border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-blue-600 transition text-lg w-full sm:w-auto focus-ring">
-                    How It Works
-                    <span class="ml-2">👀</span>
-                </a>
-            </div>
-            
-            <!-- Quick stats -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto text-center">
-                <div class="p-4">
-                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-languages">50+</div>
-                    <div class="text-sm text-blue-100">Languages</div>
-                </div>
-                <div class="p-4">
-                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-countries">120+</div>
-                    <div class="text-sm text-blue-100">Countries</div>
-                </div>
-                <div class="p-4">
-                    <div class="text-2xl sm:text-3xl font-bold text-yellow-300 mb-1" id="stat-matches">1M+</div>
-                    <div class="text-sm text-blue-100">Successful Matches</div>
-                </div>
-            </div>
-        </div>
+<div class="overflow-x-clip">
+  <!-- Hero -->
+  <section class="max-w-6xl mx-auto px-5 sm:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
+    <div>
+      <span class="pill tilt-l"><svg class="ico"><use href="#i-video"/></svg> Two-way language swap, on video</span>
+      <h1 class="mt-5 text-5xl sm:text-6xl lg:text-7xl">Swap languages.<br>Make a <span class="hl">friend</span>.</h1>
+      <p class="mt-6 text-lg sm:text-xl font-medium max-w-xl">You speak English and want Korean. Someone speaks Korean and wants English. Speakle puts you on a call and you teach each other. That is the whole idea.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        {% if user.is_authenticated %}
+        <a href="{% url 'matches:quick_match' %}" class="btn btn-solid text-lg px-7 py-3.5">Start a quick match <svg class="ico"><use href="#i-bolt"/></svg></a>
+        <a href="{% url 'matches:find_matches' %}" class="btn btn-outline text-lg px-7 py-3.5">Browse partners</a>
+        {% else %}
+        <a href="{% url 'users:register' %}" class="btn btn-solid text-lg px-7 py-3.5">Start swapping <svg class="ico"><use href="#i-arrow"/></svg></a>
+        <a href="{% url 'users:login' %}" class="btn btn-outline text-lg px-7 py-3.5">Sign in</a>
+        {% endif %}
+      </div>
+      <p class="mt-5 text-sm font-semibold flex items-center gap-2"><svg class="ico"><use href="#i-shield"/></svg> Block or report anyone, any time.</p>
     </div>
-    
-    <!-- Scroll indicator -->
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-        </svg>
+
+    <!-- Sticker collage -->
+    <div class="relative h-[26rem] sm:h-[30rem]" aria-hidden="true">
+      <div class="sticker absolute left-0 top-2 w-52 sm:w-60 p-5 tilt-l" style="background:var(--sky)">
+        <p class="font-display text-4xl">Hello!</p>
+        <p class="text-sm font-bold mt-1">Minho, speaks Korean</p>
+      </div>
+      <div class="sticker absolute right-0 top-24 sm:top-16 w-48 sm:w-56 p-5 tilt-r" style="background:var(--mint)">
+        <p class="font-display text-4xl">Annyeong</p>
+        <p class="text-sm font-bold mt-1">is how you say it back</p>
+      </div>
+      <div class="sticker absolute left-6 top-44 sm:top-48 w-72 p-5 tilt-r">
+        <p class="text-xs font-bold uppercase tracking-wider">Your pairing</p>
+        <p class="font-display text-2xl mt-1">You teach English<br>you learn Korean</p>
+        <div class="mt-3 flex gap-2"><span class="pill" style="background:var(--sun)">Mirror match</span></div>
+      </div>
+      <div class="sticker absolute right-2 bottom-0 w-44 p-4 tilt-l text-center" style="background:var(--tomato-bright)">
+        <p class="font-display text-5xl leading-none">4:12</p>
+        <p class="text-xs font-bold mt-1">left in the trial call</p>
+      </div>
     </div>
-</section>
+  </section>
 
-<!-- Enhanced Features Section -->
-<section class="py-20 lg:py-28 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16 fade-in-up">
-            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mb-4">
-                ✨ Why Choose Speakle?
-            </div>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-                The Most Effective Way to Learn
-            </h2>
-            <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-                Experience natural language learning through real conversations with native speakers from around the world.
-            </p>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
-            <div class="feature-card text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all fade-in-up">
-                <div class="feature-icon w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <span class="text-4xl">🌍</span>
-                </div>
-                <h3 class="text-xl font-bold mb-4 text-gray-900">Global Community</h3>
-                <p class="text-gray-600 leading-relaxed">
-                    Connect with native speakers from over 120 countries. Practice with real people, not bots, and experience authentic cultural exchange.
-                </p>
-                <div class="mt-6 text-sm text-blue-600 font-medium">
-                    Join 10,000+ active learners →
-                </div>
-            </div>
-
-            <div class="feature-card text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all fade-in-up">
-                <div class="feature-icon w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <span class="text-4xl">💬</span>
-                </div>
-                <h3 class="text-xl font-bold mb-4 text-gray-900">HD Video Chat</h3>
-                <p class="text-gray-600 leading-relaxed">
-                    Practice speaking face-to-face through our crystal-clear video chat. Build confidence naturally with instant feedback and corrections.
-                </p>
-                <div class="mt-6 text-sm text-green-600 font-medium">
-                    Start speaking today →
-                </div>
-            </div>
-
-            <div class="feature-card text-center p-8 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all fade-in-up">
-                <div class="feature-icon w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <span class="text-4xl">🎯</span>
-                </div>
-                <h3 class="text-xl font-bold mb-4 text-gray-900">Smart Matching</h3>
-                <p class="text-gray-600 leading-relaxed">
-                    Our AI algorithm matches you with the perfect partner based on your language goals, interests, and learning style for optimal results.
-                </p>
-                <div class="mt-6 text-sm text-purple-600 font-medium">
-                    Find your match →
-                </div>
-            </div>
-        </div>
+  <!-- Greeting marquee -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      {% for i in "12" %}<span>Hello</span><span>*</span><span>Hola</span><span>*</span><span>Bonjour</span><span>*</span><span>Ciao</span><span>*</span><span>Olá</span><span>*</span><span>Merhaba</span><span>*</span><span>Привет</span><span>*</span><span>Selamat siang</span><span>*</span><span>Hej</span><span>*</span>{% endfor %}
     </div>
-</section>
+  </div>
 
-<!-- Enhanced How It Works Section -->
-<section id="how-it-works" class="py-20 lg:py-28">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16 fade-in-up">
-            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
-                🚀 Getting Started
-            </div>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">How It Works</h2>
-            <p class="text-lg sm:text-xl text-gray-600">Get started in just 3 simple steps and start speaking within minutes</p>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-8 lg:gap-12 relative">
-            <!-- Connection lines for desktop -->
-            <div class="hidden md:block absolute top-20 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-blue-200 via-green-200 to-purple-200"></div>
-            
-            <div class="text-center fade-in-up">
-                <div class="step-number w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 text-2xl font-bold relative z-10">
-                    1
-                </div>
-                <h3 class="text-xl font-bold mb-4 text-gray-900">Create Your Profile</h3>
-                <p class="text-gray-600 leading-relaxed mb-6">
-                    Sign up and tell us about your native language, what you want to learn, your interests, and your learning goals.
-                </p>
-                <div class="interactive-demo">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span class="text-blue-600">👤</span>
-                        </div>
-                        <div class="text-left">
-                            <div class="text-sm font-medium text-gray-900">Complete profile setup</div>
-                            <div class="text-xs text-gray-500">Takes 2-3 minutes</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center fade-in-up">
-                <div class="step-number w-24 h-24 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 text-2xl font-bold relative z-10">
-                    2
-                </div>
-                <h3 class="text-xl font-bold mb-4 text-gray-900">Find Your Match</h3>
-                <p class="text-gray-600 leading-relaxed mb-6">
-                    Browse verified profiles and connect with speakers who want to learn your language while teaching you theirs.
-                </p>
-                <div class="interactive-demo">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <span class="text-green-600">🔍</span>
-                        </div>
-                        <div class="text-left">
-                            <div class="text-sm font-medium text-gray-900">Smart matching algorithm</div>
-                            <div class="text-xs text-gray-500">99% compatibility rate</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center fade-in-up">
-                <div class="step-number w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 text-2xl font-bold relative z-10">
-                    3
-                </div>
-                <h3 class="text-xl font-bold mb-4 text-gray-900">Start Speaking</h3>
-                <p class="text-gray-600 leading-relaxed mb-6">
-                    Jump into HD video chats and start practicing! Learn naturally through real conversations with built-in tools.
-                </p>
-                <div class="interactive-demo">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <span class="text-purple-600">🎥</span>
-                        </div>
-                        <div class="text-left">
-                            <div class="text-sm font-medium text-gray-900">Instant video calls</div>
-                            <div class="text-xs text-gray-500">No downloads required</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- How it works -->
+  <section class="max-w-6xl mx-auto px-5 sm:px-8 py-16 lg:py-24">
+    <h2 class="text-4xl sm:text-5xl max-w-2xl">Three steps. <span class="squiggle">No homework.</span></h2>
+    <div class="mt-10 grid md:grid-cols-3 gap-6">
+      <article class="sticker p-6 tilt-l" style="background:var(--sun-soft)">
+        <span class="font-display text-6xl">1</span>
+        <h3 class="text-2xl mt-2">Say what you speak</h3>
+        <p class="mt-2 font-medium">Add the language you know and the one you want. Every match is a swap, so both sides get something.</p>
+      </article>
+      <article class="sticker p-6 md:mt-8" style="background:var(--sky-soft)">
+        <span class="font-display text-6xl">2</span>
+        <h3 class="text-2xl mt-2">Get paired</h3>
+        <p class="mt-2 font-medium">Hit quick match for a five minute trial call, or browse partners and send a request.</p>
+      </article>
+      <article class="sticker p-6 tilt-r" style="background:var(--mint-soft)">
+        <span class="font-display text-6xl">3</span>
+        <h3 class="text-2xl mt-2">Keep the good ones</h3>
+        <p class="mt-2 font-medium">When time is up you each pick keep or skip. Keep means you can chat and call again.</p>
+      </article>
     </div>
-</section>
+  </section>
 
-<!-- Enhanced Languages Section -->
-<section class="py-20 lg:py-28 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16 fade-in-up">
-            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 mb-4">
-                🌎 Popular Languages
-            </div>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">Learn Any Language</h2>
-            <p class="text-lg sm:text-xl text-gray-600">Practice with native speakers in these popular languages and many more</p>
-        </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-12">
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇺🇸</div>
-                <p class="font-semibold text-gray-900 text-sm">English</p>
-                <p class="text-xs text-gray-500 mt-1">5.2k speakers</p>
-            </div>
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇪🇸</div>
-                <p class="font-semibold text-gray-900 text-sm">Spanish</p>
-                <p class="text-xs text-gray-500 mt-1">3.8k speakers</p>
-            </div>
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇫🇷</div>
-                <p class="font-semibold text-gray-900 text-sm">French</p>
-                <p class="text-xs text-gray-500 mt-1">2.1k speakers</p>
-            </div>
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇩🇪</div>
-                <p class="font-semibold text-gray-900 text-sm">German</p>
-                <p class="text-xs text-gray-500 mt-1">1.9k speakers</p>
-            </div>
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇮🇹</div>
-                <p class="font-semibold text-gray-900 text-sm">Italian</p>
-                <p class="text-xs text-gray-500 mt-1">1.5k speakers</p>
-            </div>
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇯🇵</div>
-                <p class="font-semibold text-gray-900 text-sm">Japanese</p>
-                <p class="text-xs text-gray-500 mt-1">2.3k speakers</p>
-            </div>
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇰🇷</div>
-                <p class="font-semibold text-gray-900 text-sm">Korean</p>
-                <p class="text-xs text-gray-500 mt-1">1.7k speakers</p>
-            </div>
-            <div class="language-card text-center p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-all fade-in-up">
-                <div class="language-flag mb-3">🇨🇳</div>
-                <p class="font-semibold text-gray-900 text-sm">Chinese</p>
-                <p class="text-xs text-gray-500 mt-1">2.8k speakers</p>
-            </div>
-        </div>
-        
-        <div class="text-center fade-in-up">
-            <p class="text-gray-600 mb-6">Don't see your language? We support 50+ languages with new ones added regularly.</p>
-            <a href="{% url 'users:register' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors focus-ring">
-                View All Languages
-                <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-            </a>
-        </div>
+  <!-- Quick match band -->
+  <section class="border-y-[3px] border-[var(--ink)]" style="background:var(--sky)">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-14 lg:py-20 grid lg:grid-cols-2 gap-10 items-center">
+      <div>
+        <span class="pill"><svg class="ico"><use href="#i-bolt"/></svg> Quick match</span>
+        <h2 class="mt-4 text-4xl sm:text-5xl">Five minutes with someone new.</h2>
+        <p class="mt-4 text-lg font-medium max-w-lg">We pair you with a person who speaks what you are learning and is learning what you speak. After the call you both choose whether to stay in touch. Nothing is shared unless you both say yes.</p>
+        <a href="{% if user.is_authenticated %}{% url 'matches:quick_match' %}{% else %}{% url 'users:register' %}{% endif %}" class="btn btn-solid mt-6 text-lg px-7 py-3.5">Try it <svg class="ico"><use href="#i-arrow"/></svg></a>
+      </div>
+      <ul class="space-y-4">
+        <li class="sticker p-4 flex gap-3 items-start"><svg class="ico mt-1" style="width:1.6em;height:1.6em"><use href="#i-globe"/></svg><div><p class="font-bold">Mirrored languages</p><p class="text-sm font-medium">You teach what they learn, they teach what you learn.</p></div></li>
+        <li class="sticker p-4 flex gap-3 items-start tilt-r"><svg class="ico mt-1" style="width:1.6em;height:1.6em"><use href="#i-ban"/></svg><div><p class="font-bold">Blocked people are skipped</p><p class="text-sm font-medium">Anyone either side has blocked never shows up.</p></div></li>
+        <li class="sticker p-4 flex gap-3 items-start"><svg class="ico mt-1" style="width:1.6em;height:1.6em"><use href="#i-check"/></svg><div><p class="font-bold">You decide after</p><p class="text-sm font-medium">Keep or skip. Nothing is automatic.</p></div></li>
+      </ul>
     </div>
-</section>
+  </section>
 
-<!-- Testimonials Section -->
-<section class="py-20 lg:py-28">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-16 fade-in-up">
-            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-800 mb-4">
-                💬 Success Stories
-            </div>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">What Our Users Say</h2>
-            <p class="text-lg sm:text-xl text-gray-600">Real stories from language learners who found success on Speakle</p>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                        M
-                    </div>
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-900">Maria Rodriguez</div>
-                        <div class="text-sm text-gray-500">Learning English • Spain</div>
-                    </div>
-                </div>
-                <p class="text-gray-600 leading-relaxed">
-                    "I've improved my English so much in just 3 months! The video chats feel natural and my conversation partner is now a great friend."
-                </p>
-                <div class="flex mt-4 text-yellow-400">
-                    ⭐⭐⭐⭐⭐
-                </div>
-            </div>
-
-            <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center text-white font-bold">
-                        J
-                    </div>
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-900">James Chen</div>
-                        <div class="text-sm text-gray-500">Learning Spanish • USA</div>
-                    </div>
-                </div>
-                <p class="text-gray-600 leading-relaxed">
-                    "The matching system is incredible. I found someone with similar interests and now we practice twice a week. My Spanish has never been better!"
-                </p>
-                <div class="flex mt-4 text-yellow-400">
-                    ⭐⭐⭐⭐⭐
-                </div>
-            </div>
-
-            <div class="testimonial-card p-8 bg-white rounded-2xl shadow-sm fade-in-up">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                        A
-                    </div>
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-900">Akiko Tanaka</div>
-                        <div class="text-sm text-gray-500">Learning French • Japan</div>
-                    </div>
-                </div>
-                <p class="text-gray-600 leading-relaxed">
-                    "Speakle made learning French fun and social. I love how easy it is to schedule calls and the video quality is always perfect."
-                </p>
-                <div class="flex mt-4 text-yellow-400">
-                    ⭐⭐⭐⭐⭐
-                </div>
-            </div>
-        </div>
+  <!-- Safety -->
+  <section class="max-w-6xl mx-auto px-5 sm:px-8 py-16 lg:py-24">
+    <h2 class="text-4xl sm:text-5xl max-w-2xl">A language app, <span class="hl">not a dating app.</span></h2>
+    <p class="mt-4 text-lg font-medium max-w-2xl">Strangers on camera need guardrails. These are in the app today.</p>
+    <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="sticker p-5"><span class="pill" style="background:var(--tomato-soft)"><svg class="ico"><use href="#i-ban"/></svg> Block</span><p class="mt-3 font-medium text-sm">Block someone and you will never be matched again, either way.</p></div>
+      <div class="sticker p-5 tilt-r"><span class="pill" style="background:var(--sun-soft)"><svg class="ico"><use href="#i-flag"/></svg> Report</span><p class="mt-3 font-medium text-sm">Pick a reason and add details. Reports go to a review queue.</p></div>
+      <div class="sticker p-5"><span class="pill" style="background:var(--mint-soft)"><svg class="ico"><use href="#i-mail"/></svg> Verified email</span><p class="mt-3 font-medium text-sm">Quick match needs a confirmed email address.</p></div>
+      <div class="sticker p-5 tilt-l"><span class="pill" style="background:var(--sky-soft)"><svg class="ico"><use href="#i-clock"/></svg> Short first call</span><p class="mt-3 font-medium text-sm">Five minutes, then a clear yes or no from both sides.</p></div>
     </div>
-</section>
+  </section>
 
-<!-- Enhanced CTA Section -->
-<section class="bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 text-white py-20 lg:py-28 relative overflow-hidden">
-    <div class="absolute inset-0 bg-black opacity-10"></div>
-    <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="fade-in-up">
-            <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white border border-white border-opacity-30 backdrop-blur-sm mb-6">
-                🎉 Join the Community
-            </div>
-            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
-                Ready to Start Your Language Journey?
-            </h2>
-            <p class="text-lg sm:text-xl mb-8 text-blue-100">
-                Join thousands of learners who are already improving their language skills through real conversations. 
-                It's free to get started!
-            </p>
-            
-            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <a href="{% url 'users:register' %}" 
-                   class="cta-button bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-semibold hover:bg-yellow-300 transition text-lg w-full sm:w-auto focus-ring">
-                    Sign Up for Free
-                    <span class="ml-2">🚀</span>
-                </a>
-                <a href="{% url 'users:login' %}" 
-                   class="cta-button border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-blue-600 transition text-lg w-full sm:w-auto focus-ring">
-                    Already have an account?
-                </a>
-            </div>
-            
-            <div class="text-sm text-blue-200">
-                ✓ No credit card required ✓ Start chatting in minutes ✓ Cancel anytime
-            </div>
-        </div>
+  <!-- Closing -->
+  <section class="border-t-[3px] border-[var(--ink)]" style="background:var(--sun)">
+    <div class="max-w-4xl mx-auto px-5 sm:px-8 py-16 text-center">
+      <h2 class="text-5xl sm:text-6xl">Say <span class="squiggle">hola</span> to someone today.</h2>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        {% if user.is_authenticated %}
+        <a href="{% url 'matches:quick_match' %}" class="btn btn-outline text-lg px-7 py-3.5">Start a quick match</a>
+        {% else %}
+        <a href="{% url 'users:register' %}" class="btn btn-outline text-lg px-7 py-3.5">Create an account</a>
+        <a href="{% url 'users:login' %}" class="btn text-lg px-7 py-3.5" style="background:var(--cream)">I already have one</a>
+        {% endif %}
+      </div>
     </div>
-    
-    <!-- Floating elements -->
-    <div class="absolute top-20 left-10 text-6xl opacity-10 animate-bounce">💬</div>
-    <div class="absolute bottom-20 right-10 text-4xl">🌍</div>
-    <div class="absolute top-1/2 left-20 text-3xl opacity-10 animate-ping">✨</div>
-</section>
-
-<!-- Enhanced JavaScript -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Scroll animations
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
-    const observer = new IntersectionObserver(function(entries) {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-            }
-        });
-    }, observerOptions);
-    
-    // Observe all fade-in elements
-    document.querySelectorAll('.fade-in-up').forEach(el => {
-        observer.observe(el);
-    });
-    
-    // Counter animations
-    function animateCounters() {
-        const counters = [
-            { id: 'stat-languages', target: 50, suffix: '+' },
-            { id: 'stat-countries', target: 120, suffix: '+' },
-            { id: 'stat-matches', target: 1000000, suffix: '+', format: 'short' },
-            { id: 'userCount', target: 10000, suffix: '+', format: 'short' }
-        ];
-        
-        counters.forEach(counter => {
-            const element = document.getElementById(counter.id);
-            if (!element) return;
-            
-            let current = 0;
-            const increment = counter.target / 100;
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= counter.target) {
-                    current = counter.target;
-                    clearInterval(timer);
-                }
-                
-                let displayValue = Math.floor(current);
-                if (counter.format === 'short' && displayValue >= 1000) {
-                    if (displayValue >= 1000000) {
-                        displayValue = (displayValue / 1000000).toFixed(1) + 'M';
-                    } else {
-                        displayValue = (displayValue / 1000).toFixed(1) + 'K';
-                    }
-                }
-                element.textContent = displayValue + counter.suffix;
-            }, 20);
-        });
-    }
-    
-    // Trigger counter animation when stats section is visible
-    const statsSection = document.querySelector('.hero-bg');
-    if (statsSection) {
-        const statsObserver = new IntersectionObserver(function(entries) {
-            if (entries[0].isIntersecting) {
-                animateCounters();
-                statsObserver.unobserve(statsSection);
-            }
-        }, { threshold: 0.5 });
-        
-        statsObserver.observe(statsSection);
-    }
-    
-    // Language card interactions
-    document.querySelectorAll('.language-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const language = this.querySelector('p').textContent;
-            showNotificationToast(
-                `${language} Selected! 🎉`,
-                `Great choice! Sign up to find ${language} speakers`,
-                '🗣️',
-                4000
-            );
-        });
-    });
-    
-    // Feature card interactions
-    document.querySelectorAll('.feature-card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.background = 'linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.background = 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)';
-        });
-    });
-    
-    // Smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-    
-    // Add dynamic content
-    const testimonials = [
-        { name: "Lisa Wang", country: "China", learning: "English", rating: 5 },
-        { name: "Carlos Silva", country: "Brazil", learning: "German", rating: 5 },
-        { name: "Emma Johnson", country: "UK", learning: "Spanish", rating: 5 }
-    ];
-    
-    // Rotate testimonials every 10 seconds
-    let currentTestimonial = 0;
-    setInterval(() => {
-        currentTestimonial = (currentTestimonial + 1) % testimonials.length;
-        // Could implement testimonial rotation here
-    }, 10000);
-    
-    // Add particles effect to hero section
-    createParticles();
-});
-
-function createParticles() {
-    const hero = document.querySelector('.hero-bg');
-    if (!hero) return;
-    
-    for (let i = 0; i < 20; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'absolute w-2 h-2 bg-white rounded-full opacity-20';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animation = `float ${3 + Math.random() * 4}s ease-in-out infinite`;
-        particle.style.animationDelay = Math.random() * 2 + 's';
-        hero.appendChild(particle);
-    }
-}
-
-// Add float animation
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-    }
-`;
-document.head.appendChild(style);
-</script>
-{% endblock %} 
+  </section>
+</div>
+{% endblock %}
