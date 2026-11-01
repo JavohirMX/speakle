@@ -15,6 +15,36 @@
 </div>
 
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+{% if next_step %}
+  <section class="sticker p-5 ns-hero mb-5" aria-labelledby="nsTitle">
+    {% if next_step.kind == 'reply' %}
+    <h2 id="nsTitle">Your next step: reply to {{ next_step.partner.username }}</h2>
+    <p class="sub">You have unread messages. Existing conversations come first.</p>
+    <p class="mt-3"><a class="btn btn-solid w-full" href="{% url 'chats:text_chat' next_step.room_id %}">Open chat</a></p>
+    {% elif next_step.kind == 'request' %}
+    <h2 id="nsTitle">Your next step: answer {{ next_step.req.sender.username }}</h2>
+    <p class="sub">They asked to practise with you - teaches {{ next_step.req.sender_teaches.name }}, learns {{ next_step.req.sender_learns.name }}.</p>
+    <p class="mt-3"><a class="btn btn-solid w-full" href="{% url 'matches:requests' %}">View request</a></p>
+    {% else %}
+    <h2 id="nsTitle">Your next step: say hi to {{ next_step.pm.potential_partner.username }}</h2>
+    <p class="sub">Best match for you right now - {{ next_step.pm.compatibility_score|floatformat:0 }}% match. One message starts it.</p>
+    <div class="feat">
+      {% if next_step.pm.potential_partner.profile_picture %}<img src="{{ next_step.pm.potential_partner.profile_picture.url }}" alt="" class="pm-avatar">{% else %}<span class="pm-avatar pm-initial" aria-hidden="true">{{ next_step.pm.potential_partner.username|first|upper }}</span>{% endif %}
+      <div class="pm-who">
+        <h3 class="pm-name">{{ next_step.pm.potential_partner.username }}</h3>
+        <p class="pm-pair"><span class="chip chip-teach">teaches {{ next_step.pm.user_learns.name }}</span> <span class="chip chip-learn">learns {{ next_step.pm.user_teaches.name }}</span></p>
+      </div>
+      <div class="pm-score {% if next_step.pm.compatibility_score >= 90 %}hi{% elif next_step.pm.compatibility_score >= 80 %}good{% elif next_step.pm.compatibility_score >= 70 %}ok{% else %}low{% endif %}"><strong>{{ next_step.pm.compatibility_score|floatformat:0 }}%</strong><span>match</span></div>
+    </div>
+    <button type="button" class="btn btn-solid w-full" data-open-request data-id="{{ next_step.pm.id }}" data-name="{{ next_step.pm.potential_partner.username|escape }}" data-teach="{{ next_step.pm.user_teaches.name }}" data-learn="{{ next_step.pm.user_learns.name }}">Say hi</button>
+    {% endif %}
+    <p class="mt-3 text-sm">
+      {% if can_quick %}<a class="underline font-semibold" href="{% url 'matches:quick_match' %}">Or Quick match - pairs you live with whoever is searching</a>
+      {% else %}<a class="underline font-semibold" href="{% url 'users:profile' %}">Quick match - unlocks after email confirmation</a>{% endif %}
+      &middot; <button type="button" class="underline font-semibold" data-refresh><span>Refresh list</span></button>
+    </p>
+  </section>
+  {% endif %}
   <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
     <p id="resultCount" class="font-semibold" aria-live="polite">{{ potential_matches|length }} partner{{ potential_matches|length|pluralize }}, best match first</p>
     <div class="flex gap-2">
