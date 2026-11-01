@@ -7,7 +7,7 @@ code, never exercised end-to-end in the browser.
 Leaves cancelled/declined CallInvitation rows in the fixture DB (the
 pending filter ignores them); CI runs against a fresh database.
 """
-import json, os, socket, subprocess, sys, time, urllib.request
+import atexit, json, os, socket, subprocess, sys, time, urllib.request
 from websocket import create_connection
 
 import os as _os, json as _json
@@ -36,6 +36,20 @@ daphne = subprocess.Popen(
     [sys.executable, '-m', 'daphne', '-b', '127.0.0.1', '-p', str(ASGI_PORT),
      'config.asgi:application'],
     cwd=REPO, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def _kill_daphne():
+    # Runs even when the scenario raises mid-run; a leaked daphne would hold
+    # the side port and fail the next run with a confusing bind error.
+    if daphne.poll() is None:
+        daphne.terminate()
+        try:
+            daphne.wait(timeout=10)
+        except Exception:
+            daphne.kill()
+
+
+atexit.register(_kill_daphne)
 for _ in range(50):
     try:
         socket.create_connection(('127.0.0.1', ASGI_PORT), timeout=1).close(); break
@@ -168,11 +182,6 @@ decline_toast = caller.wait_for(toast_seen('declined your call'), 'decline toast
 
 bcmd('Target.closeTarget', targetId=tid)
 bcmd('Target.disposeBrowserContext', browserContextId=ctx)
-daphne.terminate()
-try:
-    daphne.wait(timeout=10)
-except Exception:
-    daphne.kill()
 print(json.dumps({
     'wsCallerOpen': ws_caller, 'wsReceiverOpen': ws_receiver,
     'send1': send1, 'modalShown1': modal1, 'callerNameOk': name_ok,
