@@ -51,9 +51,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # After staticfiles so channels' runserver override wins and the dev
-    # server serves websockets; first position silently served WSGI only.
-    'channels',
+    'channels',  # NOTE: runserver serves WSGI only here regardless of app
+    # order (verified 2026-11); use `make run` (daphne) for websockets.
+
     'rest_framework',
     'main',
     'users',
