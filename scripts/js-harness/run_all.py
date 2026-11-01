@@ -72,6 +72,17 @@ def check_startcall_teardown_guard(out):
     return ok, 'startCall bails quietly on mid-await teardown, stale offer suppressed, happy path intact'
 
 
+def check_invitation_lifecycle(out):
+    d = last_json(out)
+    if not d: return False, 'scenario produced no result JSON'
+    ok = (d.get('wsCallerOpen') and d.get('wsReceiverOpen')
+          and d.get('send1') and d.get('modalShown1') and d.get('callerNameOk')
+          and d.get('cancelOk') and d.get('modalHiddenAfterCancel') and d.get('cancelToast')
+          and d.get('send2') and d.get('modalShown2') and d.get('declineToast')
+          and d.get('errors') == [])
+    return ok, 'two-context invitation lifecycle: ws receive, cancel closes modal, decline notifies caller'
+
+
 SCENARIOS = [
     ('quickcall_async_races.py', check_quickcall_async_races),
     ('incoming_call_message_chip.py', check_incoming_call_message_chip),
@@ -80,6 +91,7 @@ SCENARIOS = [
     ('mid_negotiation_teardown.py', check_mid_negotiation_teardown),
     ('teardown_identity_guard.py', check_teardown_identity_guard),
     ('startcall_teardown_guard.py', check_startcall_teardown_guard),
+    ('invitation_lifecycle.py', check_invitation_lifecycle),
 ]
 
 

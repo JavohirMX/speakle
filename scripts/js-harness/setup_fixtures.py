@@ -59,6 +59,9 @@ def main():
 
     # A live pending invitation from partner to user (message-chip scenario).
     CallInvitation.objects.filter(room=room, caller=partner, receiver=user, status='pending').delete()
+    # invitation_lifecycle leftovers from earlier runs would block its first send
+    # with 'You already have a pending invitation'.
+    CallInvitation.objects.filter(room=room, caller=user, receiver=partner, status='pending').delete()
     invitation = CallInvitation.objects.create(
         room=room, caller=partner, receiver=user,
         status='pending', expires_at=timezone.now() + timedelta(minutes=10),
