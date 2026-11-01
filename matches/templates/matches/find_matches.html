@@ -38,18 +38,14 @@
     </div>
     <button type="button" class="btn btn-solid w-full" data-open-request data-id="{{ next_step.pm.id }}" data-name="{{ next_step.pm.potential_partner.username|escape }}" data-teach="{{ next_step.pm.user_teaches.name }}" data-learn="{{ next_step.pm.user_learns.name }}">Say hi</button>
     {% endif %}
-    <p class="mt-3 text-sm">
-      {% if can_quick %}<a class="underline font-semibold" href="{% url 'matches:quick_match' %}">Or Quick match - pairs you live with whoever is searching</a>
-      {% else %}<a class="underline font-semibold" href="{% url 'users:profile' %}">Quick match - unlocks after email confirmation</a>{% endif %}
-      &middot; <button type="button" class="underline font-semibold" data-refresh><span>Refresh list</span></button>
-    </p>
   </section>
   {% endif %}
   <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
     <p id="resultCount" class="font-semibold" aria-live="polite">{{ potential_matches|length }} partner{{ potential_matches|length|pluralize }}, best match first</p>
     <div class="flex gap-2">
       <button type="button" class="btn btn-outline" id="refreshBtn" data-refresh><svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg><span>Refresh list</span></button>
-      <a class="btn btn-outline" href="{% url 'matches:quick_match' %}"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg>Quick match</a>
+      {% if can_quick %}<a class="btn btn-outline" href="{% url 'matches:quick_match' %}"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg>Quick match</a>
+      {% else %}<a class="btn btn-outline" href="{% url 'users:profile' %}"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg>Quick match - unlocks after email confirmation</a>{% endif %}
     </div>
   </div>
   <div id="matchesContainer" aria-busy="false">

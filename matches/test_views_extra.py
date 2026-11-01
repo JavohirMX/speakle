@@ -262,4 +262,12 @@ class NextStepHeroTests(MatchViewExtraBase):
         self.a.email_verified = True
         self.a.save(update_fields=['email_verified'])
         r = self.login(self.a).get(reverse('matches:find_matches'))
-        self.assertContains(r, 'Or Quick match - pairs you live with whoever is searching')
+        self.assertNotContains(r, 'unlocks after email confirmation')
+        self.assertContains(r, 'Quick match')
+
+    def test_secondary_actions_not_duplicated(self):
+        # hero shows a next step; Refresh list must live only in the toolbar
+        r = self.login(self.a).get(reverse('matches:find_matches'))
+        self.assertContains(r, 'Your next step:')
+        self.assertEqual(r.content.count(b'data-refresh'), 1)
+        self.assertEqual(r.content.count(b'id="refreshBtn"'), 1)
