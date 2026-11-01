@@ -269,5 +269,5 @@ class NextStepHeroTests(MatchViewExtraBase):
         # hero shows a next step; Refresh list must live only in the toolbar
         r = self.login(self.a).get(reverse('matches:find_matches'))
         self.assertContains(r, 'Your next step:')
-        self.assertEqual(r.content.count(b'data-refresh'), 1)
+        self.assertEqual(r.content.count(b'data-refresh>'), 1)  # element only; JS selector '[data-refresh]' excluded
         self.assertEqual(r.content.count(b'id="refreshBtn"'), 1)
