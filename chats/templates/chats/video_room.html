@@ -86,6 +86,44 @@
         z-index: 1000;
     }
     
+    .topic-card {
+        position: fixed;
+        bottom: 110px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(480px, calc(100vw - 32px));
+        background: #fff9ec;
+        color: #1a1510;
+        border: 3px solid #1a1510;
+        border-radius: 18px;
+        box-shadow: 4px 4px 0 #ffc61a;
+        padding: 14px 18px;
+        z-index: 999;
+    }
+    .topic-card .topic-level {
+        font-size: .7rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #6b5d43;
+    }
+    .topic-card .topic-text { font-size: 1.05rem; font-weight: 600; margin-top: 4px; }
+    .topic-card .topic-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .topic-card .topic-actions button {
+        font: inherit;
+        font-size: .85rem;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 2px solid #1a1510;
+        background: #ffc61a;
+        color: #1a1510;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .topic-card .topic-actions button.topic-close { background: transparent; }
+    .topic-card .topic-actions button:focus-visible { outline: 3px solid #1a1510; outline-offset: 2px; }
+
     .control-btn {
         width: 56px;
         height: 56px;
@@ -711,7 +749,8 @@
 <style>
 .ico { width: 1.4em; height: 1.4em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
-.controls-bar { gap: .6rem !important; background: #1a1510 !important; border: 3px solid #fff9ec !important; border-radius: 22px !important; padding: .55rem .7rem !important; box-shadow: 4px 4px 0 #ffc61a !important; backdrop-filter: none !important; flex-wrap: nowrap; }
+.controls-bar { gap: .6rem !important; background: #1a1510 !important; border: 3px solid #fff9ec !important; border-radius: 22px !important; padding: .55rem .7rem !important; box-shadow: 4px 4px 0 #ffc61a !important; backdrop-filter: none !important; flex-wrap: wrap; justify-content: center; width: max-content; }
+.video-container .video-overlay { padding-bottom: 120px; }
 .control-btn { width: auto !important; min-width: 64px; height: 64px !important; border-radius: 14px !important; flex-direction: column; gap: .15rem; padding: .3rem .55rem; background: #fff9ec !important; color: #1a1510 !important; border: 2px solid #1a1510 !important; box-shadow: none !important; font-size: 12px !important; font-weight: 700; }
 .control-btn .cb-label { font-size: .7rem; line-height: 1; white-space: nowrap; }
 .control-btn.active { background: #55d99a !important; } .control-btn.inactive { background: #ff6b4a !important; } .control-btn.call-start { background: #ffc61a !important; } .control-btn.call-end { background: #d63a1a !important; color: #fff !important; }
@@ -721,7 +760,14 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
 .media-error h3 { font-weight: 800; font-size: 1.15rem; margin-bottom: .3rem; } .media-error .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
 .media-error .b { padding: .55rem 1rem; border: 2px solid #1a1510; border-radius: 12px; font-weight: 700; background: #ffc61a; text-decoration: none; color: #1a1510; min-height: 44px; display: inline-flex; align-items: center; }
 .media-error .b.o { background: #fff; }
-@media (max-width: 640px) { .controls-bar { gap: .3rem !important; padding: .4rem !important; max-width: 96vw; } .control-btn { min-width: 0; flex: 1; height: 58px !important; padding: .25rem .2rem; } .control-btn .cb-label { font-size: .6rem; white-space: normal; text-align: center; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 96px; } }
+@media (min-width: 1025px) {
+.video-grid { transition: width .4s ease; }
+body:has(.chat-sidebar.open) .video-grid { width: calc(100% - 420px); }
+body:has(.chat-sidebar.open) .controls-bar, body:has(.chat-sidebar.open) .topic-card { left: calc(50% - 210px); }
+body:has(.chat-sidebar.open) .controls-bar { max-width: calc(100vw - 460px); }
+}
+@media (max-width: 640px) { .controls-bar { gap: .35rem !important; padding: .45rem !important; width: 96vw; flex-wrap: wrap; justify-content: center; } .control-btn { min-width: 58px; flex: 0 0 auto; height: 54px !important; padding: .25rem .35rem; } .control-btn .cb-label { font-size: .62rem; white-space: nowrap; } .topic-card { bottom: 170px; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 170px; } }
+body.topic-open .video-container:not(.local-video-container) .video-overlay { top: 76px; bottom: auto; right: auto; padding: 8px 12px; border-radius: 12px; background: rgba(0,0,0,0.55); }
 </style>
 </head>
 <body>
@@ -775,6 +821,15 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
     </div>
 
     <!-- Enhanced Controls Bar -->
+    <div id="topicCard" class="topic-card" role="status" hidden>
+        <div class="topic-level" id="topicLevel"></div>
+        <div class="topic-text" id="topicText"></div>
+        <div class="topic-actions">
+            <button type="button" id="nextTopic">New topic</button>
+            <button type="button" class="topic-close" id="closeTopic">Close</button>
+        </div>
+    </div>
+    {{ call_prompts|json_script:"callPrompts" }}
     <div class="controls-bar" id="controlsBar" role="toolbar" aria-label="Call controls">
         <button id="toggleVideo" class="control-btn active" type="button" aria-label="Camera"  data-on="Camera" data-off="Camera off">
             <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg><span class="cb-label">Camera</span>
@@ -784,6 +839,9 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
         </button>
         <button id="toggleChat" class="control-btn neutral" type="button" aria-label="Chat"  >
             <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg><span class="cb-label">Chat</span>
+        </button>
+        <button id="toggleTopic" class="control-btn neutral" type="button" aria-label="Conversation topic" aria-expanded="false" aria-controls="topicCard"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg><span class="cb-label">Topic</span>
         </button>
         <button id="shareScreen" class="control-btn neutral" type="button" aria-label="Share"  >
             <svg class="ico" aria-hidden="true"><use href="#i-screen"/></svg><span class="cb-label">Share</span>
@@ -1133,6 +1191,9 @@ class VideoChat {
             });
             
             this.isMediaReady = true;
+            this.toggleVideoBtn.classList.add('active'); this.toggleVideoBtn.classList.remove('inactive');
+            this.toggleAudioBtn.classList.add('active'); this.toggleAudioBtn.classList.remove('inactive');
+            this.localVideoStatus.textContent = 'Video On';
 
             this.loadingStatus.textContent = 'Video chat ready!';
             
@@ -1159,13 +1220,17 @@ class VideoChat {
         if (name === 'NotAllowedError' || name === 'PermissionDeniedError') { title = 'Camera and microphone are blocked'; body = 'Click the lock icon next to the web address, set Camera and Microphone to Allow, then press Try again.'; }
         else if (name === 'NotFoundError') { title = 'No camera or microphone found'; body = 'Plug one in or switch device, then press Try again. You can still use text chat meanwhile.'; }
         else if (name === 'NotReadableError') { title = 'Your camera is busy'; body = 'Another app or tab is using it. Close that, then press Try again.'; }
+        this.toggleVideoBtn.classList.remove('active'); this.toggleVideoBtn.classList.add('inactive');
+        this.toggleAudioBtn.classList.remove('active'); this.toggleAudioBtn.classList.add('inactive');
+        this.localVideoStatus.textContent = 'No camera';
         const ov = this.loadingOverlay; ov.style.display = 'flex'; ov.style.alignItems = 'center'; ov.style.justifyContent = 'center'; Array.from(ov.children).forEach(c => { if (!c.classList.contains('media-error')) c.style.display = 'none'; });
         const old = ov.querySelector('.media-error'); if (old) old.remove();
         const box = document.createElement('div'); box.className = 'media-error'; box.setAttribute('role', 'alert');
-        box.innerHTML = '<h3></h3><p></p><div class="row"><button type="button" class="b" id="mediaRetry">Try again</button><a class="b o" href="javascript:history.back()">Leave call</a></div>';
+        box.innerHTML = '<h3></h3><p></p><div class="row"><button type="button" class="b" id="mediaRetry">Try again</button><button type="button" class="b o" id="mediaChatOnly">Use text chat</button><a class="b o" href="javascript:history.back()">Leave call</a></div>';
         box.querySelector('h3').textContent = title; box.querySelector('p').textContent = body;
         ov.appendChild(box);
         box.querySelector('#mediaRetry').addEventListener('click', () => { box.remove(); Array.from(ov.children).forEach(c => { c.style.display = ''; }); this.initializeLocalVideo(); });
+        box.querySelector('#mediaChatOnly').addEventListener('click', () => { ov.style.display = 'none'; this.addChatMessage('Camera unavailable - continuing with text chat only. Press Camera to try again.', 'system'); this.chatSidebar.classList.add('open'); });
     }
     
     updateLocalVideoInfo() {
@@ -1967,6 +2032,10 @@ class VideoChat {
     }
     
     toggleVideo() {
+        if (!this.localStream) {
+            this.initializeLocalVideo();
+            return;
+        }
         if (this.localStream) {
             const videoTrack = this.localStream.getVideoTracks()[0];
             if (videoTrack) {
@@ -2644,6 +2713,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn.dataset.on) { l.textContent = on ? btn.dataset.on : btn.dataset.off; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.setAttribute('aria-label', l.textContent + (on ? ', on. Press to turn off' : '. Press to turn on')); }
   }
   document.querySelectorAll('.control-btn[data-on]').forEach(function (b) { sync(b); new MutationObserver(function () { sync(b); }).observe(b, {attributes: true, attributeFilter: ['class']}); });
+})();
+</script>
+
+<script>
+(function () {
+    const data = JSON.parse(document.getElementById('callPrompts').textContent);
+    const card = document.getElementById('topicCard');
+    const level = document.getElementById('topicLevel');
+    const text = document.getElementById('topicText');
+    const toggle = document.getElementById('toggleTopic');
+    let idx = 0;
+
+    function show(i) {
+        idx = ((i % data.length) + data.length) % data.length;
+        level.textContent = data[idx].level;
+        text.textContent = data[idx].text;
+    }
+    function openCard() {
+        show(idx);
+        card.hidden = false;
+        toggle.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('topic-open');
+    }
+    function closeCard() {
+        card.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('topic-open');
+        toggle.focus();
+    }
+    toggle.addEventListener('click', () => { card.hidden ? openCard() : closeCard(); });
+    document.getElementById('nextTopic').addEventListener('click', () => show(idx + 1));
+    document.getElementById('closeTopic').addEventListener('click', closeCard);
+    card.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCard(); });
 })();
 </script>
 </body>

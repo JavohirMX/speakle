@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 from users.models import Language
@@ -46,6 +47,13 @@ class Match(models.Model):
     ended_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ended_matches')
     end_reason = models.TextField(blank=True, help_text="Reason for ending the match")
 
+    # Shared weekly practice goal: scheduled calls the partners aim to
+    # complete together each week; drives the practice streak.
+    weekly_goal = models.PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    )
+
     # Quick match: timed first call, then both choose keep or skip
     trial_ends_at = models.DateTimeField(blank=True, null=True)
     user1_keep = models.BooleanField(null=True, blank=True)
@@ -60,21 +68,45 @@ class Match(models.Model):
         if user == self.user1:
             return self.user2
         return self.user1
-    
+
     def get_user_teaches(self, user):
         """Get what language the user teaches in this match."""
         if user == self.user1:
             return self.user1_teaches
         return self.user1_learns  # user2 learns what user1 teaches
-    
+
     def get_user_learns(self, user):
         """Get what language the user learns in this match."""
         if user == self.user1:
             return self.user1_learns
         return self.user1_teaches  # user2 teaches what user1 learns
-    
+
     def __str__(self):
         return f"Match: {self.user1.username} ↔ {self.user2.username} ({self.status})"
+
+
+class MatchGoalChange(models.Model):
+    """Record of a change to a match's shared weekly practice goal.
+
+    A change applies from the Monday (project timezone) of the week in
+    which it was set, so already-earned streak weeks keep the goal that
+    was in effect when they were completed. `match.weekly_goal` stays the
+    current goal; this table gives past weeks their historical goal.
+    """
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='goal_changes')
+    goal = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    )
+    effective_week = models.DateField(
+        help_text='Monday of the first week this goal applies to (project timezone).')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['match', 'effective_week']
+        ordering = ['effective_week']
+
+    def __str__(self):
+        return f'{self.match} goal {self.goal} from {self.effective_week}'
 
 class MatchRequest(models.Model):
     """Model to handle match requests before they become confirmed matches."""
@@ -130,3 +162,55 @@ class QuickMatchEntry(models.Model):
 
     def __str__(self):
         return f"{self.user.username} waiting ({self.teaches} -> {self.learns})"
+
+
+class MatchSession(models.Model):
+    """A scheduled practice session between matched partners.
+
+    One partner proposes a time; the other accepts or declines. Reminders are
+    sent by the ``send_session_reminders`` management command (run it on a
+    schedule, e.g. cron every 5 minutes).
+    """
+    STATUS_CHOICES = [
+        ('proposed', 'Proposed'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    ]
+    DURATION_CHOICES = [(15, '15 minutes'), (30, '30 minutes'), (45, '45 minutes'),
+                        (60, '1 hour'), (90, '1.5 hours'), (120, '2 hours')]
+
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='sessions')
+    proposed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposed_sessions')
+    starts_at = models.DateTimeField()
+    duration_minutes = models.PositiveSmallIntegerField(choices=DURATION_CHOICES, default=30)
+    note = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='proposed')
+    # Per-window, per-recipient record: {"24h": [user_id, ...], "1h": [...]}.
+    # A recipient is only marked after their email is actually sent, so a
+    # partial SMTP failure retries just the missing recipient next run.
+    reminders_sent = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['starts_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['match'],
+                condition=models.Q(status='proposed'),
+                name='one_proposed_session_per_match',
+            ),
+        ]
+
+    def is_participant(self, user):
+        return user in (self.match.user1, self.match.user2)
+
+    @property
+    def ends_at(self):
+        from datetime import timedelta
+        return self.starts_at + timedelta(minutes=self.duration_minutes)
+
+    def __str__(self):
+        return f"Session: {self.match} at {self.starts_at:%Y-%m-%d %H:%M} ({self.status})"

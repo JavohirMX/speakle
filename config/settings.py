@@ -45,13 +45,15 @@ ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='').split(',
 # Application definition
 
 INSTALLED_APPS = [
-    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # After staticfiles so channels' runserver override wins and the dev
+    # server serves websockets; first position silently served WSGI only.
+    'channels',
     'rest_framework',
     'main',
     'users',
