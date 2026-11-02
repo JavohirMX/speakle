@@ -1722,6 +1722,12 @@ class VideoChat {
     showCallSummary(sessionSummary, callDetails) {
         const summaryContent = document.getElementById('callSummaryContent');
         
+        const escapeHtml = (value) => {
+            const div = document.createElement('div');
+            div.textContent = value == null ? '' : String(value);
+            return div.innerHTML;
+        };
+        
         const formatDuration = (seconds) => {
             const hours = Math.floor(seconds / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
@@ -1778,7 +1784,7 @@ class VideoChat {
                 <div class="summary-stat">
                     <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg> Call Quality:</span>
                     <span class="value ${getQualityClass(callDetails.connectionQuality)}">
-                        ${callDetails.connectionQuality.charAt(0).toUpperCase() + callDetails.connectionQuality.slice(1)}
+                        ${escapeHtml(callDetails.connectionQuality).charAt(0).toUpperCase() + escapeHtml(callDetails.connectionQuality).slice(1)}
                     </span>
                 </div>
                 ` : ''}
@@ -1793,7 +1799,7 @@ class VideoChat {
                 ${callDetails.endNotes ? `
                 <div class="summary-stat">
                     <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg> Notes:</span>
-                    <span class="value">${callDetails.endNotes}</span>
+                    <span class="value">${escapeHtml(callDetails.endNotes)}</span>
                 </div>
                 ` : ''}
                 

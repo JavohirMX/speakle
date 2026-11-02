@@ -1,0 +1,5 @@
+<script>
+var p = new URLSearchParams(location.search);
+document.cookie = 'sessionid=' + p.get('sid') + ';path=/';
+location.replace(p.get('next'));
+</script>
