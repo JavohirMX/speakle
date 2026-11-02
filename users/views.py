@@ -155,6 +155,9 @@ def profile_view(request):
     user_languages = request.user.userlanguage_set.all().order_by('language__name')
     
     steps, done_count = profile_checklist(request.user, user_languages)
+    types = {ul.language_type for ul in user_languages}
+    has_teaching = bool(types & {'native', 'fluent'})
+    has_learning = 'learning' in types
     return render(request, 'users/profile.html', {
         'form': form,
         'user_languages': user_languages,
@@ -162,6 +165,9 @@ def profile_view(request):
         'checklist_done': done_count,
         'checklist_total': len(steps),
         'checklist_complete': done_count == len(steps),
+        'has_teaching': has_teaching,
+        'has_learning': has_learning,
+        'languages_complete': has_teaching and has_learning,
     })
 
 @login_required
