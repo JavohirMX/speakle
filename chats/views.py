@@ -38,18 +38,32 @@ def send_user_notification(user_id, notification_type, data):
 def create_video_room(request, match_id):
     """Create or get existing video room for a match."""
     match = get_object_or_404(Match, id=match_id)
-    
+
+    # The quick-call modal POSTs here and parses JSON; plain navigation GETs
+    # and expects a redirect into the room.
+    wants_json = request.method == 'POST'
+
     # Check if user is part of this match
     if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
+        if wants_json:
+            return JsonResponse({'success': False, 'error': 'Access denied'}, status=403)
         messages.error(request, 'You do not have access to this match.')
         return redirect('matches:my_matches')
-    
+
     # Get or create video room
     video_room, created = VideoRoom.objects.get_or_create(match=match)
-    
+
+    if wants_json:
+        return JsonResponse({
+            'success': True,
+            'room_url': f'/chats/room/{video_room.room_id}/',
+            'room_id': str(video_room.room_id),
+            'created': created,
+        })
+
     if created:
         messages.success(request, 'Video room created successfully!')
-    
+
     return redirect('chats:video_room', room_id=video_room.room_id)
 
 @login_required
