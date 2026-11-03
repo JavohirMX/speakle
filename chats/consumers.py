@@ -182,6 +182,18 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
                 'message': f'Server error: {str(e)}'
             }))
 
+    async def _deny_if_access_lost(self):
+        """Re-check room access mid-call. A block or unmatch after connect must
+        stop further signaling, not just new joins. Returns True (and sends an
+        error frame) when access is gone so the caller skips its relay."""
+        if await self.check_room_access():
+            return False
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            'message': 'Room access revoked'
+        }))
+        return True
+
     async def handle_offer(self, data):
         """Handle WebRTC offer"""
         offer = data.get('offer')
@@ -210,6 +222,8 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_answer(self, data):
         """Handle WebRTC answer"""
+        if await self._deny_if_access_lost():
+            return
         answer = data.get('answer')
         if not answer:
             await self.send(text_data=json.dumps({
@@ -376,6 +390,8 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_call_end(self, data):
         """Handle call session end with enhanced tracking"""
+        if await self._deny_if_access_lost():
+            return
         logger.debug(f"Call end from {self.user.username}")
         
         # Extract end reason and notes from data
@@ -436,6 +452,8 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
 
     async def handle_typing_stop(self, data):
         """Handle typing stop notification"""
+        if await self._deny_if_access_lost():
+            return
         logger.debug(f"Typing stop from {self.user.username}")
         await self.channel_layer.group_send(
             self.room_group_name,
