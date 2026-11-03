@@ -94,6 +94,9 @@ EMAIL_PORT = config('EMAIL_PORT', default=25, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+# Seconds before a dead SMTP host gives up; without this a misconfigured
+# provider blocks the web worker until the OS TCP timeout (minutes).
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
 
 # Logging configuration
 LOGGING = {

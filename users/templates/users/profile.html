@@ -16,6 +16,24 @@
 </div>
 
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-10">
+{% if not languages_complete %}
+  <section class="sticker p-5 ns-hero" aria-labelledby="heroTitle">
+    <h2 id="heroTitle" class="text-xl">
+      {% if has_teaching %}Next: add a language you want to learn{% else %}First: add a language you speak{% endif %}
+    </h2>
+    <p class="sub">Partners find you through what you can teach.{% if not has_teaching %} After that, add one you want to learn.{% endif %} Matching needs both.</p>
+    <p class="mt-3"><a class="btn btn-solid w-full" href="{% url 'users:add_language' %}">Add {% if user_languages %}a language{% else %}your first language{% endif %}</a></p>
+    <ol class="steps mt-5" aria-label="Setup progress">
+      <li class="step {% if has_teaching %}done{% else %}now{% endif %}"><span class="n">Step 1</span> You speak</li>
+      <li class="step {% if has_teaching %}{% if has_learning %}done{% else %}now{% endif %}{% else %}dim{% endif %}"><span class="n">Step 2</span> You learn</li>
+      <li class="step dim"><span class="n">Done</span> Start matching</li>
+    </ol>
+    {% if not user.email_verified %}<p class="mt-3 text-sm">Quick match also needs a confirmed email - we sent you a link.</p>{% endif %}
+  </section>
+  {% endif %}
+  {% if not languages_complete %}
+  <details class="opt"><summary>Profile extras - optional, partners see these later</summary>
+  {% endif %}
   {% if not checklist_complete %}
   <section class="sticker p-5" aria-labelledby="checklistTitle">
     <h2 id="checklistTitle" class="text-xl">Finish your profile <span class="text-sm font-normal text-gray-600">{{ checklist_done }} of {{ checklist_total }} done</span></h2>
@@ -33,7 +51,7 @@
   <section aria-labelledby="langTitle">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <h2 id="langTitle" class="text-2xl">My languages</h2>
-      <a href="{% url 'users:add_language' %}" class="btn btn-solid">Add a language</a>
+      {% if languages_complete %}<a href="{% url 'users:add_language' %}" class="btn btn-solid">Add a language</a>{% endif %}
     </div>
     {% if user_languages %}
     <ul class="pm-grid" role="list">
@@ -56,7 +74,7 @@
     <div class="empty" style="margin-left:0;transform:none">
       <h3>No languages yet</h3>
       <p>Add what you speak and what you are learning. Matching needs both.</p>
-      <div class="empty-act"><a class="btn btn-solid" href="{% url 'users:add_language' %}">Add your first language</a></div>
+      {% if languages_complete %}<div class="empty-act"><a class="btn btn-solid" href="{% url 'users:add_language' %}">Add your first language</a></div>{% endif %}
     </div>
     {% endif %}
   </section>
@@ -113,6 +131,7 @@
       </div>
     </form>
   </section>
+  {% if not languages_complete %}</details>{% endif %}
   <section aria-labelledby="acct-h">
     <h2 id="acct-h" class="text-2xl">Account</h2>
     <form method="post" action="{% url 'users:logout' %}" class="mt-3">{% csrf_token %}

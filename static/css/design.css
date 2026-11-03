@@ -328,3 +328,16 @@ main .flex.items-center.space-x-4 { gap: 1rem; }
 #globalCallerMessage .cm-msg-ico { background: var(--sun); border: 2px solid var(--ink); }
 #globalCallerMessage .cm-msg-ico svg { color: var(--ink) !important; }
 #partnerStatus { background: #fff; border: 2px solid var(--ink); box-shadow: none; }
+
+/* Next-step hero + setup steps (post-login/signup guidance) */
+.ns-hero h2 { font-size: 1.35rem; font-weight: 800; }
+.ns-hero .sub { color: #444; margin-top: .25rem; }
+.ns-hero .feat { display: flex; align-items: center; gap: .75rem; margin: .75rem 0; }
+.ns-hero .feat .pm-avatar { width: 48px; height: 48px; font-size: 1.3rem; }
+.steps { display: flex; gap: .5rem; flex-wrap: wrap; list-style: none; padding: 0; margin: 1.25rem 0 0; }
+.step { flex: 1; min-width: 120px; border: var(--bw) solid var(--ink); border-radius: 14px; padding: .6rem; background: #fff; }
+.step .n { display: block; font-weight: 800; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; }
+.step.now { background: var(--sun); box-shadow: 4px 4px 0 var(--ink); }
+.step.done { background: var(--mint); }
+.step.dim { opacity: .55; }
+details.opt > summary { cursor: pointer; font-weight: 700; margin-bottom: 1rem; }

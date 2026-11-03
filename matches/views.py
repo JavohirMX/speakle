@@ -9,6 +9,7 @@ import datetime
 from django.utils import timezone
 from django.urls import reverse
 from .models import PotentialMatch, Match, MatchRequest, MatchFeedback, QuickMatchEntry, MatchSession
+from chats.models import ChatRoom
 from .models import MatchGoalChange
 from .streaks import current_streak, weekly_progress
 from .services import MatchingService
@@ -65,10 +66,33 @@ def find_matches(request):
         partner = match.get_partner(request.user)
         confirmed_partner_ids.append(partner.id)
     
+    # One clear next step: unanswered chat > incoming request > best new partner.
+    next_step = None
+    rooms = ChatRoom.objects.filter(match__in=confirmed_matches).select_related('match__user1', 'match__user2').order_by('-last_activity')
+    for room in rooms:
+        partner = room.get_partner(request.user)
+        if room.messages.filter(sender=partner, is_read=False).exists():
+            next_step = {'kind': 'reply', 'partner': partner, 'room_id': room.room_id}
+            break
+    if next_step is None:
+        incoming = MatchRequest.objects.filter(receiver=request.user, status='pending').select_related('sender', 'sender_teaches', 'sender_learns').first()
+        if incoming:
+            next_step = {'kind': 'request', 'req': incoming}
+    grid_matches = list(potential_matches)
+    if next_step is None:
+        for pm in grid_matches:
+            pid = pm.potential_partner_id
+            if pid not in sent_requests and pid not in confirmed_partner_ids:
+                next_step = {'kind': 'say_hi', 'pm': pm}
+                grid_matches = [m for m in grid_matches if m.id != pm.id]
+                break
+
     context = {
-        'potential_matches': potential_matches,
+        'potential_matches': grid_matches,
         'sent_requests': sent_requests,
         'confirmed_partner_ids': confirmed_partner_ids,
+        'next_step': next_step,
+        'can_quick': quick.can_quick_match(request.user),
     }
     
     return render(request, 'matches/find_matches.html', context)
