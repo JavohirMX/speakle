@@ -107,7 +107,16 @@ def send_call_invitation(request, match_id):
         user=partner,
         defaults={'is_online': False}
     )
-    
+
+    if not created:
+        # Refresh the stored flag from recent activity before trusting it, same as
+        # check_partner_availability: the activity middleware sets is_online=True on
+        # every request but never touches last_activity, so a stored True can be
+        # stale. Use update(): save() would refresh the auto_now timestamps and make
+        # a quiet partner look active again.
+        partner_presence.is_online = partner_presence.should_be_online()
+        UserPresence.objects.filter(pk=partner_presence.pk).update(is_online=partner_presence.is_online)
+
     if not partner_presence.is_online:
         return JsonResponse({
             'error': 'Partner is not online',
