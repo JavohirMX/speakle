@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.test import TransactionTestCase
 from channels.db import database_sync_to_async
 
-from users.models import Language
+from users.models import Language, UserBlock
 from matches.models import Match
 from .models import (
     VideoRoom, CallSession, CallParticipantInterval,
@@ -83,6 +83,44 @@ class SignalingRelayTest(TransactionTestCase):
         # Streak provenance: answering opens a presence interval.
         count = await database_sync_to_async(self._open_intervals)(self.user1)
         self.assertEqual(count, 1)
+        await mine.disconnect()
+        await other.disconnect()
+
+    async def test_answer_call_end_and_typing_stop_denied_after_access_revoked(self):
+        """A block mid-call must stop further signaling relays, not just new joins."""
+        mine, other = await self._pair()
+        # Baseline: relays work while both sides have access.
+        await mine.send_json_to({
+            'type': 'answer',
+            'answer': {'type': 'answer', 'sdp': 'sdp-1'},
+        })
+        got = await _receive_type(other, 'answer')
+        self.assertEqual(got['answer']['sdp'], 'sdp-1')
+
+        await database_sync_to_async(UserBlock.objects.create)(
+            blocker=self.user2, blocked=self.user1)
+
+        # answer: sender gets an error, peer gets nothing
+        await mine.send_json_to({
+            'type': 'answer',
+            'answer': {'type': 'answer', 'sdp': 'sdp-2'},
+        })
+        err = await _receive_type(mine, 'error')
+        self.assertIn('access', err['message'].lower())
+        self.assertTrue(await other.receive_nothing())
+
+        # call_end: same denial, no relay
+        await mine.send_json_to({'type': 'call_end', 'end_reason': 'user_hangup'})
+        err = await _receive_type(mine, 'error')
+        self.assertIn('access', err['message'].lower())
+        self.assertTrue(await other.receive_nothing())
+
+        # typing_stop: same denial, no relay
+        await mine.send_json_to({'type': 'typing_stop'})
+        err = await _receive_type(mine, 'error')
+        self.assertIn('access', err['message'].lower())
+        self.assertTrue(await other.receive_nothing())
+
         await mine.disconnect()
         await other.disconnect()
 
