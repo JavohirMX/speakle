@@ -22,3 +22,11 @@ class RequestSuccessScriptTests(unittest.TestCase):
             capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_incoming_call_enter_respects_focused_button(self):
+        root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            ['node', 'scripts/js-harness/incoming-call-keyboard.cjs'], cwd=root,
+            capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
