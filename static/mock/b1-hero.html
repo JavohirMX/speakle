@@ -1,0 +1,2472 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Practice a language by video with someone who is learning yours. Free two-way language exchange in your browser.">
+    <meta name="author" content="Speakle">
+    <meta name="theme-color" content="#ffc61a">
+    
+    <link rel="canonical" href="http://127.0.0.1:8123/matches/">
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:site_name" content="Speakle">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="http://127.0.0.1:8123/matches/">
+    <meta property="og:title" content="Speakle - Swap languages, make a friend">
+    <meta property="og:description" content="Free two-way language exchange by video and text chat.">
+    <meta property="og:image" content="http://127.0.0.1:8123/static/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Speakle: swap languages, talk for real">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Speakle - Swap languages, make a friend">
+    <meta name="twitter:description" content="Free two-way language exchange by video and text chat.">
+    <meta name="twitter:image" content="http://127.0.0.1:8123/static/img/og-image.png">
+
+    <title>Find partners - Speakle</title>
+
+    <!-- Favicons and manifest -->
+    <link rel="icon" href="/static/favicon.ico" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/img/icon-192.png">
+    <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+
+    <!-- Compiled Tailwind (see tailwind.config.js) -->
+    <link rel="stylesheet" href="/static/css/tailwind.css?v=9ef0311992">
+    
+<link rel="preload" href="/static/fonts/figtree-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/bricolage-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/fonts.css?v=da27bac5e5">
+
+    
+
+    <link rel="stylesheet" href="/static/css/app.css?v=331d340308">
+    <style></style>
+    <link rel="stylesheet" href="/static/css/design.css?v=a915375e32">
+</head>
+<body class="antialiased app-shell">
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14c2.4.2 4 2 4 5"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5h16v11H10l-5 4v-4H4z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2 4 2 4H5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-4.5-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15.5 12 20 12 20z"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-phone-off" viewBox="0 0 24 24"><path d="M4 15c5-4 11-4 16 0l-2 3-3-1.5v-2.5a9 9 0 0 0-6 0v2.5L6 18z"/></symbol>
+</svg>
+
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="skip-link focus-ring">Skip to main content</a>
+    
+    <!-- Enhanced Navigation -->
+    <nav class="nav-blur" id="navbar">
+        <div class="nav-container">
+            <!-- Enhanced Logo -->
+            <div class="flex items-center">
+                <a href="/" class="logo-container flex items-center gap-2.5 focus-ring rounded-xl px-2 py-2" aria-label="Speakle home">
+                    <span class="logo-mark"><svg class="ico" viewBox="0 0 24 24" style="width:20px;height:20px"><use href="#i-message"/></svg></span>
+                    <span class="logo-wordmark">Speakle</span>
+                </a>
+            </div>
+            
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-2">
+                
+                    <!-- Navigation Items -->
+                    <a href="/matches/" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 active text-blue-600" aria-current="page">
+                        <span class="flex items-center space-x-2">
+                            <svg class="ico"><use href="#i-search"/></svg>
+                            <span>Find Partners</span>
+                        </span>
+                    </a>
+                    
+                    <a href="/matches/my-matches/" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 " >
+                        <span class="flex items-center space-x-2">
+                            <svg class="ico"><use href="#i-users"/></svg>
+                            <span>My Matches</span>
+                            <span id="pendingCallsBadge" class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                        </span>
+                    </a>
+                    
+                    <a href="/chats/" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 ">
+                        <span class="flex items-center space-x-2">
+                            <svg class="ico"><use href="#i-message"/></svg>
+                            <span>Chats</span>
+                            <span id="unreadMessagesBadge" class="notification-badge absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                        </span>
+                    </a>
+                    
+                    <a href="/matches/requests/" class="nav-item px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium transition-colors focus-ring rounded-lg relative z-10 ">
+                        <span class="flex items-center space-x-2">
+                            <svg class="ico"><use href="#i-mail"/></svg>
+                            <span>Requests</span>
+                            <span id="railRequestsBadge" class="notification-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                        </span>
+                    </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="relative ml-4">
+                        <button id="userMenuButton" class="flex items-center space-x-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 focus-ring shadow-sm" aria-expanded="false">
+                            <div class="relative">
+                                
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                                        A
+                                    </div>
+                                
+                                <div class="online-indicator"></div>
+                            </div>
+                            <div class="text-left">
+                                <div class="text-sm font-semibold text-gray-900">alex_en</div>
+                                <div class="text-xs text-gray-500">Online</div>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" id="userMenuChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdown" class="user-dropdown absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                            <!-- User Info Header -->
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <div class="flex items-center space-x-3">
+                                    
+                                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                            A
+                                        </div>
+                                    
+                                    <div>
+                                        <div class="font-semibold text-gray-900">alex_en</div>
+                                        <div class="text-sm text-gray-500">alex@fixture.local</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Menu Items -->
+                            <div class="py-2">
+                                <a href="/users/profile/" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <svg class="ico"><use href="#i-user"/></svg>
+                                    <span>Profile Settings</span>
+                                </a>
+                                <a href="/matches/my-matches/" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <svg class="ico"><use href="#i-users"/></svg>
+                                    <span>My Matches</span>
+                                </a>
+                                <a href="/chats/" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-blue-600 font-medium">
+                                    <svg class="ico"><use href="#i-message"/></svg>
+                                    <span>My Chats</span>
+                                </a>
+                            </div>
+                            
+                            <div class="border-t border-gray-100 py-2">
+                                <form method="post" action="/users/logout/" style="margin:0"><input type="hidden" name="csrfmiddlewaretoken" value="4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7">
+                                <button type="submit" class="user-dropdown-item flex items-center space-x-3 px-4 py-3 text-red-600 hover:text-red-700 font-medium w-full text-left" style="background:none;border:0;cursor:pointer;font:inherit">
+                                    <svg class="ico"><use href="#i-logout"/></svg>
+                                    <span>Sign Out</span>
+                                </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                
+            </div>
+            
+            <!-- Enhanced Mobile menu button -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="hamburger text-gray-700 hover:text-blue-600 focus-ring rounded-lg p-2 transition-colors" aria-label="Toggle mobile menu">
+                    <div class="hamburger-line line1"></div>
+                    <div class="hamburger-line line2"></div>
+                    <div class="hamburger-line line3"></div>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Enhanced Mobile Navigation -->
+    <div id="mobile-menu" class="mobile-menu md:hidden fixed right-0 w-80 h-screen shadow-2xl z-40">
+        <div class="px-6 py-8 space-y-6 h-full overflow-y-auto">
+            
+                <!-- Mobile User Profile -->
+                <div class="flex items-center space-x-4 pb-6 border-b border-gray-200">
+                    
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                            A
+                        </div>
+                    
+                    <div>
+                        <div class="font-semibold text-gray-900 text-lg">alex_en</div>
+                        <div class="text-sm text-gray-500">alex@fixture.local</div>
+                    </div>
+                </div>
+                
+                <!-- Mobile Menu Items -->
+                <div class="space-y-2">
+                    <a href="/matches/" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-search"/></svg></span>
+                        <span>Find Partners</span>
+                    </a>
+                    <a href="/matches/my-matches/" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg></span>
+                        <span>My Matches</span>
+                        <span id="pendingCallsBadgeMobile" class="notification-badge absolute top-3 right-3 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                    </a>
+                    <a href="/chats/" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium relative">
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
+                        <span>Chats</span>
+                        <span id="unreadMessagesBadgeMobile" class="notification-badge absolute top-3 right-3 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold" style="display: none;"></span>
+                    </a>
+                    <a href="/matches/requests/" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg></span>
+                        <span>Requests</span>
+                    </a>
+                    <a href="/users/profile/" class="mobile-menu-item flex items-center space-x-4 px-4 py-4 text-gray-700 hover:text-blue-600 font-medium">
+                        <span class="text-xl"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg></span>
+                        <span>Profile</span>
+                    </a>
+                </div>
+                
+                <!-- Mobile Logout -->
+                <div class="pt-6 border-t border-gray-200">
+                    <form method="post" action="/users/logout/" style="margin:0"><input type="hidden" name="csrfmiddlewaretoken" value="4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7"><button type="submit" class="block w-full text-center bg-red-500 text-white px-6 py-4 rounded-xl hover:bg-red-600 transition-colors font-semibold focus-ring" style="border:0;cursor:pointer;font:inherit">
+                        <span class="flex items-center justify-center space-x-2">
+                            <svg class="ico"><use href="#i-logout"/></svg>
+                            <span>Sign Out</span>
+                        </span>
+                    </button></form>
+                </div>
+            
+        </div>
+    </div>
+
+    <!-- Enhanced Global Notification Toast -->
+    <div id="notificationToast" class="notification-toast">
+        <div class="notification-toast-content rounded-2xl p-6 border border-gray-100/50 relative overflow-hidden">
+            <!-- Background gradient overlay -->
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-cyan-50/30 pointer-events-none"></div>
+            
+            <div class="relative z-10 flex items-start">
+                <div class="flex-shrink-0 pt-1">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                        <span id="toastIcon" class="text-2xl text-white block"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                    </div>
+                </div>
+                <div class="ml-4 flex-1 min-w-0">
+                    <p id="toastTitle" class="text-base font-bold text-gray-900 truncate mb-1">Notification</p>
+                    <p id="toastMessage" class="text-sm text-gray-700 line-clamp-2 leading-relaxed">Message content</p>
+                    <div id="toastActions" class="mt-4 flex space-x-3" style="display: none;">
+                        <button id="toastActionPrimary" class="btn-enhanced btn-accept text-xs px-4 py-2 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105 focus-visible">
+                            Action
+                        </button>
+                        <button id="toastActionSecondary" class="btn-enhanced text-xs bg-gradient-to-r from-gray-400 to-gray-500 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 hover:scale-105 focus-visible">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+                <div class="ml-3 flex-shrink-0">
+                    <button onclick="hideNotificationToast()" class="w-8 h-8 bg-gray-100/80 hover:bg-gray-200/80 rounded-full flex items-center justify-center transition-all duration-200 focus-ring" aria-label="Close notification">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Mobile Call Helper Button -->
+    <div id="mobileCallHelper" class="mobile-call-helper">
+        <button onclick="joinLastCall()" title="Join Your Accepted Call" aria-label="Join Your Accepted Call">
+            <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg>
+        </button>
+    </div>
+    
+    <!-- Enhanced Global Incoming Call Modal -->
+    <div id="globalIncomingCallModal" class="fixed inset-0 modal-overlay hidden z-[9999] flex items-center justify-center p-4" role="dialog" aria-labelledby="call-modal-title" aria-modal="true">
+        <div class="modal-content relative">
+            <div class="modal-content-enhanced rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 w-full max-w-xs sm:max-w-md md:max-w-lg relative overflow-hidden">
+                <!-- Background gradient overlay -->
+                
+                
+                <div class="relative z-10 text-center">
+                    <!-- Enhanced animated call icon with caller avatar -->
+                    <div class="call-icon-container w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-6 relative">
+                        <div class="call-avatar w-full h-full rounded-full flex items-center justify-center">
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center">
+                                <span class="text-3xl sm:text-4xl" id="callerAvatar"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress ring for timer -->
+                        <svg class="absolute inset-0 w-full h-full progress-ring opacity-60" viewBox="0 0 64 64">
+                            <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(26,21,16,.15)" stroke-width="2"/>
+                            <circle cx="32" cy="32" r="30" fill="none" stroke="var(--ink)" stroke-width="3" 
+                                    stroke-dasharray="188" stroke-dashoffset="188" stroke-linecap="round"/>
+                            <defs>
+                                
+                            </defs>
+                        </svg>
+                    </div>
+                    
+                    <!-- Call info with enhanced typography -->
+                    <div class="mb-4 sm:mb-6">
+                        <h3 id="call-modal-title" class="text-lg sm:text-2xl md:text-3xl font-bold mb-2">
+                            Incoming Video Call
+                        </h3>
+                        <p class="text-base sm:text-xl md:text-2xl font-bold mb-2" id="globalCallerName"></p>
+                        <p class="text-gray-600 text-sm sm:text-base md:text-lg mb-2 sm:mb-3">wants to start a video call with you</p>
+                        
+                        <!-- Enhanced connection quality indicator -->
+                        <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2 mb-3 sm:mb-4">
+                            <div class="flex space-x-1">
+                                <div class="w-1.5 h-2 sm:w-2 sm:h-3 bg-green-500 rounded-full"></div>
+                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-500 rounded-full"></div>
+                                <div class="w-1.5 h-4 sm:w-2 sm:h-5 bg-green-500 rounded-full"></div>
+                                <div class="w-1.5 h-3 sm:w-2 sm:h-4 bg-green-400 rounded-full"></div>
+                            </div>
+                            <span class="text-xs sm:text-sm text-green-600 font-medium">Excellent Connection</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Optional message with enhanced design -->
+                    <div id="globalCallerMessage" class="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl" style="display: none;">
+                        <div class="flex items-start space-x-2 sm:space-x-3">
+                            <div class="cm-msg-ico w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xs sm:text-sm"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs font-medium text-gray-600 mb-1">Message from caller:</p>
+                                <div id="globalMessageContent" class="text-gray-800 text-xs sm:text-sm font-medium leading-relaxed"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced action buttons -->
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mb-3 sm:mb-4">
+                        <button onclick="globalDeclineCall()" 
+                                class="btn-enhanced btn-decline flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center space-x-2 focus-visible">
+                            <span class="text-lg sm:text-xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                            <span>Decline</span>
+                        </button>
+                        <button onclick="globalAcceptCall()" 
+                                class="btn-enhanced btn-accept flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg flex items-center justify-center space-x-2 focus-visible">
+                            <span class="text-lg sm:text-xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                            <span>Accept</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Enhanced auto-decline timer -->
+                    <div class="cm-timer flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                        <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <span id="callTimer" class="text-xs sm:text-sm text-gray-600 font-medium text-center">
+                            Auto-decline in <span id="timerCountdown" class="font-bold text-orange-600">30</span>s
+                        </span>
+                    </div>
+                    
+                    <!-- Quick actions -->
+                    <div class="flex items-center justify-center flex-wrap gap-2 sm:gap-4 mt-3 sm:mt-4 text-xs text-gray-500">
+                        <button onclick="globalAcceptCall()" class="flex items-center space-x-1 hover:text-gray-900 transition-colors focus-visible px-2 py-1 rounded-lg">
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                            <span class="hidden sm:inline">Video</span>
+                        </button>
+                        <button onclick="acceptAudioOnly()" class="flex items-center space-x-1 hover:text-gray-900 transition-colors focus-visible px-2 py-1 rounded-lg">
+                            <span><svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg></span>
+                            <span class="hidden sm:inline">Audio Only</span>
+                        </button>
+                        <button onclick="sendQuickMessage()" class="flex items-center space-x-1 hover:text-gray-900 transition-colors focus-visible px-2 py-1 rounded-lg">
+                            <svg class="ico"><use href="#i-message"/></svg>
+                            <span class="hidden sm:inline">Message</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Main Content with proper spacing for fixed nav -->
+    
+    <main id="main-content" class="min-h-screen">
+        
+        <div class="verify-bar" id="verify-bar">
+            <span>Confirm your email to unlock Quick match. We sent a link to <strong>alex@fixture.local</strong>.</span>
+            <button type="button" id="verify-resend" class="verify-btn">Resend link</button>
+        </div>
+        <script>
+        document.getElementById('verify-resend').addEventListener('click', function () {
+            var b = this; b.disabled = true; b.textContent = 'Sending...';
+            fetch("/users/resend-verification/", {method: 'POST', headers: {'X-CSRFToken': '4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7'}})
+                .then(function (r) { return r.json(); }).then(function (d) { b.textContent = d.success ? 'Sent. Check your inbox' : (d.error || 'Try again in a minute'); if (!d.success) b.disabled = false; })
+                .catch(function () { b.textContent = 'Network error. Try again'; b.disabled = false; });
+        });
+        </script>
+        
+        
+<style>
+.hero{background:#fff;border:3px solid #1a1a1a;border-radius:20px;box-shadow:6px 6px 0 #1a1a1a;padding:1.25rem;margin-bottom:1.5rem}
+.hero h2{font-size:1.35rem;font-weight:800;margin-bottom:.25rem}
+.hero .sub{color:#444;margin-bottom:.75rem}
+.feat{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.feat .pm-avatar{width:48px;height:48px;font-size:1.3rem}
+.doors{display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:768px){.doors{grid-template-columns:1fr 1fr}}
+.door{background:#fff;border:3px solid #1a1a1a;border-radius:20px;box-shadow:6px 6px 0 #1a1a1a;padding:1.25rem}
+.door .big{font-size:1.25rem;font-weight:800}
+.steps{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.step{flex:1;min-width:120px;border:3px solid #1a1a1a;border-radius:14px;padding:.6rem;background:#fff}
+.step.now{background:#ffd21f;box-shadow:4px 4px 0 #1a1a1a}
+.step .n{font-weight:800;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+.step.dim{opacity:.55}
+details.opt{margin-top:1.5rem}
+details.opt>summary{cursor:pointer;font-weight:700}
+</style>
+<div class="page-head"><div class="page-head-in">
+  <h1>Welcome back, alex_en</h1>
+  <p class="mylangs"><span class="chip chip-teach">speaks English</span> <span class="chip chip-learn">learning Korean</span> <a href="/users/profile/" class="underline font-semibold">edit</a></p>
+</div></div>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+  <div class="hero">
+    <h2>Your next step: say hi to dae_ho</h2>
+    <p class="sub">Best match for you right now. One message starts it.</p>
+    <div class="feat">
+      <span class="pm-avatar pm-initial" aria-hidden="true">D</span>
+      <div class="pm-who">
+        <h3 class="pm-name">dae_ho</h3>
+        <p class="pm-pair"><span class="chip chip-teach">teaches Korean</span> <span class="chip chip-learn">learns English</span></p>
+      </div>
+      <div class="pm-score good"><strong>80%</strong><span>match</span></div>
+    </div>
+    <button type="button" class="btn btn-solid w-full" data-open-request data-id="1" data-name="dae_ho" data-teach="English" data-learn="Korean">Say hi</button>
+    <p class="mt-3 text-sm"><a class="underline font-semibold" href="/users/profile/">Quick match - unlocks after email confirmation</a> &middot; <button type="button" class="underline font-semibold" id="refreshBtn" data-refresh><span>Refresh list</span></button></p>
+  </div>
+  <p id="resultCount" class="font-semibold mb-3" aria-live="polite">3 more partners, best match first</p>
+  <div id="matchesContainer" aria-busy="false"><ul class="pm-grid" role="list"><li class="pm-card" data-partner="7">
+    <div class="pm-top">
+      
+        <span class="pm-avatar pm-initial" aria-hidden="true">H</span>
+      
+      <div class="pm-who">
+        <h3 class="pm-name">haeun</h3>
+        <p class="pm-pair"><span class="chip chip-teach">teaches Korean</span> <span class="chip chip-learn">learns English</span></p>
+      </div>
+      <div class="pm-score good" title="How well your languages and levels line up">
+        <strong>80%</strong><span>match</span>
+      </div>
+    </div>
+    <p class="pm-bio">Office worker, evenings free. Intermediate English, can explain Korean grammar simply.</p>
+    <p class="pm-int"><span class="sr-only">Interests: </span>books, travel, photography</p>
+    <div class="pm-act">
+      
+        <button type="button" class="btn btn-solid w-full" data-open-request data-id="3" data-name="haeun" data-teach="English" data-learn="Korean">Say hi</button>
+      
+    </div>
+  </li>
+
+  
+<li class="pm-card" data-partner="6">
+    <div class="pm-top">
+      
+        <span class="pm-avatar pm-initial" aria-hidden="true">J</span>
+      
+      <div class="pm-who">
+        <h3 class="pm-name">jiwon</h3>
+        <p class="pm-pair"><span class="chip chip-teach">teaches Korean</span> <span class="chip chip-learn">learns English</span></p>
+      </div>
+      <div class="pm-score good" title="How well your languages and levels line up">
+        <strong>80%</strong><span>match</span>
+      </div>
+    </div>
+    <p class="pm-bio">University student in Busan. Patient with beginners, want natural English practice.</p>
+    <p class="pm-int"><span class="sr-only">Interests: </span>music, cooking, gaming</p>
+    <div class="pm-act">
+      
+        <button type="button" class="btn btn-solid w-full" data-open-request data-id="2" data-name="jiwon" data-teach="English" data-learn="Korean">Say hi</button>
+      
+    </div>
+  </li>
+
+  
+<li class="pm-card" data-partner="5">
+    <div class="pm-top">
+      
+        <span class="pm-avatar pm-initial" aria-hidden="true">M</span>
+      
+      <div class="pm-who">
+        <h3 class="pm-name">minsu_kr</h3>
+        <p class="pm-pair"><span class="chip chip-teach">teaches Korean</span> <span class="chip chip-learn">learns English</span></p>
+      </div>
+      <div class="pm-score good" title="How well your languages and levels line up">
+        <strong>80%</strong><span>match</span>
+      </div>
+    </div>
+    <p class="pm-bio">Native Korean speaker in Seoul. Happy to help with everyday conversation and K-drama lines.</p>
+    <p class="pm-int"><span class="sr-only">Interests: </span>coffee, hiking, movies</p>
+    <div class="pm-act">
+      
+        <button type="button" class="btn btn-solid w-full" data-open-request data-id="1" data-name="minsu_kr" data-teach="English" data-learn="Korean">Say hi</button>
+      
+    </div>
+  </li></ul></div>
+</div>
+<dialog id="requestDialog" class="req-dialog" aria-labelledby="reqTitle">
+  <form method="dialog" id="requestForm">
+    <div class="req-head">
+      <h2 id="reqTitle">Say hi to <span id="reqName"></span></h2>
+      <button type="button" class="req-x" data-close aria-label="Close">&times;</button>
+    </div>
+    <p id="reqSwap" class="text-sm font-semibold"></p>
+    <label for="requestMessage" class="block text-sm font-semibold mt-4">A short intro <span class="font-normal text-gray-600">(optional)</span></label>
+    <textarea id="requestMessage" rows="4" maxlength="300" class="w-full mt-1 px-3 py-2" placeholder="Hi! I am learning ... and can help with ... Want to practise this week?"></textarea>
+    <p class="text-xs text-gray-600 mt-1"><span id="charCount">0</span>/300. They see this with your request.</p>
+    <p id="reqError" class="field-error" role="alert" hidden></p>
+    <div class="flex gap-3 mt-5">
+      <button type="button" class="btn btn-outline flex-1" data-close>Cancel</button>
+      <button type="submit" class="btn btn-solid flex-1" id="reqSend">Send request</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  var dlg = document.getElementById('requestDialog'), current = null, opener = null;
+  var csrf = '4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7';
+  var box = document.getElementById('matchesContainer');
+  function status(msg) { document.getElementById('resultCount').textContent = msg; }
+  document.addEventListener('click', function (e) {
+    var o = e.target.closest('[data-open-request]');
+    if (o) {
+      current = o.dataset.id; opener = o;
+      document.getElementById('reqName').textContent = o.dataset.name;
+      document.getElementById('reqSwap').textContent = 'You teach ' + o.dataset.teach + '. You learn ' + o.dataset.learn + '.';
+      document.getElementById('reqError').hidden = true; document.getElementById('requestMessage').value = ''; document.getElementById('charCount').textContent = '0';
+      dlg.showModal(); document.getElementById('requestMessage').focus(); return;
+    }
+    if (e.target.closest('[data-close]')) { dlg.close(); return; }
+    if (e.target === dlg) { dlg.close(); return; }
+    if (e.target.closest('[data-refresh]')) refresh();
+  });
+  document.getElementById('requestMessage').addEventListener('input', function () { document.getElementById('charCount').textContent = this.value.length; });
+  document.getElementById('requestForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = document.getElementById('reqSend'), err = document.getElementById('reqError');
+    btn.disabled = true; btn.textContent = 'Sending...'; err.hidden = true;
+    var fd = new FormData(); fd.append('message', document.getElementById('requestMessage').value); fd.append('csrfmiddlewaretoken', csrf);
+    fetch('/matches/api/send-request/' + current + '/', {method: 'POST', body: fd}).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.success) {
+        dlg.close();
+        var card = opener.closest('.pm-card'); card.querySelector('.pm-act').innerHTML = '<span class="pm-state"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Request sent. We will tell you when they reply.</span>';
+        status(d.message);
+      } else { err.textContent = d.error === 'Match request already exists' ? 'You already sent this person a request.' : (d.error || 'Could not send. Try again.'); err.hidden = false; }
+    }).catch(function () { err.textContent = 'No connection. Check your internet and press Send again.'; err.hidden = false; })
+      .finally(function () { btn.disabled = false; btn.textContent = 'Send request'; });
+  });
+  function refresh() {
+    var b = document.getElementById('refreshBtn'); b.disabled = true; b.querySelector('span').textContent = 'Refreshing...'; box.setAttribute('aria-busy', 'true'); box.style.opacity = '.5';
+    var fd = new FormData(); fd.append('csrfmiddlewaretoken', csrf);
+    fetch('/matches/api/refresh-matches/', {method: 'POST', body: fd}).then(function (r) { return r.json(); }).then(function () { return fetch('/matches/'); })
+      .then(function (r) { return r.text(); }).then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html'); box.innerHTML = doc.getElementById('matchesContainer').innerHTML;
+        var n = box.querySelectorAll('.pm-card').length; status(n + ' partner' + (n === 1 ? '' : 's') + ', best match first. List refreshed.');
+      }).catch(function () { status('Could not refresh. Check your connection and try again.'); })
+      .finally(function () { b.disabled = false; b.querySelector('span').textContent = 'Refresh list'; box.setAttribute('aria-busy', 'false'); box.style.opacity = '1'; });
+  }
+})();
+</script>
+
+    </main>
+
+    
+    <nav class="tabbar" aria-label="Main">
+        
+        <a href="/matches/" class="on" aria-current="page"><svg class="ico"><use href="#i-search"/></svg>Find</a>
+        <a href="/matches/my-matches/" class="" ><svg class="ico"><use href="#i-users"/></svg>Matches<span class="tab-badge" id="tabMatchesBadge" hidden></span></a>
+        <a href="/matches/quick/" class="fab " aria-label="Quick match"><span class="bub"><svg class="ico"><use href="#i-bolt"/></svg></span>Quick</a>
+        <a href="/chats/" class="" ><svg class="ico"><use href="#i-message"/></svg>Chats<span class="tab-badge" id="tabChatsBadge" hidden></span></a>
+        <a href="/users/profile/" class="" ><svg class="ico"><use href="#i-user"/></svg>Me</a>
+        
+    </nav>
+    
+    <!-- Enhanced Footer -->
+    <footer class="site-footer bg-gray-900 text-gray-300 mt-0">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 py-12 grid sm:grid-cols-[1.5fr_1fr_1fr] gap-10">
+            <div>
+                <p class="font-display text-2xl font-semibold text-white">Speakle</p>
+                <p class="mt-3 text-sm text-gray-400 max-w-sm">Language exchange by video. You teach what you speak, they teach what you are learning.</p>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-white">Explore</p>
+                <ul class="mt-3 space-y-2 text-sm">
+                    <li><a class="hover:text-white" href="/">Home</a></li>
+                    <li><a class="hover:text-white" href="/matches/">Find partners</a></li>
+                    <li><a class="hover:text-white" href="/matches/my-matches/">My matches</a></li>
+                </ul>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-white">Account</p>
+                <ul class="mt-3 space-y-2 text-sm">
+                    
+                    <li><a class="hover:text-white" href="/users/profile/">Profile</a></li>
+                    <li><form method="post" action="/users/logout/" style="margin:0"><input type="hidden" name="csrfmiddlewaretoken" value="4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7"><button type="submit" class="hover:text-white" style="background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit">Sign out</button></form></li>
+                    
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-800">
+            <p class="max-w-6xl mx-auto px-5 sm:px-8 py-5 text-xs text-gray-400">&copy; Speakle</p>
+        </div>
+    </footer>
+
+    <!-- Enhanced JavaScript -->
+    <script>
+        // Enhanced mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const navbar = document.getElementById('navbar');
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userDropdown = document.getElementById('userDropdown');
+            const userMenuChevron = document.getElementById('userMenuChevron');
+            
+            // Enhanced Mobile menu toggle
+            mobileMenuButton?.addEventListener('click', function() {
+                mobileMenu.classList.toggle('open');
+                this.classList.toggle('open');
+                const isOpen = mobileMenu.classList.contains('open');
+                this.setAttribute('aria-expanded', isOpen);
+                
+                // Prevent body scroll when menu is open
+                if (isOpen) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // User dropdown functionality
+            userMenuButton?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = userDropdown.classList.contains('show');
+                
+                if (isOpen) {
+                    closeUserDropdown();
+                } else {
+                    openUserDropdown();
+                }
+            });
+            
+            function openUserDropdown() {
+                userDropdown.classList.add('show');
+                userMenuButton.setAttribute('aria-expanded', 'true');
+                userMenuChevron.style.transform = 'rotate(180deg)';
+                
+                // Focus first menu item
+                const firstMenuItem = userDropdown.querySelector('a');
+                if (firstMenuItem) {
+                    setTimeout(() => firstMenuItem.focus(), 100);
+                }
+            }
+            
+            function closeUserDropdown() {
+                userDropdown.classList.remove('show');
+                userMenuButton.setAttribute('aria-expanded', 'false');
+                userMenuChevron.style.transform = 'rotate(0deg)';
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                // Close mobile menu
+                if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
+                    mobileMenu.classList.remove('open');
+                    mobileMenuButton.classList.remove('open');
+                    mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    document.body.style.overflow = '';
+                }
+                
+                // Close user dropdown
+                if (userDropdown && !userDropdown.contains(e.target) && !userMenuButton.contains(e.target)) {
+                    closeUserDropdown();
+                }
+            });
+            
+            // Keyboard navigation for dropdowns
+            document.addEventListener('keydown', function(e) {
+                // Close dropdowns on Escape
+                if (e.key === 'Escape') {
+                    if (mobileMenu.classList.contains('open')) {
+                        mobileMenu.classList.remove('open');
+                        mobileMenuButton.classList.remove('open');
+                        mobileMenuButton.setAttribute('aria-expanded', 'false');
+                        mobileMenuButton.focus();
+                        document.body.style.overflow = '';
+                    }
+                    
+                    if (userDropdown?.classList.contains('show')) {
+                        closeUserDropdown();
+                        userMenuButton.focus();
+                    }
+                }
+                
+                // Navigate dropdown with arrow keys
+                if (userDropdown?.classList.contains('show')) {
+                    const menuItems = userDropdown.querySelectorAll('a');
+                    const currentIndex = Array.from(menuItems).indexOf(document.activeElement);
+                    
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const nextIndex = currentIndex < menuItems.length - 1 ? currentIndex + 1 : 0;
+                        menuItems[nextIndex].focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prevIndex = currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
+                        menuItems[prevIndex].focus();
+                    }
+                }
+            });
+            
+            // Enhanced navbar scroll effect with performance optimization
+            let lastScrollY = window.scrollY;
+            let ticking = false;
+            
+            function updateNavbar() {
+                const currentScrollY = window.scrollY;
+                
+                // Add scrolled class for enhanced styling
+                if (currentScrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+                
+                // Removed navbar hiding behavior as requested
+                lastScrollY = currentScrollY;
+                ticking = false;
+            }
+            
+            function requestTick() {
+                if (!ticking) {
+                    requestAnimationFrame(updateNavbar);
+                    ticking = true;
+                }
+            }
+            
+            window.addEventListener('scroll', requestTick, { passive: true });
+            
+            // Auto-highlight active navigation items
+            highlightActiveNavItem();
+            
+            // Remove the annoying navbar slide-in animation
+            // The navbar should be immediately visible for better UX during navigation
+        });
+        
+        // Enhanced active navigation highlighting
+        function highlightActiveNavItem() { /* active state is rendered server-side */ }
+        
+        // Enhanced notification badge updates with animation
+        function updatePendingCallsBadge() {
+            const badges = ['pendingCallsBadge', 'pendingCallsBadgeMobile'];
+            badges.forEach(badgeId => {
+                const badge = document.getElementById(badgeId);
+                if (badge) {
+                    if (pendingCallsCount > 0) {
+                        const displayCount = pendingCallsCount > 99 ? '99+' : pendingCallsCount;
+                        
+                        // Animate number change
+                        if (badge.textContent !== displayCount) {
+                            badge.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                badge.textContent = displayCount;
+                                badge.style.transform = 'scale(1)';
+                            }, 100);
+                        }
+                        
+                        badge.style.display = 'flex';
+                        
+                        // Clean, minimal design - no animations
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Enhanced unread messages badge function
+        let unreadMessagesCount = 0;
+        
+        function updateUnreadMessagesBadge() {
+            const badges = ['unreadMessagesBadge', 'unreadMessagesBadgeMobile'];
+            badges.forEach(badgeId => {
+                const badge = document.getElementById(badgeId);
+                if (badge) {
+                    if (unreadMessagesCount > 0) {
+                        const displayCount = unreadMessagesCount > 99 ? '99+' : unreadMessagesCount;
+                        
+                        // Animate number change
+                        if (badge.textContent !== displayCount) {
+                            badge.style.transform = 'scale(1.3)';
+                            setTimeout(() => {
+                                badge.textContent = displayCount;
+                                badge.style.transform = 'scale(1)';
+                            }, 100);
+                        }
+                        
+                        badge.style.display = 'flex';
+                        
+                        // Clean, minimal design - no animations
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Function to check unread messages across all chats
+        function checkUnreadMessages() {
+            
+            fetch('/chats/api/total-unread-count/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    unreadMessagesCount = data.unread_count || 0;
+                    updateUnreadMessagesBadge();
+                }
+            })
+            .catch(error => {
+
+            });
+            
+        }
+        
+        // Enhanced theme and accessibility features
+        function enhanceAccessibility() {
+            // Add loading states to buttons
+            const buttons = document.querySelectorAll('button, a.btn-primary');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.type === 'submit' || this.classList.contains('btn-primary')) {
+                        this.classList.add('loading');
+                        
+                        // Remove loading state after 3 seconds as fallback
+                        setTimeout(() => {
+                            this.classList.remove('loading');
+                        }, 3000);
+                    }
+                });
+            });
+            
+            // Enhanced focus management
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+            
+            document.addEventListener('mousedown', function() {
+                document.body.classList.remove('keyboard-navigation');
+            });
+        }
+        
+        // Performance monitoring and optimization
+        function optimizePerformance() {
+            // Lazy load images when they come into view
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            if (img.dataset.src) {
+                                img.src = img.dataset.src;
+                                img.removeAttribute('data-src');
+                                observer.unobserve(img);
+                            }
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+            
+            // Preload critical resources
+            const criticalResources = [
+                '/matches/',
+                '/matches/my-matches/',
+                '/chats/',
+                '/users/profile/'
+            ];
+            
+            criticalResources.forEach(url => {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = url;
+                document.head.appendChild(link);
+            });
+        }
+        
+        // Initialize enhanced features
+        document.addEventListener('DOMContentLoaded', function() {
+            enhanceAccessibility();
+            optimizePerformance();
+        });
+
+        
+        // Enhanced global notification system (existing code with improvements)
+        let globalNotificationSocket = null;
+        let currentGlobalIncomingInvitation = null;
+        let pendingCallsCount = 0;
+        let browserNotificationsEnabled = false;
+        let callTimerInterval = null;
+        let callCountdown = 30;
+
+        // Performance optimizations
+        const WEBSOCKET_RECONNECT_DELAY = 3000;
+        const NOTIFICATION_DURATION = 5000;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        let reconnectAttempts = 0;
+
+        // Request browser notification permission with better UX
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                if (Notification.permission === 'default') {
+                    // For mobile devices, be more explicit about the permission request
+                    if (window.isMobileDevice()) {
+                        // Show a brief toast first to explain why we need permission
+                        showNotificationToast(
+                            'Enable Notifications?', 
+                            'Get notified when someone calls you', 
+                            '', 
+                            3000
+                        );
+                        
+                        // Delay the permission request slightly for better UX
+                        setTimeout(() => {
+                            Notification.requestPermission().then(permission => {
+                                browserNotificationsEnabled = permission === 'granted';
+                                if (browserNotificationsEnabled) {
+                                    showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '');
+                                } else {
+                                    showNotificationToast('Notifications Disabled', 'You may miss incoming calls', '');
+                                }
+                            }).catch(error => {
+                                browserNotificationsEnabled = false;
+                            });
+                        }, 1500);
+                    } else {
+                        // Desktop permission request
+                        Notification.requestPermission().then(permission => {
+                            browserNotificationsEnabled = permission === 'granted';
+                            if (browserNotificationsEnabled) {
+                                showNotificationToast('Notifications Enabled', 'You\'ll receive call notifications', '');
+                            }
+                        });
+                    }
+                } else {
+                    browserNotificationsEnabled = Notification.permission === 'granted';
+                }
+            } else {
+                browserNotificationsEnabled = false;
+            }
+        }
+
+        // Enhanced browser notification
+        function showBrowserNotification(title, message, icon = '', tag = 'speakle-call') {
+            if (browserNotificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification(title, {
+                    body: message,
+                    icon: '/static/images/logo.png', // Add your logo here
+                    badge: '/static/images/badge.png', // Add your badge here
+                    requireInteraction: true,
+                    tag: tag,
+                    vibrate: [200, 100, 200], // Vibration pattern for mobile
+                    silent: false
+                });
+                
+                // Auto-close after 15 seconds for calls
+                setTimeout(() => notification.close(), 15000);
+                
+                return notification;
+            }
+            return null;
+        }
+
+        // Enhanced notification toast with actions
+        function showNotificationToast(title, message, icon = '', duration = NOTIFICATION_DURATION, actions = null) {
+            const toast = document.getElementById('notificationToast');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastActions = document.getElementById('toastActions');
+            
+            // Don't show if title and message are empty
+            if (!title && !message) {
+                return;
+            }
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            toastIcon.textContent = icon;
+            
+            // Handle actions
+            if (actions) {
+                toastActions.style.display = 'flex';
+                const primaryBtn = document.getElementById('toastActionPrimary');
+                const secondaryBtn = document.getElementById('toastActionSecondary');
+                
+                primaryBtn.textContent = actions.primary.text;
+                primaryBtn.onclick = actions.primary.action;
+                
+                if (actions.secondary) {
+                    secondaryBtn.textContent = actions.secondary.text;
+                    secondaryBtn.onclick = actions.secondary.action;
+                    secondaryBtn.style.display = 'block';
+                } else {
+                    secondaryBtn.style.display = 'none';
+                }
+            } else {
+                toastActions.style.display = 'none';
+            }
+            
+            toast.classList.add('show');
+            
+            // Auto-hide
+            if (duration > 0) {
+                setTimeout(() => {
+                    if (!actions) hideNotificationToast();
+                }, duration);
+            }
+        }
+
+        function hideNotificationToast() {
+            const toast = document.getElementById('notificationToast');
+            toast.classList.remove('show');
+        }
+
+        // Call timer functionality
+        function startCallTimer() {
+            callCountdown = 30;
+            const timerElement = document.getElementById('timerCountdown');
+            
+            callTimerInterval = setInterval(() => {
+                callCountdown--;
+                if (timerElement) {
+                    timerElement.textContent = callCountdown;
+                }
+                
+                if (callCountdown <= 0) {
+                    clearInterval(callTimerInterval);
+                    stopNotificationSound(); // Stop sound on auto-decline
+                    globalDeclineCall(); // Auto-decline
+                }
+            }, 1000);
+        }
+
+        function stopCallTimer() {
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+        }
+
+        // Enhanced WebSocket connection with retry logic
+        function connectGlobalNotificationWebSocket() {
+            if (globalNotificationSocket?.readyState === WebSocket.OPEN) {
+                return; // Already connected
+            }
+            
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+            
+            try {
+                globalNotificationSocket = new WebSocket(wsUrl);
+                
+                // Set a connection timeout for mobile devices
+                const connectionTimeout = setTimeout(() => {
+                    if (globalNotificationSocket.readyState === WebSocket.CONNECTING) {
+                        globalNotificationSocket.close();
+                        adjustPollingFrequency(false);
+                    }
+                }, 10000); // 10 seconds timeout for mobile
+                
+                globalNotificationSocket.onopen = function() {
+                    clearTimeout(connectionTimeout);
+                    reconnectAttempts = 0;
+                    adjustPollingFrequency(true);
+                    checkPendingInvitations();
+                };
+                
+                globalNotificationSocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleGlobalNotificationMessage(data);
+                        adjustPollingFrequency(true);
+                    } catch (error) {
+                        // Error parsing WebSocket message
+                    }
+                };
+                
+                globalNotificationSocket.onclose = function(event) {
+                    clearTimeout(connectionTimeout);
+                    adjustPollingFrequency(false);
+                    
+                    // More aggressive reconnection for mobile
+                    if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        const delay = window.isMobileDevice() ? 
+                            Math.min(WEBSOCKET_RECONNECT_DELAY * Math.pow(1.5, reconnectAttempts), 15000) :
+                            WEBSOCKET_RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
+                        
+                        setTimeout(() => {
+                            reconnectAttempts++;
+                            connectGlobalNotificationWebSocket();
+                        }, delay);
+                    } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                        // Fall back to more frequent polling
+                        pollInterval = minPollInterval;
+                        startAdaptivePolling();
+                    }
+                };
+                
+                globalNotificationSocket.onerror = function(error) {
+                    clearTimeout(connectionTimeout);
+                    adjustPollingFrequency(false);
+                };
+                
+            } catch (error) {
+                adjustPollingFrequency(false);
+            }
+        }
+
+        function handleGlobalNotificationMessage(data) {
+
+            
+            switch (data.type) {
+                case 'notification_connected':
+
+                    break;
+                case 'call_invitation_received':
+                    handleGlobalIncomingCallInvitation(data);
+                    break;
+                case 'call_invitation_accepted':
+                    // Handle call acceptance with mobile-friendly approach
+                    const accepterUsername = data.accepter_username;
+                    const roomUrl = data.room_url;
+                    
+                    if (window.isMobileDevice()) {
+                        // For mobile: Show notification with manual entry option
+                        showNotificationToast(
+                            'Call Accepted!',
+                            `${accepterUsername} accepted your call`,
+                            '',
+                            0, // Don't auto-hide
+                            {
+                                primary: {
+                                    text: 'Join Call',
+                                    action: () => {
+                                        hideNotificationToast();
+
+                                        window.navigateToUrl(roomUrl, true);
+                                    }
+                                },
+                                secondary: {
+                                    text: 'Later',
+                                    action: () => {
+                                        hideNotificationToast();
+                                    }
+                                }
+                            }
+                        );
+                        
+                        // Also redirect immediately for mobile
+
+                        window.navigateToUrl(roomUrl, true);
+                        
+                        // Show mobile helper button immediately
+                        showMobileCallHelper();
+                        
+                        // Backup notification in case redirect fails on mobile
+                        setTimeout(() => {
+                            // Check if user is still on the same page (redirect might have failed)
+                            if (window.location.pathname === window.location.pathname) {
+                                showNotificationToast(
+                                    'Join Your Call',
+                                    `Tap the button or notification to join your call`,
+                                    '',
+                                    0, // Don't auto-hide
+                                    {
+                                        primary: {
+                                            text: 'Join Now',
+                                            action: () => {
+                                                hideNotificationToast();
+                                                hideMobileCallHelper();
+                                                window.navigateToUrl(roomUrl, true);
+                                            }
+                                        },
+                                        secondary: {
+                                            text: 'Dismiss',
+                                            action: () => {
+                                                hideNotificationToast();
+                                                hideMobileCallHelper();
+                                            }
+                                        }
+                                    }
+                                );
+                            }
+                        }, 3000);
+                    } else {
+                        // For desktop: Keep the existing behavior with notification
+                        showNotificationToast(
+                            'Call Accepted!',
+                            `${accepterUsername} accepted your call`,
+                            '',
+                            2000
+                        );
+                        setTimeout(() => {
+                            window.navigateToUrl(roomUrl, true);
+                        }, 1500);
+                    }
+                    
+                    showBrowserNotification(
+                        'Call Accepted!',
+                        `${accepterUsername} accepted your call`,
+                        ''
+                    );
+                    break;
+                case 'call_invitation_declined':
+                    showNotificationToast(
+                        'Call Declined',
+                        `${data.decliner_username} declined your call`,
+                        '',
+                        4000
+                    );
+                    break;
+                case 'call_invitation_cancelled':
+                    handleGlobalCallCancelled(data);
+                    break;
+            }
+        }
+
+        function handleGlobalIncomingCallInvitation(data) {
+            // Play notification sound continuously
+            playNotificationSound();
+            
+            // Show browser notification (for system notifications when tab is in background)
+            const browserNotif = showBrowserNotification(
+                'Incoming Video Call',
+                `${data.caller_username} wants to start a video call${data.message ? ': ' + data.message : ''}`,
+                ''
+            );
+
+            // Show main incoming call modal (primary UI)
+            const invitation = {
+                id: data.invitation_id,
+                caller: data.caller_username,
+                caller_id: data.caller_id,
+                message: data.message,
+                match_id: data.match_id,
+                expires_at: data.expires_at
+            };
+            
+            // For mobile devices, ensure the modal is properly shown
+            if (window.isMobileDevice()) {
+                // Force focus on the page if possible
+                try {
+                    if (document.hidden) {
+                        // Page is hidden, attempting to bring to foreground
+                    }
+                    window.focus();
+                } catch (e) {
+                    // Could not focus window
+                }
+                
+                // Vibrate if available (mobile browsers)
+                if ('vibrate' in navigator) {
+                    try {
+                        navigator.vibrate([200, 100, 200, 100, 200]);
+                    } catch (e) {
+                        // Could not vibrate device
+                    }
+                }
+            }
+            
+            showGlobalIncomingCall(invitation);
+            
+            // Update badge with enhanced animation
+            pendingCallsCount++;
+            updatePendingCallsBadge();
+
+            // Handle browser notification click
+            if (browserNotif) {
+                browserNotif.onclick = function() {
+                    try {
+                        window.focus();
+                        browserNotif.close();
+                        const modal = document.getElementById('globalIncomingCallModal');
+                        if (modal && !modal.classList.contains('hidden')) {
+                            // For mobile, scroll to modal and ensure it's visible
+                            if (window.isMobileDevice()) {
+                                modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // Force redraw to ensure modal is visible
+                                modal.style.display = 'flex';
+                                modal.offsetHeight; // Force reflow
+                            } else {
+                                modal.scrollIntoView();
+                            }
+                        }
+                    } catch (e) {
+                        // Error handling browser notification click
+                    }
+                };
+            }
+        }
+
+        // Continuous notification sound variables
+        let notificationSoundInterval = null;
+        let notificationAudioContext = null;
+
+        // Play notification sound continuously
+        function playNotificationSound() {
+            // Stop any existing sound first
+            stopNotificationSound();
+            
+            try {
+                notificationAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                function playTone() {
+                    if (!notificationAudioContext) return;
+                    
+                    const oscillator = notificationAudioContext.createOscillator();
+                    const gainNode = notificationAudioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(notificationAudioContext.destination);
+                    
+                    // Create a pleasant notification tone
+                    oscillator.frequency.setValueAtTime(800, notificationAudioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(600, notificationAudioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(800, notificationAudioContext.currentTime + 0.2);
+                    
+                    gainNode.gain.setValueAtTime(0.1, notificationAudioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, notificationAudioContext.currentTime + 0.5);
+                    
+                    oscillator.start();
+                    oscillator.stop(notificationAudioContext.currentTime + 0.5);
+                }
+                
+                // Play immediately
+                playTone();
+                
+                // Then repeat every 2 seconds
+                notificationSoundInterval = setInterval(playTone, 2000);
+            } catch (e) {
+                // Silently fail if audio context not supported
+            }
+        }
+
+        // Stop notification sound
+        function stopNotificationSound() {
+            if (notificationSoundInterval) {
+                clearInterval(notificationSoundInterval);
+                notificationSoundInterval = null;
+            }
+            if (notificationAudioContext) {
+                try {
+                    notificationAudioContext.close();
+                } catch (e) {
+                    // Silently fail
+                }
+                notificationAudioContext = null;
+            }
+        }
+
+        function handleGlobalCallCancelled(data) {
+            // Close modal if it's for this invitation
+            if (currentGlobalIncomingInvitation && currentGlobalIncomingInvitation.id == data.invitation_id) {
+                hideIncomingCallModal();
+                currentGlobalIncomingInvitation = null;
+                stopCallTimer();
+                
+                pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                updatePendingCallsBadge();
+            }
+            
+            showNotificationToast(
+                'Call Cancelled',
+                `${data.canceller_username} cancelled the call`,
+                ''
+            );
+        }
+
+        function showGlobalIncomingCall(invitation) {
+            if (!currentGlobalIncomingInvitation) {
+                currentGlobalIncomingInvitation = invitation;
+                
+                // Update modal content
+                const callerNameElement = document.getElementById('globalCallerName');
+                if (callerNameElement) {
+                    callerNameElement.textContent = invitation.caller;
+                }
+                
+                // Enhanced caller avatar display
+                const callerAvatar = document.getElementById('callerAvatar');
+                if (callerAvatar) {
+                    callerAvatar.textContent = invitation.caller.charAt(0).toUpperCase();
+                }
+                
+                // Handle optional message
+                const messageContent = document.getElementById('globalMessageContent');
+                const messageContainer = document.getElementById('globalCallerMessage');
+                if (invitation.message && invitation.message.trim() && messageContent && messageContainer) {
+                    messageContent.textContent = invitation.message;
+                    messageContainer.style.display = 'block';
+                } else if (messageContainer) {
+                    messageContainer.style.display = 'none';
+                }
+                
+                // Show the modal
+                const modal = document.getElementById('globalIncomingCallModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    
+                    // For mobile devices, ensure proper display and prevent scrolling
+                    if (window.isMobileDevice()) {
+                        // Prevent body scroll when modal is open
+                        document.body.style.overflow = 'hidden';
+                        document.body.style.position = 'fixed';
+                        document.body.style.width = '100%';
+                        document.body.style.height = '100%';
+                        
+                        // Force modal to be visible and properly positioned
+                        modal.style.display = 'flex';
+                        modal.style.position = 'fixed';
+                        modal.style.top = '0';
+                        modal.style.left = '0';
+                        modal.style.right = '0';
+                        modal.style.bottom = '0';
+                        modal.style.zIndex = '9999';
+                        
+                        // Ensure modal content is properly centered
+                        modal.style.alignItems = 'center';
+                        modal.style.justifyContent = 'center';
+                        
+                        // Force a repaint to ensure the modal is visible
+                        modal.offsetHeight;
+                        
+                        // Add mobile-specific class
+                        modal.classList.add('mobile-active');
+                    }
+                    
+                    startCallTimer();
+                    
+                    // Enhanced entrance animation (simplified for mobile)
+                    const modalContent = modal.querySelector('.modal-content-enhanced');
+                    if (modalContent) {
+                        if (window.isMobileDevice()) {
+                            // Simpler animation for mobile to avoid performance issues
+                            modalContent.style.transform = 'scale(0.9)';
+                            modalContent.style.opacity = '0';
+                            
+                            setTimeout(() => {
+                                modalContent.style.transform = 'scale(1)';
+                                modalContent.style.opacity = '1';
+                            }, 100);
+                        } else {
+                            // Full animation for desktop
+                            modalContent.style.transform = 'scale(0.8) rotate(5deg)';
+                            modalContent.style.opacity = '0';
+                            
+                            setTimeout(() => {
+                                modalContent.style.transform = 'scale(1) rotate(0deg)';
+                                modalContent.style.opacity = '1';
+                            }, 50);
+                        }
+                    }
+                    
+                    // Focus management for accessibility (desktop only)
+                    if (!window.isMobileDevice()) {
+                        const firstButton = modal.querySelector('button');
+                        if (firstButton) {
+                            setTimeout(() => firstButton.focus(), 300);
+                        }
+                    }
+                }
+            }
+        }
+
+        function globalAcceptCall() {
+            if (currentGlobalIncomingInvitation) {
+                // Stop notification sound
+                stopNotificationSound();
+                
+                const btn = event?.target || document.querySelector('#globalIncomingCallModal .btn-accept');
+                if (btn) btn.classList.add('loading');
+                
+                const formData = new FormData();
+                formData.append('response', 'accept');
+                formData.append('csrfmiddlewaretoken', '4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7');
+                
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        hideIncomingCallModal();
+                        currentGlobalIncomingInvitation = null;
+                        stopCallTimer();
+                        
+                        pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                        updatePendingCallsBadge();
+                        
+                        showNotificationToast('Joining call...', 'Redirecting to video room', '', 1500);
+                        
+                        // Mobile-friendly redirection - immediate redirect without timeout
+                        if (window.isMobileDevice()) {
+                            // For mobile devices, redirect immediately to prevent timeout issues
+                            window.navigateToUrl(data.room_url, true);
+                        } else {
+                            // For desktop, keep a short delay for better UX
+                            setTimeout(() => {
+                                window.navigateToUrl(data.room_url, true);
+                            }, 500);
+                        }
+                    } else {
+                        throw new Error(data.error || 'Failed to accept call');
+                    }
+                })
+                .catch(error => {
+                    showNotificationToast('Error', 'Failed to accept call', '');
+                })
+                .finally(() => {
+                    if (btn) btn.classList.remove('loading');
+                });
+            }
+        }
+
+        function globalDeclineCall() {
+            if (currentGlobalIncomingInvitation) {
+                // Stop notification sound
+                stopNotificationSound();
+                
+                const btn = event?.target || document.querySelector('#globalIncomingCallModal .btn-decline');
+                if (btn) btn.classList.add('loading');
+                
+                const formData = new FormData();
+                formData.append('response', 'decline');
+                formData.append('csrfmiddlewaretoken', '4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7');
+                
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideIncomingCallModal();
+                    currentGlobalIncomingInvitation = null;
+                    stopCallTimer();
+                    
+                    pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                    updatePendingCallsBadge();
+                    
+                    showNotificationToast('Call declined', 'Call invitation declined', '', 3000);
+                })
+                .catch(error => {
+                    showNotificationToast('Error', 'Failed to decline call', '');
+                })
+                .finally(() => {
+                    if (btn) btn.classList.remove('loading');
+                });
+            }
+        }
+
+        // Helper function to properly hide the incoming call modal
+        function hideIncomingCallModal() {
+            // Stop notification sound when modal is hidden
+            stopNotificationSound();
+            
+            const modal = document.getElementById('globalIncomingCallModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('mobile-active');
+                
+                // Restore body scroll for mobile
+                if (window.isMobileDevice()) {
+                    document.body.style.overflow = '';
+                    document.body.style.position = '';
+                    document.body.style.width = '';
+                    document.body.style.height = '';
+                }
+            }
+        }
+
+
+
+        // Enhanced helper functions for quick actions
+        function acceptAudioOnly() {
+            if (currentGlobalIncomingInvitation) {
+                // For now, redirect to accept but store preference for audio-only
+                localStorage.setItem('callPreference', 'audio-only');
+                globalAcceptCall();
+            }
+        }
+
+        function sendQuickMessage() {
+            if (currentGlobalIncomingInvitation) {
+                // Close the call modal
+                document.getElementById('globalIncomingCallModal').classList.add('hidden');
+                stopCallTimer();
+                
+                // Decline the call
+                const formData = new FormData();
+                formData.append('response', 'decline');
+                formData.append('csrfmiddlewaretoken', '4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7');
+                
+                fetch(`/chats/api/respond-invitation/${currentGlobalIncomingInvitation.id}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Redirect to chat with the caller - mobile-friendly
+                    const chatUrl = `/chats/match/${currentGlobalIncomingInvitation.match_id}/`;
+
+                    window.navigateToUrl(chatUrl, true);
+                })
+                .catch(error => {
+
+                    showNotificationToast('Error', 'Failed to send message', '');
+                });
+                
+                currentGlobalIncomingInvitation = null;
+                pendingCallsCount = Math.max(0, pendingCallsCount - 1);
+                updatePendingCallsBadge();
+            }
+        }
+
+        // Enhanced adaptive polling with better performance
+        let pollInterval = 60000;
+        let maxPollInterval = 300000;
+        let minPollInterval = 15000;
+        let pollIntervalId = null;
+        let websocketFailureCount = 0;
+        let isPageVisible = !document.hidden;
+        let lastUserActivity = Date.now();
+
+        function startAdaptivePolling() {
+            if (pollIntervalId) {
+                clearInterval(pollIntervalId);
+            }
+            
+            if (isPageVisible && (Date.now() - lastUserActivity < 300000)) {
+                pollIntervalId = setInterval(checkPendingInvitations, pollInterval);
+            }
+        }
+
+        function adjustPollingFrequency(websocketWorking) {
+            if (websocketWorking) {
+                websocketFailureCount = 0;
+                pollInterval = Math.min(pollInterval * 1.5, maxPollInterval);
+            } else {
+                websocketFailureCount++;
+                pollInterval = Math.max(pollInterval / 2, minPollInterval);
+            }
+            startAdaptivePolling();
+        }
+        
+        function updateUserActivity() {
+            lastUserActivity = Date.now();
+            if (!pollIntervalId && isPageVisible) {
+                startAdaptivePolling();
+            }
+        }
+        
+        // Activity listeners with throttling
+        let activityThrottle = false;
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(function(event) {
+            document.addEventListener(event, function() {
+                if (!activityThrottle) {
+                    updateUserActivity();
+                    activityThrottle = true;
+                    setTimeout(() => { activityThrottle = false; }, 1000);
+                }
+            }, true);
+        });
+        
+        // Page visibility handling
+        document.addEventListener('visibilitychange', function() {
+            isPageVisible = !document.hidden;
+            if (isPageVisible) {
+                updateUserActivity();
+                startAdaptivePolling();
+                if (!globalNotificationSocket || globalNotificationSocket.readyState !== WebSocket.OPEN) {
+                    connectGlobalNotificationWebSocket();
+                }
+            } else {
+                if (pollIntervalId) {
+                    clearInterval(pollIntervalId);
+                    pollIntervalId = null;
+                }
+            }
+        });
+
+        // Enhanced pending invitations check
+        function checkPendingInvitations() {
+            fetch('/chats/api/pending-invitations/')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.invitations && data.invitations.length > 0) {
+                    pendingCallsCount = data.invitations.length;
+                    updatePendingCallsBadge();
+                    
+                    if (!currentGlobalIncomingInvitation) {
+                        showGlobalIncomingCall(data.invitations[0]);
+                    }
+                    
+                    if (data.invitations.length > 1) {
+                        showNotificationToast(
+                            'Multiple Calls',
+                            `You have ${data.invitations.length} pending invitations`,
+                            '',
+                            5000
+                        );
+                    }
+                } else {
+                    pendingCallsCount = 0;
+                    updatePendingCallsBadge();
+                }
+            })
+            .catch(error => {});
+        }
+
+        // Modal event handlers
+        document.getElementById('globalIncomingCallModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                globalDeclineCall();
+            }
+        });
+
+        // Keyboard navigation for modal
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('globalIncomingCallModal');
+            if (!modal.classList.contains('hidden')) {
+                if (e.key === 'Escape') {
+                    globalDeclineCall();
+                } else if (e.key === 'Enter') {
+                    globalAcceptCall();
+                }
+            }
+        });
+
+        // Enhanced global video call function
+        window.initiateVideoCallGlobal = function(matchId, partnerUsername, options = {}) {
+            // Set default options
+            const settings = {
+                redirectOnAccept: true,
+                showNotifications: true,
+                onAccept: null,
+                onDecline: null,
+                onExpire: null,
+                onCancel: null,
+                ...options
+            };
+
+            // Use existing modal if available, otherwise create one
+            let modal = document.getElementById('quickCallModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'quickCallModal';
+                modal.className = 'fixed inset-0 modal-overlay hidden z-[9998] flex items-center justify-center p-4';
+                modal.innerHTML = `
+                    <div class="modal-content relative">
+                        <div class="modal-content-enhanced rounded-3xl p-4 sm:p-6 md:p-8 max-w-xs sm:max-w-md md:max-w-lg w-full mx-2 sm:mx-4 relative overflow-hidden">
+                            <!-- Background gradient overlay -->
+                            
+                            
+                            <div class="relative z-10 text-center">
+                                <!-- Enhanced call icon with partner avatar -->
+                                <div class="call-icon-container w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 mx-auto mb-4 sm:mb-6 relative">
+                                    <div class="call-avatar w-full h-full rounded-full flex items-center justify-center">
+                                        <div class="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center">
+                                            <span class="text-2xl sm:text-3xl md:text-4xl"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Enhanced header -->
+                                <div class="mb-4 sm:mb-6">
+                                    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-2">
+                                        Start Video Call
+                                    </h3>
+                                    <p class="text-base sm:text-lg md:text-xl font-bold mb-1" id="quickCallPartner"></p>
+                                    <p class="text-sm sm:text-base text-gray-600 mb-2 sm:mb-4">Send a call invitation to connect</p>
+                                </div>
+                                
+                                <!-- Enhanced Partner Status -->
+                                <div id="partnerStatus" class="status-indicator mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
+                                    <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                        <div id="statusIndicator" class="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-400"></div>
+                                        <span id="statusText" class="font-medium text-gray-700 text-sm sm:text-base text-center">Checking availability...</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Enhanced Call invitation form -->
+                                <div id="invitationForm" style="display: none;">
+                                    <div class="mb-6 sm:mb-8">
+                                        <label class="block text-left font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center space-x-2">
+                                            <span class="text-base sm:text-lg"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg></span>
+                                            <span class="text-sm sm:text-base">Add a personal message (optional)</span>
+                                        </label>
+                                        <div class="relative">
+                                            <textarea id="quickCallMessage" 
+                                                    placeholder="Hi! I'd love to practice language exchange with you. When would be a good time for a video call?" 
+                                                    class="w-full border-2 border-gray-200 rounded-xl sm:rounded-2xl px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base text-gray-800 placeholder-gray-500 focus:outline-none transition-colors resize-none bg-white"
+                                                    rows="3" maxlength="200"></textarea>
+                                            <div class="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded-full">
+                                                <span id="messageCharCount">0</span>/200
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 sm:mt-3 flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 text-xs sm:text-sm text-gray-600">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                <span>A short intro helps them see why you are reaching out</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                                        <button onclick="closeQuickCallModal()" 
+                                                class="btn-enhanced cm-neutral flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
+                                                <span>Cancel</span>
+                                            </span>
+                                        </button>
+                                        <button onclick="sendQuickCallInvitation()" 
+                                                class="btn-enhanced btn-accept flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span class="text-base sm:text-lg"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                                                <span>Send Invitation</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Enhanced Waiting for response -->
+                                <div id="waitingResponse" style="display: none;">
+                                    <div class="text-center">
+                                        <!-- Enhanced loading animation -->
+                                        <div class="relative w-16 h-16 mx-auto mb-6">
+                                            <div class="absolute inset-0 rounded-full border-4 animate-spin" style="border-color: rgba(26,21,16,.15); border-top-color: var(--ink);"></div>
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <span class="text-lg"><svg class="ico" aria-hidden="true"><use href="#i-video"/></svg></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <h4 class="text-xl font-bold text-gray-900 mb-2">Invitation sent</h4>
+                                        <p class="text-gray-600 mb-4">Waiting for your partner to respond...</p>
+                                        
+                                        <!-- Enhanced timer display -->
+                                        <div class="cm-timer mb-6 p-4 rounded-2xl">
+                                            <div class="flex items-center justify-center space-x-3">
+                                                <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
+                                                <span class="text-orange-800 font-medium">
+                                                    Expires in <span id="timeRemaining" class="font-bold text-orange-600">2:00</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <button onclick="cancelInvitation()" 
+                                                class="btn-enhanced btn-decline px-6 py-3 rounded-2xl font-semibold focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
+                                                <span>Cancel Invitation</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Enhanced Offline message -->
+                                <div id="offlineMessage" style="display: none;">
+                                    <div class="cm-timer mb-6 p-6 rounded-2xl">
+                                        <div class="flex items-center justify-center space-x-3 mb-4">
+                                            <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
+                                            <span class="text-gray-600 font-medium">Partner is currently offline</span>
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            Last seen: <span id="lastSeenTime" class="font-medium">Unknown</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-3">
+                                        <button onclick="enterRoomAnyway()" 
+                                                class="btn-enhanced btn-accept w-full px-6 py-4 rounded-2xl font-semibold focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <svg class="ico"><use href="#i-logout"/></svg>
+                                                <span>Enter Room Anyway</span>
+                                            </span>
+                                        </button>
+                                        <button onclick="closeQuickCallModal()" 
+                                                class="btn-enhanced cm-neutral w-full px-6 py-3 rounded-2xl font-medium focus-visible">
+                                            <span class="flex items-center justify-center space-x-2">
+                                                <span><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></span>
+                                                <span>Close</span>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Character counter
+                const textarea = modal.querySelector('#quickCallMessage');
+                const counter = modal.querySelector('#messageCharCount');
+                textarea.addEventListener('input', function() {
+                    counter.textContent = this.value.length;
+                });
+                
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeQuickCallModal();
+                    }
+                });
+            }
+
+            // Store current call data globally
+            window.currentCallData = {
+                matchId: matchId,
+                partnerUsername: partnerUsername,
+                invitationId: null,
+                invitationTimer: null,
+                statusCheckInterval: null,
+                settings: settings
+            };
+
+            // Reset modal state
+            document.getElementById('quickCallPartner').textContent = partnerUsername;
+            document.getElementById('invitationForm').style.display = 'none';
+            document.getElementById('waitingResponse').style.display = 'none';
+            document.getElementById('offlineMessage').style.display = 'none';
+            document.getElementById('quickCallMessage').value = '';
+            document.getElementById('messageCharCount').textContent = '0';
+
+            modal.classList.remove('hidden');
+            
+            // Check partner availability
+            checkPartnerAvailability();
+        };
+
+        // Global helper functions for call management
+        window.checkPartnerAvailability = function() {
+            const { matchId, partnerUsername } = window.currentCallData;
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = `Checking ${partnerUsername}'s availability...`;
+            
+            fetch(`/chats/api/partner-availability/${matchId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_online) {
+                    showPartnerOnline();
+                } else {
+                    showPartnerOffline(data.last_seen);
+                }
+            })
+            .catch(error => {
+
+                showPartnerOffline();
+            });
+        };
+
+        window.showPartnerOnline = function() {
+            const { partnerUsername } = window.currentCallData;
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = 'w-3 h-3 rounded-full mr-2 bg-green-500';
+            statusText.textContent = `${partnerUsername} is online`;
+            
+            setTimeout(() => {
+                document.getElementById('invitationForm').style.display = 'block';
+                // Focus on textarea
+                document.getElementById('quickCallMessage').focus();
+            }, 500);
+        };
+
+        window.showPartnerOffline = function(lastSeen) {
+            const { partnerUsername } = window.currentCallData;
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = 'w-3 h-3 rounded-full mr-2 bg-gray-400';
+            statusText.textContent = `${partnerUsername} is offline`;
+            
+            if (lastSeen) {
+                document.getElementById('lastSeenTime').textContent = new Date(lastSeen).toLocaleString();
+            }
+            
+            setTimeout(() => {
+                document.getElementById('offlineMessage').style.display = 'block';
+            }, 500);
+        };
+
+        window.closeQuickCallModal = function() {
+            const modal = document.getElementById('quickCallModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                
+                // Clean up timers and intervals
+                if (window.currentCallData) {
+                    if (window.currentCallData.invitationTimer) {
+                        clearInterval(window.currentCallData.invitationTimer);
+                    }
+                    if (window.currentCallData.statusCheckInterval) {
+                        clearInterval(window.currentCallData.statusCheckInterval);
+                    }
+                    
+                    // Reset form
+                    document.getElementById('quickCallMessage').value = '';
+                    document.getElementById('messageCharCount').textContent = '0';
+                    
+                    window.currentCallData = null;
+                }
+            }
+        };
+
+        window.sendQuickCallInvitation = function() {
+            const { matchId } = window.currentCallData;
+            const message = document.getElementById('quickCallMessage').value.trim();
+            const btn = event.target;
+            
+            btn.classList.add('loading');
+            btn.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('csrfmiddlewaretoken', getCSRFToken());
+            
+            fetch(`/chats/api/send-invitation/${matchId}/`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.currentCallData.invitationId = data.invitation_id;
+                    showWaitingForResponse();
+                    startInvitationTimer();
+                    startStatusPolling();
+                } else {
+                    throw new Error(data.error || 'Failed to send invitation');
+                }
+            })
+            .catch(error => {
+
+                showNotificationToast('Error', error.message || 'Failed to send invitation', '');
+            })
+            .finally(() => {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            });
+        };
+
+        window.showWaitingForResponse = function() {
+            document.getElementById('invitationForm').style.display = 'none';
+            document.getElementById('waitingResponse').style.display = 'block';
+        };
+
+        window.startInvitationTimer = function() {
+            let timeLeft = 120; // 2 minutes in seconds
+            const timeDisplay = document.getElementById('timeRemaining');
+            
+            window.currentCallData.invitationTimer = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                timeLeft--;
+                
+                if (timeLeft < 0) {
+                    clearInterval(window.currentCallData.invitationTimer);
+                    invitationExpired();
+                }
+            }, 1000);
+        };
+
+        window.startStatusPolling = function() {
+            const { invitationId } = window.currentCallData;
+            
+            window.currentCallData.statusCheckInterval = setInterval(() => {
+                if (invitationId) {
+                    fetch(`/chats/api/invitation-status/${invitationId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'accepted') {
+                            clearInterval(window.currentCallData.statusCheckInterval);
+                            clearInterval(window.currentCallData.invitationTimer);
+                            
+                            // Store room URL for potential fallback
+                            window.currentCallData.acceptedRoomUrl = data.room_url;
+                            invitationAccepted(data.room_url);
+                        } else if (data.status === 'declined') {
+                            clearInterval(window.currentCallData.statusCheckInterval);
+                            clearInterval(window.currentCallData.invitationTimer);
+                            invitationDeclined();
+                        } else if (data.is_expired) {
+                            clearInterval(window.currentCallData.statusCheckInterval);
+                            clearInterval(window.currentCallData.invitationTimer);
+                            invitationExpired();
+                        }
+                    })
+                    .catch(error => {});
+                }
+            }, 3000);
+        };
+
+        window.invitationAccepted = function(roomUrl) {
+            const { partnerUsername, settings } = window.currentCallData;
+            closeQuickCallModal();
+            
+            if (settings.showNotifications) {
+                showNotificationToast(
+                    'Call Accepted!',
+                    `${partnerUsername} accepted your call`,
+                    '',
+                    1500
+                );
+            }
+            
+            if (settings.onAccept) {
+                settings.onAccept(roomUrl);
+            } else if (settings.redirectOnAccept && roomUrl) {
+                // Mobile-friendly redirection
+                if (window.isMobileDevice()) {
+                    // For mobile devices, redirect immediately to prevent timeout issues
+
+                    showMobileCallHelper(); // Show backup button
+                    window.navigateToUrl(roomUrl, true);
+                } else {
+                    // For desktop, keep a short delay for better UX
+                    setTimeout(() => {
+                        window.navigateToUrl(roomUrl, true);
+                    }, 500);
+                }
+            }
+        };
+
+        window.invitationDeclined = function() {
+            const { partnerUsername, settings } = window.currentCallData;
+            closeQuickCallModal();
+            
+            if (settings.showNotifications) {
+                showNotificationToast(
+                    'Call Declined',
+                    `${partnerUsername} declined your call invitation`,
+                    '',
+                    4000
+                );
+            }
+            
+            if (settings.onDecline) {
+                settings.onDecline();
+            }
+        };
+
+        window.invitationExpired = function() {
+            const { partnerUsername, settings } = window.currentCallData;
+            closeQuickCallModal();
+            
+            if (settings.showNotifications) {
+                showNotificationToast(
+                    'Call Expired',
+                    `Call invitation expired. ${partnerUsername} did not respond in time`,
+                    '⏰',
+                    5000
+                );
+            }
+            
+            if (settings.onExpire) {
+                settings.onExpire();
+            }
+        };
+
+        window.cancelInvitation = function() {
+            const { invitationId, settings } = window.currentCallData;
+            
+            if (invitationId) {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', getCSRFToken());
+                
+                fetch(`/chats/api/cancel-invitation/${invitationId}/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+
+                    } else {
+
+                    }
+                })
+                .catch(error => {
+
+                });
+            }
+            
+            if (settings.onCancel) {
+                settings.onCancel();
+            }
+            
+            closeQuickCallModal();
+        };
+
+        window.enterRoomAnyway = function() {
+            const { matchId } = window.currentCallData;
+            
+            fetch(`/chats/create-room/${matchId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mobile-friendly redirection for entering room anyway
+
+                    window.navigateToUrl(data.room_url, true);
+                } else {
+                    throw new Error(data.error || 'Failed to create video room');
+                }
+            })
+            .catch(error => {
+
+                showNotificationToast('Error', 'Failed to create video room. Please try again.', '');
+            });
+            
+            closeQuickCallModal();
+        };
+
+        // For backward compatibility, create alias
+        window.initiateVideoCall = window.initiateVideoCallGlobal;
+
+        // Initialize system
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure notification toast is hidden on page load
+            const notificationToast = document.getElementById('notificationToast');
+            if (notificationToast) {
+                notificationToast.classList.remove('show');
+            }
+            
+            
+            requestNotificationPermission();
+            connectGlobalNotificationWebSocket();
+            startAdaptivePolling();
+            
+            // Initialize unread messages checking
+            checkUnreadMessages();
+            
+            // Add unread messages to polling
+            setInterval(checkUnreadMessages, 30000); // Check every 30 seconds
+            
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (globalNotificationSocket) {
+                globalNotificationSocket.close(1000, 'Page unload');
+            }
+            if (pollIntervalId) {
+                clearInterval(pollIntervalId);
+            }
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+            }
+        });
+
+        
+        
+        // Mobile device detection helper
+        window.isMobileDevice = function() {
+            return /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        };
+        
+        // Mobile-friendly navigation helper
+        window.navigateToUrl = function(url, debug = false) {
+            if (debug) {
+
+            }
+            
+            try {
+                if (window.isMobileDevice()) {
+                    // For mobile devices, try multiple methods for maximum compatibility
+                    try {
+                        // Method 1: location.assign (most compatible with mobile browsers)
+                        window.location.assign(url);
+                    } catch (assignError) {
+
+                        try {
+                            // Method 2: location.replace as fallback
+                            window.location.replace(url);
+                        } catch (replaceError) {
+
+                            // Method 3: href as last resort
+                            window.location.href = url;
+                        }
+                    }
+                } else {
+                    // For desktop, use href which works fine
+                    window.location.href = url;
+                }
+            } catch (error) {
+
+                // Emergency fallback - create a temporary link and click it
+                try {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_self';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (linkError) {
+
+                    alert(`Navigation failed. Please manually navigate to: ${url}`);
+                }
+            }
+        };
+        
+        // Mobile call helper button management
+        window.showMobileCallHelper = function() {
+            if (window.isMobileDevice()) {
+                const helper = document.getElementById('mobileCallHelper');
+                if (helper) {
+                    helper.classList.add('show');
+                    // Auto-hide after 30 seconds
+                    setTimeout(() => {
+                        helper.classList.remove('show');
+                    }, 30000);
+                }
+            }
+        };
+        
+        window.hideMobileCallHelper = function() {
+            const helper = document.getElementById('mobileCallHelper');
+            if (helper) {
+                helper.classList.remove('show');
+            }
+        };
+        
+        // Global helper for manual video room entry (for mobile troubleshooting)
+        window.joinLastCall = function() {
+            if (window.currentCallData?.acceptedRoomUrl) {
+
+                hideMobileCallHelper();
+                window.navigateToUrl(window.currentCallData.acceptedRoomUrl, true);
+                return true;
+            } else {
+
+                showNotificationToast(
+                    'No Active Call',
+                    'No active call to join. Please wait for a call invitation.',
+                    '',
+                    3000
+                );
+                return false;
+            }
+        };
+        
+        // Debug helper for mobile users
+        window.showCallStatus = function() {
+            const currentData = window.currentCallData;
+            const incomingData = currentGlobalIncomingInvitation;
+            
+            let message = 'Call Status:\n';
+            if (currentData) {
+                message += `• Outgoing call to: ${currentData.partnerUsername}\n`;
+                message += `• Invitation ID: ${currentData.invitationId || 'None'}\n`;
+                message += `• Accepted Room URL: ${currentData.acceptedRoomUrl || 'None'}\n`;
+            }
+            if (incomingData) {
+                message += `• Incoming call from: ${incomingData.caller}\n`;
+                message += `• Call ID: ${incomingData.id}\n`;
+            }
+            if (!currentData && !incomingData) {
+                message += '• No active calls\n';
+            }
+            message += `• Mobile Device: ${window.isMobileDevice()}\n`;
+            message += `• Current URL: ${window.location.href}`;
+            
+            alert(message);
+        };
+        
+        // Global CSRF token helper function
+        window.getCSRFToken = function() {
+            // Try to get CSRF token from a form field first
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfInput) {
+                return csrfInput.value;
+            }
+            
+            // Fallback to getting from cookie if no form field exists
+            const csrfCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='));
+            
+            if (csrfCookie) {
+                return csrfCookie.split('=')[1];
+            }
+            
+            // Last fallback - use the template-provided token
+            return '4DTJevLCOB2lzv0kfoVa4LPU4yCuxE6qhG350mGJGXxWY0SQxqR8yn11Njsjn6b7';
+        };
+    </script>
+
+    
+
+    
+    <script>
+    (function () {
+        function put(el, n) { if (!el) return; if (n > 0) { el.textContent = n > 9 ? '9+' : n; el.hidden = false; el.style.display = 'flex'; } else { el.hidden = true; el.style.display = 'none'; } }
+        function sync() {
+            fetch('/matches/api/pending-requests/').then(function (r) { return r.json(); }).then(function (d) {
+                var n = (d.incoming_requests || d.incoming || []).length;
+                put(document.getElementById('railRequestsBadge'), n);
+                window.__incomingRequests = n; put(document.getElementById('tabMatchesBadge'), n);
+            }).catch(function () {});
+            fetch('/chats/api/total-unread-count/').then(function (r) { return r.json(); }).then(function (d) {
+                put(document.getElementById('tabChatsBadge'), d.unread_count || 0);
+            }).catch(function () {});
+        }
+        sync(); setInterval(sync, 30000);
+    })();
+    </script>
+    
+</body>
+</html> 

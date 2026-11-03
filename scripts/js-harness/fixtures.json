@@ -1,0 +1,11 @@
+{
+  "base_url": "http://127.0.0.1:8000",
+  "cdp_url": "http://127.0.0.1:9223",
+  "user": "a11ydemo",
+  "partner": "fixturepartner",
+  "password": "fixture-pass-123",
+  "match_id": 1,
+  "video_room_id": "b93a7e4e-46b3-475d-8af1-f2afdf371356",
+  "chat_room_id": "e4cfdeba-df77-4f4d-8b5a-f4fe7a875cb6",
+  "invitation_id": 26
+}
