@@ -843,7 +843,7 @@ body.topic-open .video-container:not(.local-video-container) .video-overlay { to
         <button id="toggleAudio" class="control-btn active" type="button" aria-label="Mic"  data-on="Mic" data-off="Mic off">
             <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg><span class="cb-label">Mic</span>
         </button>
-        <button id="toggleChat" class="control-btn neutral" type="button" aria-label="Chat"  >
+        <button id="toggleChat" class="control-btn neutral" type="button" aria-label="Chat" aria-controls="chatSidebar" aria-expanded="false"  >
             <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg><span class="cb-label">Chat</span>
         </button>
         <button id="toggleTopic" class="control-btn neutral" type="button" aria-label="Conversation topic" aria-expanded="false" aria-controls="topicCard"  >
@@ -864,7 +864,7 @@ body.topic-open .video-container:not(.local-video-container) .video-overlay { to
     </div>
 
     <!-- Enhanced Chat Sidebar -->
-    <div id="chatSidebar" class="chat-sidebar">
+    <div id="chatSidebar" class="chat-sidebar" inert>
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
             <div class="flex justify-between items-center">
                 <div>
@@ -1121,8 +1121,14 @@ class VideoChat {
             }, 2000);
         });
         
+        this.chatSidebar.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                this.setChatOpen(false);
+            }
+        });
         document.getElementById('closeChatBtn').addEventListener('click', () => {
-            this.chatSidebar.classList.remove('open');
+            this.setChatOpen(false);
         });
         
         document.getElementById('toggleFullscreen').addEventListener('click', () => {
@@ -1237,7 +1243,7 @@ class VideoChat {
         box.querySelector('h3').textContent = title; box.querySelector('p').textContent = body;
         ov.appendChild(box);
         box.querySelector('#mediaRetry').addEventListener('click', () => { box.remove(); Array.from(ov.children).forEach(c => { c.style.display = ''; }); this.initializeLocalVideo(); });
-        box.querySelector('#mediaChatOnly').addEventListener('click', () => { ov.style.display = 'none'; this.addChatMessage('Camera unavailable - continuing with text chat only. Press Camera to try again.', 'system'); this.chatSidebar.classList.add('open'); });
+        box.querySelector('#mediaChatOnly').addEventListener('click', () => { ov.style.display = 'none'; this.addChatMessage('Camera unavailable - continuing with text chat only. Press Camera to try again.', 'system'); this.setChatOpen(true); });
     }
     
     updateLocalVideoInfo() {
@@ -2494,33 +2500,26 @@ class VideoChat {
         }
     }
     
-    // Enhanced toggleChat for mobile
     toggleChat() {
-        this.chatSidebar.classList.toggle('open');
-        
-        // Clear notification when chat is opened
-        if (this.chatSidebar.classList.contains('open')) {
+        this.setChatOpen(!this.chatSidebar.classList.contains('open'));
+    }
+
+    setChatOpen(open) {
+        this.chatSidebar.classList.toggle('open', open);
+        this.chatSidebar.inert = !open;
+        this.toggleChatBtn.setAttribute('aria-expanded', String(open));
+        if (open) {
             this.clearChatNotification();
-            
-            // On mobile, adjust chat size based on orientation
             if (this.isMobile) {
                 this.chatSidebar.style.width = this.currentOrientation === 'landscape' ? '60%' : '100%';
-                
-                // Focus chat input after a delay to ensure keyboard appears correctly
-                setTimeout(() => {
-                    if (this.chatInput) {
-                        this.chatInput.focus();
-                    }
-                }, 300);
             }
-            
-            // Scroll to bottom to show latest messages
-            setTimeout(() => {
-                this.scrollChatToBottom();
-            }, 100);
+            this.chatInput.focus({preventScroll: true});
+            this.scrollChatToBottom();
+        } else {
+            this.toggleChatBtn.focus({preventScroll: true});
         }
     }
-    
+
     // Override share screen for mobile (not supported on most mobile browsers)
     async shareScreen() {
         if (this.isMobile) {

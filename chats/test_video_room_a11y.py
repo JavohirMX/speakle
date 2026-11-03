@@ -84,3 +84,9 @@ class VideoRoomA11yTest(TestCase):
                 self.assertNotIn('open', attrs)
                 self.assertIn(f"document.getElementById('{element_id}').showModal()", self.html)
                 self.assertIn(f"document.getElementById('{element_id}').close()", self.html)
+
+    def test_closed_chat_panel_is_inert_and_has_a_toggle(self):
+        self.assertIn('inert', self.elements['chatSidebar'][1])
+        toggle = self.elements['toggleChat'][1]
+        self.assertEqual(toggle.get('aria-controls'), 'chatSidebar')
+        self.assertEqual(toggle.get('aria-expanded'), 'false')
