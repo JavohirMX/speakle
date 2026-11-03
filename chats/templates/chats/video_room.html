@@ -526,7 +526,13 @@
     }
 
     /* Enhanced Modal Styles */
+    .modal-overlay:not([open]) { display: none; }
     .modal-overlay {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        max-width: none;
+        max-height: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -865,7 +871,7 @@ body.topic-open .video-container:not(.local-video-container) .video-overlay { to
                     <h2 class="text-xl font-semibold">Chat</h2>
                     <p class="text-sm opacity-90">with {{ partner.username }}</p>
                 </div>
-                <button id="closeChatBtn" class="text-2xl hover:text-gray-300 transition">&times;</button>
+                <button id="closeChatBtn" aria-label="Close chat" class="text-2xl hover:text-gray-300 transition">&times;</button>
             </div>
         </div>
         
@@ -891,7 +897,7 @@ body.topic-open .video-container:not(.local-video-container) .video-overlay { to
         
         <div class="p-6 border-t bg-white">
             <div class="flex gap-3">
-                <input type="text" id="chatInput" placeholder="Type a message..." 
+                <input type="text" id="chatInput" placeholder="Type a message..." aria-label="Chat message"
                        class="flex-1 border border-gray-300 rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <button id="sendChatBtn" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full text-sm hover:from-blue-600 hover:to-purple-700 transition">
                     Send
@@ -919,11 +925,11 @@ body.topic-open .video-container:not(.local-video-container) .video-overlay { to
 </div>
 
 <!-- Enhanced Call End Modal -->
-<div id="callEndModal" class="modal-overlay" style="display: none;">
+<dialog id="callEndModal" aria-labelledby="endCallTitle" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 class="text-xl font-semibold text-gray-900">End Call</h2>
-            <button id="closeCallEndModal" class="close-btn">&times;</button>
+            <h2 id="endCallTitle" class="text-xl font-semibold text-gray-900">End Call</h2>
+            <button id="closeCallEndModal" aria-label="Close end call dialog" class="close-btn">&times;</button>
         </div>
         
         <div class="modal-body">
@@ -972,14 +978,14 @@ body.topic-open .video-container:not(.local-video-container) .video-overlay { to
             <button id="confirmEndCall" class="btn-danger">End Call</button>
         </div>
     </div>
-</div>
+</dialog>
 
 <!-- Post-Call Summary Modal -->
-<div id="callSummaryModal" class="modal-overlay" style="display: none;">
+<dialog id="callSummaryModal" aria-labelledby="callSummaryTitle" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 class="text-xl font-semibold text-gray-900">Call Summary</h2>
-            <button id="closeCallSummaryModal" class="close-btn">&times;</button>
+            <h2 id="callSummaryTitle" class="text-xl font-semibold text-gray-900">Call Summary</h2>
+            <button id="closeCallSummaryModal" aria-label="Close call summary dialog" class="close-btn">&times;</button>
         </div>
         
         <div class="modal-body">
@@ -993,6 +999,7 @@ body.topic-open .video-container:not(.local-video-container) .video-overlay { to
             <button id="closeCallSummary" class="btn-primary">Close</button>
         </div>
     </div>
+</dialog>
 </main>
 
 <!-- Enhanced WebRTC JavaScript -->
@@ -1638,11 +1645,11 @@ class VideoChat {
     }
     
     showCallEndModal() {
-        document.getElementById('callEndModal').style.display = 'flex';
+        document.getElementById('callEndModal').showModal();
     }
     
     hideCallEndModal() {
-        document.getElementById('callEndModal').style.display = 'none';
+        document.getElementById('callEndModal').close();
     }
     
     async confirmEndCall() {
@@ -1810,11 +1817,11 @@ class VideoChat {
             </div>
         `;
         
-        document.getElementById('callSummaryModal').style.display = 'flex';
+        document.getElementById('callSummaryModal').showModal();
     }
     
     hideCallSummary() {
-        document.getElementById('callSummaryModal').style.display = 'none';
+        document.getElementById('callSummaryModal').close();
     }
     
     getCSRFToken() {
