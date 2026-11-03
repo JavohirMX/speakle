@@ -1077,8 +1077,12 @@ class VideoChat {
         if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) { this.shareScreenBtn.style.display = 'none'; }
         this.shareScreenBtn.addEventListener('click', () => this.shareScreen());
         this.sendChatBtn.addEventListener('click', () => this.sendChatMessage());
-        this.chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.sendChatMessage();
+        this.chatInput.addEventListener('keydown', (e) => {
+            // Enter confirms an IME candidate before it means send.
+            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+                e.preventDefault();
+                this.sendChatMessage();
+            }
         });
         
         // Modal event listeners

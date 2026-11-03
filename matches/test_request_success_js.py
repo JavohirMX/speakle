@@ -14,3 +14,11 @@ class RequestSuccessScriptTests(unittest.TestCase):
             capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_chat_enter_does_not_send_during_ime_composition(self):
+        root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            ['node', 'scripts/js-harness/chat-ime.cjs'], cwd=root,
+            capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
