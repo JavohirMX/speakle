@@ -22,6 +22,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = f'video_call_{self.room_id}'
         self.user = self.scope['user']
+        self.joined_room = False
         
         logger.debug(f"WebSocket connection attempt for room: {self.room_id}")
         logger.debug(f"User: {self.user}")
@@ -64,6 +65,7 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        self.joined_room = True
 
         logger.debug(f"User {self.user.username} joined room group")
 
@@ -93,6 +95,11 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         logger.debug(f"WebSocket disconnected with code: {close_code}")
         
+        # Rejected sockets never joined and must not announce a departure.
+        if not getattr(self, 'joined_room', False):
+            return
+        self.joined_room = False
+
         # Close any open presence interval for this user on this room
         if hasattr(self, 'user') and hasattr(self, 'room_id') and self.user.is_authenticated:
             await self.close_presence_intervals(self.room_id, user=self.user)
