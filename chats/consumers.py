@@ -966,6 +966,8 @@ class TextChatConsumer(AsyncWebsocketConsumer):
         logger.debug(f"Text chat connection attempt for room: {self.room_id}")
         logger.debug(f"User: {self.user}")
         
+        self.joined_room = False
+
         # Accept connection first
         await self.accept()
         
@@ -993,7 +995,8 @@ class TextChatConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
-        
+        self.joined_room = True
+
         logger.debug(f"User {self.user.username} joined text chat room group")
         
         # Update user's online status for this room
@@ -1021,6 +1024,11 @@ class TextChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         logger.debug(f"Text chat disconnected with code: {close_code}")
         
+        # Rejected connections never joined this room and own no cleanup.
+        if not getattr(self, 'joined_room', False):
+            return
+        self.joined_room = False
+
         # Set user offline and stop typing
         await self.set_user_offline()
         await self.stop_typing()
