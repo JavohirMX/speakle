@@ -608,8 +608,11 @@ class ChatsViewsTest(TestCase):
     
     def test_send_call_invitation_partner_offline(self):
         """Test sending invitation when partner is offline."""
-        # Don't create UserPresence or create with is_online=False
+        # Offline means no recent activity (the view re-derives the stored flag,
+        # same as the availability endpoint): stale last_activity, stored flag False.
         UserPresence.objects.create(user=self.user2, is_online=False)
+        UserPresence.objects.filter(user=self.user2).update(
+            last_activity=timezone.now() - timedelta(minutes=10))
         
         self.client.login(username='testuser1', password='testpass123')
         

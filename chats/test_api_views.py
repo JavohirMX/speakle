@@ -280,9 +280,23 @@ class InvitationViewTests(ChatApiBase):
         CallInvitation.objects.all().delete()
         self.assertEqual(self.send(message='x' * 501).status_code, 400)
         self.assertEqual(self.send(self.outsider).status_code, 403)
-        UserPresence.objects.filter(user=self.b).update(is_online=False)
+        # Offline now means no recent activity (same semantics as the
+        # availability endpoint), not merely a stored False flag.
+        UserPresence.objects.filter(user=self.b).update(
+            is_online=False, last_activity=timezone.now() - timedelta(minutes=10))
         self.assertEqual(self.send().status_code, 400)  # partner offline
         self.assertEqual(CallInvitation.objects.count(), 0)
+
+    def test_send_rejects_partner_with_stale_activity_despite_stored_online_flag(self):
+        from .models import CallInvitation, UserPresence
+        # Middleware can leave is_online=True while last_activity goes quiet;
+        # the invite path must re-derive online status like the availability check.
+        UserPresence.objects.filter(user=self.b).update(
+            is_online=True, last_activity=timezone.now() - timedelta(minutes=10))
+        self.assertEqual(self.send().status_code, 400)
+        self.assertEqual(CallInvitation.objects.count(), 0)
+        UserPresence.objects.filter(user=self.b).update(last_activity=timezone.now())
+        self.assertEqual(self.send().status_code, 200)
 
     def test_send_denied_when_blocked(self):
         from users.models import UserBlock

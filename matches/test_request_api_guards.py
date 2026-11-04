@@ -30,6 +30,23 @@ class RequestApiGuardTests(TestCase):
         self.assertFalse(second.json()['success'])
         self.assertEqual(MatchRequest.objects.count(), 1)
 
+    def test_message_over_cap_rejected(self):
+        self.client.force_login(self.a)
+        url = reverse('matches:send_request_api', args=[self.pm.id])
+        r = self.client.post(url, {'message': 'x' * 1001})
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(MatchRequest.objects.count(), 0)
+        r = self.client.post(url, {'message': 'x' * 1000})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(MatchRequest.objects.count(), 1)
+
+    def test_html_send_message_over_cap_rejected(self):
+        self.client.force_login(self.a)
+        url = reverse('matches:send_request', args=[self.pm.id])
+        r = self.client.post(url, {'message': 'x' * 1001})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(MatchRequest.objects.count(), 0)
+
     def test_re_respond_returns_400(self):
         req, _ = MatchingService.send_match_request(
             self.a, self.b, self.en, self.ko)
