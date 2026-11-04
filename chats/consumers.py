@@ -854,15 +854,14 @@ class UserNotificationConsumer(AsyncWebsocketConsumer):
         # Create user-specific group
         self.user_group_name = f'user_notifications_{self.user.id}'
         
-        # Accept connection
-        await self.accept()
-        logger.debug(f"User {self.user.username} connected to notification websocket")
-        
-        # Join user's notification group
+        # Join before accepting: onopen must mean group notifications reach us.
         await self.channel_layer.group_add(
             self.user_group_name,
             self.channel_name
         )
+
+        await self.accept()
+        logger.debug(f"User {self.user.username} connected to notification websocket")
         
         # Send connection confirmation
         await self.send(text_data=json.dumps({
