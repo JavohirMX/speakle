@@ -730,8 +730,8 @@ def submit_feedback(request):
             return JsonResponse({'error': 'Invalid rating'}, status=400)
         
         # Get session and verify user access
-        session = CallSession.objects.get(id=session_id)
         room = VideoRoom.objects.get(room_id=room_id)
+        session = CallSession.objects.get(id=session_id, room=room)
         
         if not room.can_user_access(request.user):
             return JsonResponse({'error': 'Access denied'}, status=403)

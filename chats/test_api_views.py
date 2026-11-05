@@ -749,6 +749,20 @@ class SubmitFeedbackTests(ChatApiBase):
         self.assertEqual(self.post(self.a, None, raw='[1, 2]').status_code, 400)
         self.assertEqual(self.post(self.a, self.payload(session_id=99999)).status_code, 404)
 
+    def test_session_cannot_be_rated_through_another_accessible_room(self):
+        other_match = Match.objects.create(
+            user1=self.a, user2=self.outsider,
+            user1_teaches=self.match.user1_teaches,
+            user1_learns=self.match.user1_learns, status='active')
+        other_room = VideoRoom.objects.create(match=other_match)
+        from users.models import UserBlock
+        UserBlock.objects.create(blocker=self.b, blocked=self.a)
+        self.assertEqual(self.post(self.a, self.payload()).status_code, 403)
+        response = self.post(self.a, self.payload(room_id=str(other_room.room_id)))
+        self.assertEqual(response.status_code, 404)
+        self.session.refresh_from_db()
+        self.assertFalse(self.session.end_notes)
+
     def test_outsider_and_non_participant_denied(self):
         self.assertEqual(self.post(self.outsider, self.payload()).status_code, 403)
         other = CallSession.objects.create(room=self.video, status='ended')
