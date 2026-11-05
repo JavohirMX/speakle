@@ -12,8 +12,11 @@ from asgiref.sync import async_to_sync
 from matches.models import Match
 from .webrtc import ice_servers
 from .models import pair_is_blocked, VideoRoom, CallSession, CallInvitation, UserPresence, ChatRoom, ChatMessage
+import logging
 import uuid
 from django.db import transaction
+
+logger = logging.getLogger(__name__)
 
 # Utility function for sending WebSocket notifications
 def send_user_notification(user_id, notification_type, data):
@@ -35,18 +38,32 @@ def send_user_notification(user_id, notification_type, data):
 def create_video_room(request, match_id):
     """Create or get existing video room for a match."""
     match = get_object_or_404(Match, id=match_id)
-    
+
+    # The quick-call modal POSTs here and parses JSON; plain navigation GETs
+    # and expects a redirect into the room.
+    wants_json = request.method == 'POST'
+
     # Check if user is part of this match
     if request.user not in [match.user1, match.user2] or pair_is_blocked(match.user1, match.user2):
+        if wants_json:
+            return JsonResponse({'success': False, 'error': 'Access denied'}, status=403)
         messages.error(request, 'You do not have access to this match.')
         return redirect('matches:my_matches')
-    
+
     # Get or create video room
     video_room, created = VideoRoom.objects.get_or_create(match=match)
-    
+
+    if wants_json:
+        return JsonResponse({
+            'success': True,
+            'room_url': f'/chats/room/{video_room.room_id}/',
+            'room_id': str(video_room.room_id),
+            'created': created,
+        })
+
     if created:
         messages.success(request, 'Video room created successfully!')
-    
+
     return redirect('chats:video_room', room_id=video_room.room_id)
 
 @login_required
@@ -90,7 +107,16 @@ def send_call_invitation(request, match_id):
         user=partner,
         defaults={'is_online': False}
     )
-    
+
+    if not created:
+        # Refresh the stored flag from recent activity before trusting it, same as
+        # check_partner_availability: the activity middleware sets is_online=True on
+        # every request but never touches last_activity, so a stored True can be
+        # stale. Use update(): save() would refresh the auto_now timestamps and make
+        # a quiet partner look active again.
+        partner_presence.is_online = partner_presence.should_be_online()
+        UserPresence.objects.filter(pk=partner_presence.pk).update(is_online=partner_presence.is_online)
+
     if not partner_presence.is_online:
         return JsonResponse({
             'error': 'Partner is not online',
@@ -216,7 +242,7 @@ def get_pending_invitations(request):
         ).update(status='expired')
         
         if expired_count > 0:
-            print(f"Marked {expired_count} expired invitations for user {request.user.username}")
+            logger.debug(f"Marked {expired_count} expired invitations for user {request.user.username}")
             # Clear cache if we updated any invitations
             cache.delete(cache_key)
         
@@ -275,7 +301,8 @@ def video_room(request, room_id):
     user_learns = room.match.get_user_learns(request.user)
     
     # Get recent messages
-    recent_messages = room.messages.all()[:50]
+    # Latest 50, shown oldest-first. The model orders ascending, so a bare [:50] would return the first 50 ever sent.
+    recent_messages = list(reversed(room.messages.select_related('sender').order_by('-timestamp')[:50]))
     
     # Get call history
     call_history = room.sessions.filter(status='ended')[:10]
@@ -290,6 +317,7 @@ def video_room(request, room_id):
         'call_history': call_history,
         'room_id_str': str(room.room_id),
         'ice_servers': ice_servers(),
+        'call_prompts': conversation_prompts(),
     }
     
     return render(request, 'chats/video_room.html', context)
@@ -316,6 +344,7 @@ def room_status(request, room_id):
         return JsonResponse({'error': 'Room not found'}, status=404)
 
 from datetime import timedelta
+from matches.prompts import conversation_prompts
 
 
 def _format_minutes(delta):
@@ -620,16 +649,13 @@ def call_summary(request, room_id, session_id):
             messages.error(request, 'You do not have access to this room.')
             return redirect('matches:my_matches')
         
-        # Check if user was a participant in this session
-        # If they weren't but have room access, add them as a participant (retroactive fix)
+        # Only actual participants may view the call summary. Participants
+        # are recorded when a user signals (offer/answer/peer-ready); never
+        # backfilled here - analytics and practice streaks rely on that
+        # integrity.
         if not session.participants.filter(id=request.user.id).exists():
-            if room.can_user_access(request.user):
-                # User has room access but wasn't marked as participant - fix this
-                session.participants.add(request.user)
-                print(f"Retroactively added {request.user.username} as participant to session {session.id}")
-            else:
-                messages.error(request, 'You were not a participant in this call.')
-                return redirect('matches:my_matches')
+            messages.error(request, 'You were not a participant in this call.')
+            return redirect('matches:my_matches')
         
         # Get partner and language info
         partner = room.match.get_partner(request.user)
@@ -704,8 +730,8 @@ def submit_feedback(request):
             return JsonResponse({'error': 'Invalid rating'}, status=400)
         
         # Get session and verify user access
-        session = CallSession.objects.get(id=session_id)
         room = VideoRoom.objects.get(room_id=room_id)
+        session = CallSession.objects.get(id=session_id, room=room)
         
         if not room.can_user_access(request.user):
             return JsonResponse({'error': 'Access denied'}, status=403)

@@ -540,3 +540,42 @@ class ShortSignupTests(TestCase):
         self.assertIn('name="password1"', html)
         self.assertNotIn('name="password2"', html)
         self.assertNotIn('name="first_name"', html)
+
+
+class ProfileFirstRunTests(TestCase):
+    def setUp(self):
+        from django.test import Client
+        User = get_user_model()
+        self.u = User.objects.create_user('pfu', 'pfu@x.com', 'pw12345!')
+        self.en = Language.objects.create(name='English', code='en')
+        self.ko = Language.objects.create(name='Korean', code='ko')
+        self.c = Client()
+        self.c.force_login(self.u)
+
+    def test_hero_and_single_cta_when_no_languages(self):
+        r = self.c.get(reverse('users:profile'))
+        self.assertContains(r, 'First: add a language you speak')
+        self.assertContains(r, 'Profile extras - optional, partners see these later')
+        self.assertContains(r, 'Quick match also needs a confirmed email')
+        # one visible add-language action: hero CTA only (checklist links stay inside collapsed extras)
+        self.assertContains(r, 'Add your first language')
+        self.assertNotContains(r, 'class="btn btn-solid">Add a language</a>')
+        self.assertNotContains(r, 'empty-act')
+
+    def test_hero_adapts_when_only_learning_missing(self):
+        UserLanguage.objects.create(user=self.u, language=self.en, proficiency='native', language_type='native')
+        r = self.c.get(reverse('users:profile'))
+        self.assertContains(r, 'Next: add a language you want to learn')
+
+    def test_no_hero_when_languages_complete(self):
+        UserLanguage.objects.create(user=self.u, language=self.en, proficiency='native', language_type='native')
+        UserLanguage.objects.create(user=self.u, language=self.ko, proficiency='beginner', language_type='learning')
+        r = self.c.get(reverse('users:profile'))
+        self.assertNotContains(r, 'ns-hero')
+        self.assertContains(r, 'Finish your profile')
+
+    def test_gate_note_hidden_when_verified(self):
+        self.u.email_verified = True
+        self.u.save(update_fields=['email_verified'])
+        r = self.c.get(reverse('users:profile'))
+        self.assertNotContains(r, 'Quick match also needs a confirmed email')

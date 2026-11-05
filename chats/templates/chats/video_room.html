@@ -86,6 +86,44 @@
         z-index: 1000;
     }
     
+    .topic-card {
+        position: fixed;
+        bottom: 110px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(480px, calc(100vw - 32px));
+        background: #fff9ec;
+        color: #1a1510;
+        border: 3px solid #1a1510;
+        border-radius: 18px;
+        box-shadow: 4px 4px 0 #ffc61a;
+        padding: 14px 18px;
+        z-index: 999;
+    }
+    .topic-card .topic-level {
+        font-size: .7rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #6b5d43;
+    }
+    .topic-card .topic-text { font-size: 1.05rem; font-weight: 600; margin-top: 4px; }
+    .topic-card .topic-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .topic-card .topic-actions button {
+        font: inherit;
+        font-size: .85rem;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 2px solid #1a1510;
+        background: #ffc61a;
+        color: #1a1510;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .topic-card .topic-actions button.topic-close { background: transparent; }
+    .topic-card .topic-actions button:focus-visible { outline: 3px solid #1a1510; outline-offset: 2px; }
+
     .control-btn {
         width: 56px;
         height: 56px;
@@ -488,7 +526,13 @@
     }
 
     /* Enhanced Modal Styles */
+    .modal-overlay:not([open]) { display: none; }
     .modal-overlay {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        max-width: none;
+        max-height: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -711,7 +755,8 @@
 <style>
 .ico { width: 1.4em; height: 1.4em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
-.controls-bar { gap: .6rem !important; background: #1a1510 !important; border: 3px solid #fff9ec !important; border-radius: 22px !important; padding: .55rem .7rem !important; box-shadow: 4px 4px 0 #ffc61a !important; backdrop-filter: none !important; flex-wrap: nowrap; }
+.controls-bar { gap: .6rem !important; background: #1a1510 !important; border: 3px solid #fff9ec !important; border-radius: 22px !important; padding: .55rem .7rem !important; box-shadow: 4px 4px 0 #ffc61a !important; backdrop-filter: none !important; flex-wrap: wrap; justify-content: center; width: max-content; }
+.video-container .video-overlay { padding-bottom: 120px; }
 .control-btn { width: auto !important; min-width: 64px; height: 64px !important; border-radius: 14px !important; flex-direction: column; gap: .15rem; padding: .3rem .55rem; background: #fff9ec !important; color: #1a1510 !important; border: 2px solid #1a1510 !important; box-shadow: none !important; font-size: 12px !important; font-weight: 700; }
 .control-btn .cb-label { font-size: .7rem; line-height: 1; white-space: nowrap; }
 .control-btn.active { background: #55d99a !important; } .control-btn.inactive { background: #ff6b4a !important; } .control-btn.call-start { background: #ffc61a !important; } .control-btn.call-end { background: #d63a1a !important; color: #fff !important; }
@@ -721,7 +766,14 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
 .media-error h3 { font-weight: 800; font-size: 1.15rem; margin-bottom: .3rem; } .media-error .row { display: flex; gap: .6rem; margin-top: .9rem; flex-wrap: wrap; }
 .media-error .b { padding: .55rem 1rem; border: 2px solid #1a1510; border-radius: 12px; font-weight: 700; background: #ffc61a; text-decoration: none; color: #1a1510; min-height: 44px; display: inline-flex; align-items: center; }
 .media-error .b.o { background: #fff; }
-@media (max-width: 640px) { .controls-bar { gap: .3rem !important; padding: .4rem !important; max-width: 96vw; } .control-btn { min-width: 0; flex: 1; height: 58px !important; padding: .25rem .2rem; } .control-btn .cb-label { font-size: .6rem; white-space: normal; text-align: center; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 96px; } }
+@media (min-width: 1025px) {
+.video-grid { transition: width .4s ease; }
+body:has(.chat-sidebar.open) .video-grid { width: calc(100% - 420px); }
+body:has(.chat-sidebar.open) .controls-bar, body:has(.chat-sidebar.open) .topic-card { left: calc(50% - 210px); }
+body:has(.chat-sidebar.open) .controls-bar { max-width: calc(100vw - 460px); }
+}
+@media (max-width: 640px) { .controls-bar { gap: .35rem !important; padding: .45rem !important; width: 96vw; flex-wrap: wrap; justify-content: center; } .control-btn { min-width: 58px; flex: 0 0 auto; height: 54px !important; padding: .25rem .35rem; } .control-btn .cb-label { font-size: .62rem; white-space: nowrap; } .topic-card { bottom: 170px; } .video-container:not(.local-video-container) .video-overlay { padding-bottom: 170px; } }
+body.topic-open .video-container:not(.local-video-container) .video-overlay { top: 76px; bottom: auto; right: auto; padding: 8px 12px; border-radius: 12px; background: rgba(0,0,0,0.55); }
 </style>
 </head>
 <body>
@@ -775,6 +827,15 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
     </div>
 
     <!-- Enhanced Controls Bar -->
+    <div id="topicCard" class="topic-card" role="status" hidden>
+        <div class="topic-level" id="topicLevel"></div>
+        <div class="topic-text" id="topicText"></div>
+        <div class="topic-actions">
+            <button type="button" id="nextTopic">New topic</button>
+            <button type="button" class="topic-close" id="closeTopic">Close</button>
+        </div>
+    </div>
+    {{ call_prompts|json_script:"callPrompts" }}
     <div class="controls-bar" id="controlsBar" role="toolbar" aria-label="Call controls">
         <button id="toggleVideo" class="control-btn active" type="button" aria-label="Camera"  data-on="Camera" data-off="Camera off">
             <svg class="ico" aria-hidden="true"><use href="#i-video"/></svg><span class="cb-label">Camera</span>
@@ -782,8 +843,11 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
         <button id="toggleAudio" class="control-btn active" type="button" aria-label="Mic"  data-on="Mic" data-off="Mic off">
             <svg class="ico" aria-hidden="true"><use href="#i-mic"/></svg><span class="cb-label">Mic</span>
         </button>
-        <button id="toggleChat" class="control-btn neutral" type="button" aria-label="Chat"  >
+        <button id="toggleChat" class="control-btn neutral" type="button" aria-label="Chat" aria-controls="chatSidebar" aria-expanded="false"  >
             <svg class="ico" aria-hidden="true"><use href="#i-message"/></svg><span class="cb-label">Chat</span>
+        </button>
+        <button id="toggleTopic" class="control-btn neutral" type="button" aria-label="Conversation topic" aria-expanded="false" aria-controls="topicCard"  >
+            <svg class="ico" aria-hidden="true"><use href="#i-sparkle"/></svg><span class="cb-label">Topic</span>
         </button>
         <button id="shareScreen" class="control-btn neutral" type="button" aria-label="Share"  >
             <svg class="ico" aria-hidden="true"><use href="#i-screen"/></svg><span class="cb-label">Share</span>
@@ -800,14 +864,14 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
     </div>
 
     <!-- Enhanced Chat Sidebar -->
-    <div id="chatSidebar" class="chat-sidebar">
+    <div id="chatSidebar" class="chat-sidebar" inert>
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-xl font-semibold">Chat</h2>
                     <p class="text-sm opacity-90">with {{ partner.username }}</p>
                 </div>
-                <button id="closeChatBtn" class="text-2xl hover:text-gray-300 transition">&times;</button>
+                <button id="closeChatBtn" aria-label="Close chat" class="text-2xl hover:text-gray-300 transition">&times;</button>
             </div>
         </div>
         
@@ -833,7 +897,7 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
         
         <div class="p-6 border-t bg-white">
             <div class="flex gap-3">
-                <input type="text" id="chatInput" placeholder="Type a message..." 
+                <input type="text" id="chatInput" placeholder="Type a message..." aria-label="Chat message"
                        class="flex-1 border border-gray-300 rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <button id="sendChatBtn" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full text-sm hover:from-blue-600 hover:to-purple-700 transition">
                     Send
@@ -861,11 +925,11 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
 </div>
 
 <!-- Enhanced Call End Modal -->
-<div id="callEndModal" class="modal-overlay" style="display: none;">
+<dialog id="callEndModal" aria-labelledby="endCallTitle" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 class="text-xl font-semibold text-gray-900">End Call</h2>
-            <button id="closeCallEndModal" class="close-btn">&times;</button>
+            <h2 id="endCallTitle" class="text-xl font-semibold text-gray-900">End Call</h2>
+            <button id="closeCallEndModal" aria-label="Close end call dialog" class="close-btn">&times;</button>
         </div>
         
         <div class="modal-body">
@@ -914,14 +978,14 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
             <button id="confirmEndCall" class="btn-danger">End Call</button>
         </div>
     </div>
-</div>
+</dialog>
 
 <!-- Post-Call Summary Modal -->
-<div id="callSummaryModal" class="modal-overlay" style="display: none;">
+<dialog id="callSummaryModal" aria-labelledby="callSummaryTitle" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 class="text-xl font-semibold text-gray-900">Call Summary</h2>
-            <button id="closeCallSummaryModal" class="close-btn">&times;</button>
+            <h2 id="callSummaryTitle" class="text-xl font-semibold text-gray-900">Call Summary</h2>
+            <button id="closeCallSummaryModal" aria-label="Close call summary dialog" class="close-btn">&times;</button>
         </div>
         
         <div class="modal-body">
@@ -935,6 +999,7 @@ body { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; }
             <button id="closeCallSummary" class="btn-primary">Close</button>
         </div>
     </div>
+</dialog>
 </main>
 
 <!-- Enhanced WebRTC JavaScript -->
@@ -1012,8 +1077,12 @@ class VideoChat {
         if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) { this.shareScreenBtn.style.display = 'none'; }
         this.shareScreenBtn.addEventListener('click', () => this.shareScreen());
         this.sendChatBtn.addEventListener('click', () => this.sendChatMessage());
-        this.chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.sendChatMessage();
+        this.chatInput.addEventListener('keydown', (e) => {
+            // Enter confirms an IME candidate before it means send.
+            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+                e.preventDefault();
+                this.sendChatMessage();
+            }
         });
         
         // Modal event listeners
@@ -1056,8 +1125,14 @@ class VideoChat {
             }, 2000);
         });
         
+        this.chatSidebar.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                this.setChatOpen(false);
+            }
+        });
         document.getElementById('closeChatBtn').addEventListener('click', () => {
-            this.chatSidebar.classList.remove('open');
+            this.setChatOpen(false);
         });
         
         document.getElementById('toggleFullscreen').addEventListener('click', () => {
@@ -1133,6 +1208,9 @@ class VideoChat {
             });
             
             this.isMediaReady = true;
+            this.toggleVideoBtn.classList.add('active'); this.toggleVideoBtn.classList.remove('inactive');
+            this.toggleAudioBtn.classList.add('active'); this.toggleAudioBtn.classList.remove('inactive');
+            this.localVideoStatus.textContent = 'Video On';
 
             this.loadingStatus.textContent = 'Video chat ready!';
             
@@ -1159,13 +1237,17 @@ class VideoChat {
         if (name === 'NotAllowedError' || name === 'PermissionDeniedError') { title = 'Camera and microphone are blocked'; body = 'Click the lock icon next to the web address, set Camera and Microphone to Allow, then press Try again.'; }
         else if (name === 'NotFoundError') { title = 'No camera or microphone found'; body = 'Plug one in or switch device, then press Try again. You can still use text chat meanwhile.'; }
         else if (name === 'NotReadableError') { title = 'Your camera is busy'; body = 'Another app or tab is using it. Close that, then press Try again.'; }
+        this.toggleVideoBtn.classList.remove('active'); this.toggleVideoBtn.classList.add('inactive');
+        this.toggleAudioBtn.classList.remove('active'); this.toggleAudioBtn.classList.add('inactive');
+        this.localVideoStatus.textContent = 'No camera';
         const ov = this.loadingOverlay; ov.style.display = 'flex'; ov.style.alignItems = 'center'; ov.style.justifyContent = 'center'; Array.from(ov.children).forEach(c => { if (!c.classList.contains('media-error')) c.style.display = 'none'; });
         const old = ov.querySelector('.media-error'); if (old) old.remove();
         const box = document.createElement('div'); box.className = 'media-error'; box.setAttribute('role', 'alert');
-        box.innerHTML = '<h3></h3><p></p><div class="row"><button type="button" class="b" id="mediaRetry">Try again</button><a class="b o" href="javascript:history.back()">Leave call</a></div>';
+        box.innerHTML = '<h3></h3><p></p><div class="row"><button type="button" class="b" id="mediaRetry">Try again</button><button type="button" class="b o" id="mediaChatOnly">Use text chat</button><a class="b o" href="javascript:history.back()">Leave call</a></div>';
         box.querySelector('h3').textContent = title; box.querySelector('p').textContent = body;
         ov.appendChild(box);
         box.querySelector('#mediaRetry').addEventListener('click', () => { box.remove(); Array.from(ov.children).forEach(c => { c.style.display = ''; }); this.initializeLocalVideo(); });
+        box.querySelector('#mediaChatOnly').addEventListener('click', () => { ov.style.display = 'none'; this.addChatMessage('Camera unavailable - continuing with text chat only. Press Camera to try again.', 'system'); this.setChatOpen(true); });
     }
     
     updateLocalVideoInfo() {
@@ -1573,11 +1655,11 @@ class VideoChat {
     }
     
     showCallEndModal() {
-        document.getElementById('callEndModal').style.display = 'flex';
+        document.getElementById('callEndModal').showModal();
     }
     
     hideCallEndModal() {
-        document.getElementById('callEndModal').style.display = 'none';
+        document.getElementById('callEndModal').close();
     }
     
     async confirmEndCall() {
@@ -1657,6 +1739,12 @@ class VideoChat {
     showCallSummary(sessionSummary, callDetails) {
         const summaryContent = document.getElementById('callSummaryContent');
         
+        const escapeHtml = (value) => {
+            const div = document.createElement('div');
+            div.textContent = value == null ? '' : String(value);
+            return div.innerHTML;
+        };
+        
         const formatDuration = (seconds) => {
             const hours = Math.floor(seconds / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
@@ -1713,7 +1801,7 @@ class VideoChat {
                 <div class="summary-stat">
                     <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-chart"/></svg> Call Quality:</span>
                     <span class="value ${getQualityClass(callDetails.connectionQuality)}">
-                        ${callDetails.connectionQuality.charAt(0).toUpperCase() + callDetails.connectionQuality.slice(1)}
+                        ${escapeHtml(callDetails.connectionQuality).charAt(0).toUpperCase() + escapeHtml(callDetails.connectionQuality).slice(1)}
                     </span>
                 </div>
                 ` : ''}
@@ -1728,7 +1816,7 @@ class VideoChat {
                 ${callDetails.endNotes ? `
                 <div class="summary-stat">
                     <span class="label"><svg class="ico" aria-hidden="true"><use href="#i-message"/></svg> Notes:</span>
-                    <span class="value">${callDetails.endNotes}</span>
+                    <span class="value">${escapeHtml(callDetails.endNotes)}</span>
                 </div>
                 ` : ''}
                 
@@ -1739,11 +1827,11 @@ class VideoChat {
             </div>
         `;
         
-        document.getElementById('callSummaryModal').style.display = 'flex';
+        document.getElementById('callSummaryModal').showModal();
     }
     
     hideCallSummary() {
-        document.getElementById('callSummaryModal').style.display = 'none';
+        document.getElementById('callSummaryModal').close();
     }
     
     getCSRFToken() {
@@ -1967,6 +2055,10 @@ class VideoChat {
     }
     
     toggleVideo() {
+        if (!this.localStream) {
+            this.initializeLocalVideo();
+            return;
+        }
         if (this.localStream) {
             const videoTrack = this.localStream.getVideoTracks()[0];
             if (videoTrack) {
@@ -2412,33 +2504,26 @@ class VideoChat {
         }
     }
     
-    // Enhanced toggleChat for mobile
     toggleChat() {
-        this.chatSidebar.classList.toggle('open');
-        
-        // Clear notification when chat is opened
-        if (this.chatSidebar.classList.contains('open')) {
+        this.setChatOpen(!this.chatSidebar.classList.contains('open'));
+    }
+
+    setChatOpen(open) {
+        this.chatSidebar.classList.toggle('open', open);
+        this.chatSidebar.inert = !open;
+        this.toggleChatBtn.setAttribute('aria-expanded', String(open));
+        if (open) {
             this.clearChatNotification();
-            
-            // On mobile, adjust chat size based on orientation
             if (this.isMobile) {
                 this.chatSidebar.style.width = this.currentOrientation === 'landscape' ? '60%' : '100%';
-                
-                // Focus chat input after a delay to ensure keyboard appears correctly
-                setTimeout(() => {
-                    if (this.chatInput) {
-                        this.chatInput.focus();
-                    }
-                }, 300);
             }
-            
-            // Scroll to bottom to show latest messages
-            setTimeout(() => {
-                this.scrollChatToBottom();
-            }, 100);
+            this.chatInput.focus({preventScroll: true});
+            this.scrollChatToBottom();
+        } else {
+            this.toggleChatBtn.focus({preventScroll: true});
         }
     }
-    
+
     // Override share screen for mobile (not supported on most mobile browsers)
     async shareScreen() {
         if (this.isMobile) {
@@ -2644,6 +2729,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn.dataset.on) { l.textContent = on ? btn.dataset.on : btn.dataset.off; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.setAttribute('aria-label', l.textContent + (on ? ', on. Press to turn off' : '. Press to turn on')); }
   }
   document.querySelectorAll('.control-btn[data-on]').forEach(function (b) { sync(b); new MutationObserver(function () { sync(b); }).observe(b, {attributes: true, attributeFilter: ['class']}); });
+})();
+</script>
+
+<script>
+(function () {
+    const data = JSON.parse(document.getElementById('callPrompts').textContent);
+    const card = document.getElementById('topicCard');
+    const level = document.getElementById('topicLevel');
+    const text = document.getElementById('topicText');
+    const toggle = document.getElementById('toggleTopic');
+    let idx = 0;
+
+    function show(i) {
+        idx = ((i % data.length) + data.length) % data.length;
+        level.textContent = data[idx].level;
+        text.textContent = data[idx].text;
+    }
+    function openCard() {
+        show(idx);
+        card.hidden = false;
+        toggle.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('topic-open');
+    }
+    function closeCard() {
+        card.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('topic-open');
+        toggle.focus();
+    }
+    toggle.addEventListener('click', () => { card.hidden ? openCard() : closeCard(); });
+    document.getElementById('nextTopic').addEventListener('click', () => show(idx + 1));
+    document.getElementById('closeTopic').addEventListener('click', closeCard);
+    card.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCard(); });
 })();
 </script>
 </body>

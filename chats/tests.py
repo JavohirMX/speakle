@@ -608,8 +608,11 @@ class ChatsViewsTest(TestCase):
     
     def test_send_call_invitation_partner_offline(self):
         """Test sending invitation when partner is offline."""
-        # Don't create UserPresence or create with is_online=False
+        # Offline means no recent activity (the view re-derives the stored flag,
+        # same as the availability endpoint): stale last_activity, stored flag False.
         UserPresence.objects.create(user=self.user2, is_online=False)
+        UserPresence.objects.filter(user=self.user2).update(
+            last_activity=timezone.now() - timedelta(minutes=10))
         
         self.client.login(username='testuser1', password='testpass123')
         
@@ -1101,12 +1104,14 @@ class TextChatApiTests(TestCase):
         from django.core.cache import cache
         from .models import ChatMessage
         from users.throttle import CHAT_LIMIT
-        cache.clear()
+        # Reset only this user's send counter. cache.clear() would also wipe
+        # a cache-stored login session (production uses cache sessions).
+        cache.delete('chat-send:%s' % self.a.id)
         for i in range(CHAT_LIMIT):
             self.assertEqual(self._send('m%d' % i).status_code, 200)
         self.assertEqual(self._send('one too many').status_code, 429)
         self.assertEqual(ChatMessage.objects.filter(content='one too many').count(), 0)
-        cache.clear()
+        cache.delete('chat-send:%s' % self.a.id)
 
     def test_send_message_saves_it(self):
         r = self._send('  hello  ')

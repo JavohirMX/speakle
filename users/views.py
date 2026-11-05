@@ -16,8 +16,22 @@ from datetime import timedelta
 from django.utils import timezone
 import time
 from django.contrib.auth import get_user_model as _get_user_model
+from django.contrib.auth import views as auth_views
+from django.shortcuts import redirect
 from .throttle import signup_allowed, login_blocked, record_login_failure, clear_login_failures
 from .verification import send_verification_email, check_token
+
+class PasswordResetView(auth_views.PasswordResetView):
+    """Never surface an email-backend failure as a site error: log it and
+    show the normal 'if that account exists, we sent a link' page."""
+
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except Exception:
+            logging.getLogger(__name__).exception('Could not send password-reset email')
+            return redirect(self.get_success_url())
+
 
 RESEND_COOLDOWN_SECONDS = 60
 
@@ -81,12 +95,16 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             try:
-                send_verification_email(request, user)
+                sent = send_verification_email(request, user)
             except Exception:
+                sent = False
                 logging.getLogger(__name__).exception('Could not send verification email')
             # Sign the new user straight in: no second form to fill.
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            messages.success(request, f'Welcome, {user.username}! We sent a link to {user.email}. Confirm it to unlock Quick match.')
+            if sent:
+                messages.success(request, f'Welcome, {user.username}! We sent a link to {user.email}. Confirm it to unlock Quick match.')
+            else:
+                messages.warning(request, f'Welcome, {user.username}! We could not send the confirmation email - resend it from your profile to unlock Quick match.')
             return redirect('matches:find_matches')
     else:
         form = UserRegistrationForm()
@@ -155,6 +173,9 @@ def profile_view(request):
     user_languages = request.user.userlanguage_set.all().order_by('language__name')
     
     steps, done_count = profile_checklist(request.user, user_languages)
+    types = {ul.language_type for ul in user_languages}
+    has_teaching = bool(types & {'native', 'fluent'})
+    has_learning = 'learning' in types
     return render(request, 'users/profile.html', {
         'form': form,
         'user_languages': user_languages,
@@ -162,6 +183,9 @@ def profile_view(request):
         'checklist_done': done_count,
         'checklist_total': len(steps),
         'checklist_complete': done_count == len(steps),
+        'has_teaching': has_teaching,
+        'has_learning': has_learning,
+        'languages_complete': has_teaching and has_learning,
     })
 
 @login_required

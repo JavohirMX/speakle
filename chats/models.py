@@ -276,6 +276,29 @@ class CallSession(models.Model):
         reason_map = dict(self.END_REASON_CHOICES)
         return reason_map.get(self.end_reason, 'Unknown')
 
+class CallParticipantInterval(models.Model):
+    """One continuous presence span of a user in a call session.
+
+    Intervals are opened only when a user actually signals (call start,
+    offer, answer, peer-ready) and closed on hangup, disconnect or
+    session end. They are the provenance practice streaks use to prove
+    joint presence: calls recorded before this tracking existed have no
+    intervals and can never earn streak credit.
+    """
+    session = models.ForeignKey(CallSession, on_delete=models.CASCADE,
+                                related_name='participant_intervals')
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='call_intervals')
+    joined_at = models.DateTimeField()
+    left_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['joined_at']
+
+    def __str__(self):
+        return f'{self.user.username} in session {self.session_id} ({self.joined_at} - {self.left_at})'
+
+
 class RoomMessage(models.Model):
     """Model for chat messages within video rooms."""
     room = models.ForeignKey(VideoRoom, on_delete=models.CASCADE, related_name='messages')

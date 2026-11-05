@@ -280,9 +280,23 @@ class InvitationViewTests(ChatApiBase):
         CallInvitation.objects.all().delete()
         self.assertEqual(self.send(message='x' * 501).status_code, 400)
         self.assertEqual(self.send(self.outsider).status_code, 403)
-        UserPresence.objects.filter(user=self.b).update(is_online=False)
+        # Offline now means no recent activity (same semantics as the
+        # availability endpoint), not merely a stored False flag.
+        UserPresence.objects.filter(user=self.b).update(
+            is_online=False, last_activity=timezone.now() - timedelta(minutes=10))
         self.assertEqual(self.send().status_code, 400)  # partner offline
         self.assertEqual(CallInvitation.objects.count(), 0)
+
+    def test_send_rejects_partner_with_stale_activity_despite_stored_online_flag(self):
+        from .models import CallInvitation, UserPresence
+        # Middleware can leave is_online=True while last_activity goes quiet;
+        # the invite path must re-derive online status like the availability check.
+        UserPresence.objects.filter(user=self.b).update(
+            is_online=True, last_activity=timezone.now() - timedelta(minutes=10))
+        self.assertEqual(self.send().status_code, 400)
+        self.assertEqual(CallInvitation.objects.count(), 0)
+        UserPresence.objects.filter(user=self.b).update(last_activity=timezone.now())
+        self.assertEqual(self.send().status_code, 200)
 
     def test_send_denied_when_blocked(self):
         from users.models import UserBlock
@@ -734,6 +748,20 @@ class SubmitFeedbackTests(ChatApiBase):
         self.assertEqual(self.post(self.a, None, raw='not json').status_code, 400)
         self.assertEqual(self.post(self.a, None, raw='[1, 2]').status_code, 400)
         self.assertEqual(self.post(self.a, self.payload(session_id=99999)).status_code, 404)
+
+    def test_session_cannot_be_rated_through_another_accessible_room(self):
+        other_match = Match.objects.create(
+            user1=self.a, user2=self.outsider,
+            user1_teaches=self.match.user1_teaches,
+            user1_learns=self.match.user1_learns, status='active')
+        other_room = VideoRoom.objects.create(match=other_match)
+        from users.models import UserBlock
+        UserBlock.objects.create(blocker=self.b, blocked=self.a)
+        self.assertEqual(self.post(self.a, self.payload()).status_code, 403)
+        response = self.post(self.a, self.payload(room_id=str(other_room.room_id)))
+        self.assertEqual(response.status_code, 404)
+        self.session.refresh_from_db()
+        self.assertFalse(self.session.end_notes)
 
     def test_outsider_and_non_participant_denied(self):
         self.assertEqual(self.post(self.outsider, self.payload()).status_code, 403)

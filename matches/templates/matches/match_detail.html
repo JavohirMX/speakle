@@ -203,6 +203,96 @@
                         </ul>
                     </section>
 
+                    <!-- Scheduled sessions -->
+                    <section class="md-sec" id="sessions" aria-labelledby="mdSessionsH">
+                        <h2 id="mdSessionsH" class="md-h">Practice sessions</h2>
+                        <div class="md-lang" style="grid-template-columns: 1fr" aria-live="polite">
+                            <span class="md-lang-meta">
+                                {% if streak > 0 %}
+                                <span class="chip chip-native">{{ streak }}-week streak</span>
+                                {% endif %}
+                                <span class="md-lang-lvl">This week: {{ week_done }}/{{ weekly_goal }} scheduled call{{ weekly_goal|pluralize }} together (weeks start Monday, {{ tz_label }})</span>
+                            </span>
+                            <form method="post" action="{% url 'matches:set_weekly_goal' match.id %}" class="md-lang-meta">
+                                {% csrf_token %}
+                                <label for="weekly-goal" class="md-lang-lvl">Shared weekly goal</label>
+                                <select id="weekly-goal" name="weekly_goal" class="rounded-xl border border-gray-300 px-2 py-1">
+                                    {% for g in weekly_goal_choices %}
+                                    <option value="{{ g }}" {% if g == weekly_goal %}selected{% endif %}>{{ g }} call{{ g|pluralize }} / week</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-outline">Save</button>
+                            </form>
+                            {% if streak == 0 and week_done == 0 %}
+                            <p class="md-note">Finish a scheduled call together to start your streak. No pressure - it simply counts the weeks you both show up.</p>
+                            {% endif %}
+                        </div>
+                        {% if upcoming_sessions %}
+                        <ul class="md-langs" style="grid-template-columns: 1fr">
+                            {% for session in upcoming_sessions %}
+                            <li class="md-lang" style="grid-template-columns: 1fr">
+                                <span class="md-lang-name">{{ session.starts_at|date:"D, M d" }} · {{ session.starts_at|time:"H:i" }} ({{ tz_label }}) · {{ session.get_duration_minutes_display }}</span>
+                                <span class="md-lang-meta">
+                                    <span class="chip {% if session.status == 'accepted' %}chip-native{% else %}chip-teach{% endif %}">{{ session.get_status_display }}</span>
+                                    <span class="md-lang-lvl">proposed by {{ session.proposed_by.username }}</span>
+                                    {% if session.note %}<span class="md-lang-lvl">{{ session.note }}</span>{% endif %}
+                                </span>
+                                <span class="md-lang-meta">
+                                    {% if session.status == 'proposed' and session.proposed_by != user %}
+                                    <form method="post" action="{% url 'matches:respond_session' session.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" name="action" value="accept" class="btn btn-solid">Accept</button>
+                                        <button type="submit" name="action" value="decline" class="btn btn-outline">Decline</button>
+                                    </form>
+                                    {% endif %}
+                                    {% if session.status == 'accepted' or session.proposed_by == user %}
+                                    <form method="post" action="{% url 'matches:cancel_session' session.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-coral">Cancel</button>
+                                    </form>
+                                    {% endif %}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="md-note">No sessions planned yet. Pick a time below and {{ partner.username }} can accept or decline.</p>
+                        {% endif %}
+
+                        {% if match.status == 'active' or match.status == 'trial' %}
+                        {% if not upcoming_sessions or upcoming_sessions.0.status != 'proposed' %}
+                        <form method="post" action="{% url 'matches:propose_session' match.id %}">
+                            {% csrf_token %}
+                            <div class="md-two">
+                                <div>
+                                    <label for="session-starts-at" class="md-h3">Date and time ({{ tz_label }})</label>
+                                    <input type="datetime-local" id="session-starts-at" name="starts_at" min="{{ min_session_start }}" required class="w-full rounded-xl border border-gray-300 px-3 py-2">
+                                </div>
+                                <div>
+                                    <label for="session-duration" class="md-h3">Length</label>
+                                    <select id="session-duration" name="duration_minutes" class="w-full rounded-xl border border-gray-300 px-3 py-2">
+                                        {% for value, label in duration_choices %}
+                                        <option value="{{ value }}"{% if value == 30 %} selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="session-note" class="md-h3">Note (optional)</label>
+                                <input type="text" id="session-note" name="note" maxlength="200" class="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="e.g. focus on past tense">
+                            </div>
+                            <button type="submit" class="btn btn-solid">Propose session</button>
+                        </form>
+                        {% else %}
+                        {% if upcoming_sessions.0.proposed_by == user %}
+                        <p class="md-note">Waiting for {{ partner.username }} to answer your proposal above.</p>
+                        {% else %}
+                        <p class="md-note">Answer {{ partner.username }}'s proposal above. You can propose a different time once it is answered.</p>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
+                    </section>
+
                     <!-- Partner's languages -->
                     <section class="md-sec" aria-labelledby="mdLangH">
                         <h2 id="mdLangH" class="md-h">{{ partner.username }}'s languages</h2>

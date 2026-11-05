@@ -223,3 +223,51 @@ class PartnerEmailOptInTests(TestCase):
         get_user_model().objects.filter(pk=self.p.pk).update(share_email_with_matches=True)
         for partner in self._both():
             self.assertEqual(partner['email'], 'partner@x.com')
+
+
+class NextStepHeroTests(MatchViewExtraBase):
+    def setUp(self):
+        super().setUp()
+        UserLanguage.objects.create(user=self.a, language=self.en, proficiency='native', language_type='native')
+        UserLanguage.objects.create(user=self.a, language=self.ko, proficiency='beginner', language_type='learning')
+        for u in (self.b, self.c):
+            UserLanguage.objects.create(user=u, language=self.ko, proficiency='native', language_type='native')
+            UserLanguage.objects.create(user=u, language=self.en, proficiency='intermediate', language_type='learning')
+
+    def test_say_hi_hero_and_grid_exclusion(self):
+        c = self.login(self.a)
+        r = c.get(reverse('matches:find_matches'))
+        self.assertContains(r, 'Your next step: say hi to')
+        # featured partner excluded from the grid
+        self.assertEqual(len(r.context['potential_matches']), 1)
+
+    def test_incoming_request_beats_say_hi(self):
+        MatchRequest.objects.create(sender=self.b, receiver=self.a, sender_teaches=self.ko, sender_learns=self.en)
+        r = self.login(self.a).get(reverse('matches:find_matches'))
+        self.assertContains(r, 'Your next step: answer mvb')
+        self.assertNotContains(r, 'Your next step: say hi to')
+
+    def test_unread_chat_beats_request(self):
+        m = Match.objects.create(user1=self.a, user2=self.b, user1_teaches=self.en, user1_learns=self.ko, status='active')
+        from chats.models import ChatRoom, ChatMessage
+        room = ChatRoom.objects.create(match=m)
+        ChatMessage.objects.create(room=room, sender=self.b, content='hello?')
+        MatchRequest.objects.create(sender=self.c, receiver=self.a, sender_teaches=self.ko, sender_learns=self.en)
+        r = self.login(self.a).get(reverse('matches:find_matches'))
+        self.assertContains(r, 'Your next step: reply to mvb')
+
+    def test_quick_match_gate_copy(self):
+        r = self.login(self.a).get(reverse('matches:find_matches'))
+        self.assertContains(r, 'Quick match - unlocks after email confirmation')
+        self.a.email_verified = True
+        self.a.save(update_fields=['email_verified'])
+        r = self.login(self.a).get(reverse('matches:find_matches'))
+        self.assertNotContains(r, 'unlocks after email confirmation')
+        self.assertContains(r, 'Quick match')
+
+    def test_secondary_actions_not_duplicated(self):
+        # hero shows a next step; Refresh list must live only in the toolbar
+        r = self.login(self.a).get(reverse('matches:find_matches'))
+        self.assertContains(r, 'Your next step:')
+        self.assertEqual(r.content.count(b'data-refresh>'), 1)  # element only; JS selector '[data-refresh]' excluded
+        self.assertEqual(r.content.count(b'id="refreshBtn"'), 1)
