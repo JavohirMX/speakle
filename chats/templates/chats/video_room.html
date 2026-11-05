@@ -1298,6 +1298,10 @@ class VideoChat {
 
             this.updateStatus('Disconnected', 'disconnected');
             this.isWebSocketReady = false;
+            // A new signaling socket must negotiate a fresh peer connection.
+            // Retaining isCallActive suppresses peer_ready and strands both users.
+            this.resetCall();
+            this.pendingPeerReadySignals = [];
             
             // Attempt to reconnect after 3 seconds
             setTimeout(() => {

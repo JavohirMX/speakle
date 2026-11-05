@@ -844,3 +844,24 @@ class PresenceHeartbeatTests(ChatApiBase):
 
         p.refresh_from_db()
         self.assertTrue(p.is_online)
+
+
+class AcceptedInvitationRecoveryTests(ChatApiBase):
+    def test_both_call_directions_recover_room_from_status_after_accept(self):
+        from .models import CallInvitation
+        for caller, receiver in ((self.a, self.b), (self.b, self.a)):
+            invitation = CallInvitation.objects.create(room=self.video, caller=caller, receiver=receiver)
+            response = self.client_for(receiver).post(
+                reverse('chats:respond_to_invitation', args=[invitation.id]), {'response': 'accept'})
+            self.assertEqual(response.status_code, 200)
+            status = self.client_for(caller).get(
+                reverse('chats:check_invitation_status', args=[invitation.id])).json()
+            self.assertEqual(status['status'], 'accepted')
+            self.assertEqual(status.get('room_url'), response.json()['room_url'])
+
+    def test_pending_invitation_does_not_expose_a_join_target(self):
+        from .models import CallInvitation
+        invitation = CallInvitation.objects.create(room=self.video, caller=self.a, receiver=self.b)
+        status = self.client_for(self.a).get(
+            reverse('chats:check_invitation_status', args=[invitation.id])).json()
+        self.assertFalse(status.get('room_url'))
