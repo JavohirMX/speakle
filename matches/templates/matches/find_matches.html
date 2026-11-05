@@ -99,7 +99,20 @@
     fetch('/matches/api/send-request/' + current + '/', {method: 'POST', body: fd}).then(function (r) { return r.json(); }).then(function (d) {
       if (d.success) {
         dlg.close();
-        var card = opener.closest('.pm-card'); card.querySelector('.pm-act').innerHTML = '<span class="pm-state"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Request sent. We will tell you when they reply.</span>';
+        // A suggestion can appear in both the featured next step and the list.
+        // Replace every entry, then focus the clicked entry's confirmation because
+        // the browser's original dialog invoker has just been removed.
+        var confirmation = null;
+        document.querySelectorAll('[data-open-request]').forEach(function (entry) {
+          if (entry.dataset.id !== current) return;
+          var sent = document.createElement('span');
+          sent.className = 'pm-state';
+          sent.tabIndex = -1;
+          sent.textContent = 'Request sent. We will tell you when they reply.';
+          entry.replaceWith(sent);
+          if (entry === opener) confirmation = sent;
+        });
+        if (confirmation) confirmation.focus();
         status(d.message);
       } else { err.textContent = d.error === 'Match request already exists' ? 'You already sent this person a request.' : (d.error || 'Could not send. Try again.'); err.hidden = false; }
     }).catch(function () { err.textContent = 'No connection. Check your internet and press Send again.'; err.hidden = false; })
