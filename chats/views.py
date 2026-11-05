@@ -107,7 +107,16 @@ def send_call_invitation(request, match_id):
         user=partner,
         defaults={'is_online': False}
     )
-    
+
+    if not created:
+        # Refresh the stored flag from recent activity before trusting it, same as
+        # check_partner_availability: the activity middleware sets is_online=True on
+        # every request but never touches last_activity, so a stored True can be
+        # stale. Use update(): save() would refresh the auto_now timestamps and make
+        # a quiet partner look active again.
+        partner_presence.is_online = partner_presence.should_be_online()
+        UserPresence.objects.filter(pk=partner_presence.pk).update(is_online=partner_presence.is_online)
+
     if not partner_presence.is_online:
         return JsonResponse({
             'error': 'Partner is not online',
@@ -721,8 +730,8 @@ def submit_feedback(request):
             return JsonResponse({'error': 'Invalid rating'}, status=400)
         
         # Get session and verify user access
-        session = CallSession.objects.get(id=session_id)
         room = VideoRoom.objects.get(room_id=room_id)
+        session = CallSession.objects.get(id=session_id, room=room)
         
         if not room.can_user_access(request.user):
             return JsonResponse({'error': 'Access denied'}, status=403)

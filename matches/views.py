@@ -104,6 +104,9 @@ def send_match_request(request, potential_match_id):
     
     if request.method == 'POST':
         message = request.POST.get('message', '')
+        if len(message) > 1000:
+            messages.error(request, 'Message too long (max 1000 characters).')
+            return redirect('matches:find_matches')
         
         match_request, created = MatchingService.send_match_request(
             sender=request.user,
@@ -378,6 +381,8 @@ def send_match_request_api(request, potential_match_id):
     potential_match = get_object_or_404(PotentialMatch, id=potential_match_id, user=request.user)
     
     message = request.POST.get('message', '')
+    if len(message) > 1000:
+        return JsonResponse({'error': 'Message too long (max 1000 characters)'}, status=400)
     
     match_request, created = MatchingService.send_match_request(
         sender=request.user,
