@@ -54,7 +54,7 @@ Taken in a real browser against a local database with demo accounts. The names a
 
 ## How matching works
 
-![A browser connects to Django over HTTP and WebSockets; Django stores application data and brokers signaling, while WebRTC carries peer media](docs/img/system-map.svg)
+<img src="docs/img/system-map.svg" alt="A browser connects to Django over HTTP and WebSockets; Django stores application data and brokers signaling, while WebRTC carries peer media" width="420">
 
 Pages and account data use Django HTTP views. Channels handles presence, chat
 and call signaling; the browser-to-browser media connection uses WebRTC, with
