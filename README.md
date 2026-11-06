@@ -1,13 +1,12 @@
 # Speakle
 
-Free two-way language exchange in the browser. You speak English and want Korean, someone speaks Korean and wants English, and Speakle puts you on a call to teach each other.
+Two-way language exchange in the browser. You speak English and want Korean, someone speaks Korean and wants English, and Speakle puts you on a call to teach each other.
 
 Live: https://speakle.javohirmx.com/
 
-<p>
-  <img src="docs/img/landing-desktop.png" alt="Speakle landing page on desktop" width="62%">
-  <img src="docs/img/landing-mobile.png" alt="Speakle landing page on a phone" width="26%">
-</p>
+![Speakle landing page on desktop](docs/img/landing-desktop.png)
+
+[Phone view](docs/img/landing-mobile.png)
 
 ## Contents
 
@@ -35,21 +34,31 @@ Live: https://speakle.javohirmx.com/
 - **Call history.** Past calls and per-call summaries.
 - **Safety.** Block and report other users. Reports go to an admin review screen. Blocked people never show up in matching.
 - **Privacy-first analytics.** Per-day counters per page name, plus referrer host and `?utm_source=` on the landing, sign-in and sign-up pages. No IP address, cookie, user agent, user id or chat content is stored, and nothing is sent to a third party. `ANALYTICS_ENABLED = False` turns it off. A staff-only `/stats/` page shows aggregate counts.
-- **Basics.** Canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, web manifest, custom 404 and 500 pages, UI checked with axe-core in a real browser.
+- **Basics.** Canonical URLs, Open Graph and Twitter cards, JSON-LD, `robots.txt`, `sitemap.xml`, web manifest, custom 404 and 500 pages.
 
 ## Screenshots
 
 Taken in a real browser against a local database with demo accounts. The names and profiles are made up for the screenshots.
 
-| Find a partner | Match page |
-|---|---|
-| ![Find a partner, desktop](docs/img/find-partners-desktop.png) | ![Match page, desktop](docs/img/match-desktop.png) |
+### Find a partner
 
-| Find a partner (390px) | Match page (390px) |
-|---|---|
-| <img src="docs/img/find-partners-mobile.png" alt="Find a partner on a phone" width="280"> | <img src="docs/img/match-mobile.png" alt="Match page on a phone" width="280"> |
+![Find a partner with synthetic demo profiles](docs/img/find-partners-desktop.png)
+
+[Phone view](docs/img/find-partners-mobile.png)
+
+### Match page
+
+![Match page with a synthetic demo partner](docs/img/match-desktop.png)
+
+[Phone view](docs/img/match-mobile.png)
 
 ## How matching works
+
+![A browser connects to Django over HTTP and WebSockets; Django stores application data and brokers signaling, while WebRTC carries peer media](docs/img/system-map.svg)
+
+Pages and account data use Django HTTP views. Channels handles presence, chat
+and call signaling; the browser-to-browser media connection uses WebRTC, with
+STUN/TURN configured separately. Signaling and media are different paths.
 
 Matching is rule-based, not machine learning (`matches/services.py`). A pair needs a mirror: you can teach what they are learning and they can teach what you are learning. The score is out of 100:
 
@@ -59,6 +68,9 @@ Matching is rule-based, not machine learning (`matches/services.py`). A pair nee
 - 10 if both people wrote a bio longer than 50 characters.
 
 ## Quickstart
+
+Prefer the Makefile? `make install && make migrate languages run` runs the same local
+setup with Python 3.11. Use `make help` for individual commands.
 
 Python 3.11 is what CI and the Docker image use.
 
@@ -87,24 +99,69 @@ Open http://127.0.0.1:8000/.
 
 Local development works without any config beyond `DEBUG=True`. Docker and production read environment variables (or a `.env` file, via python-decouple). Copy `env.example` to `.env` and edit it.
 
-| Variable | Purpose |
-|---|---|
-| `DJANGO_SETTINGS_MODULE` | `config.settings_prod` for Docker and production. Without it you get the development settings (in-memory channel layer, console email, SQLite, no HTTPS or HSTS settings). `env.example` sets it. |
-| `SECRET_KEY` | Required. Long random value. The app will not start with a placeholder. |
-| `DEBUG` | `False` in production. Defaults to `False`. |
-| `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` | Your domain(s), comma separated. `CSRF_TRUSTED_ORIGINS` needs the scheme, for example `https://speakle.example.com`. |
-| `SITE_URL` | Public origin, for example `https://speakle.example.com`. Used for canonical URLs, the sitemap, share images and email links. |
-| `DATABASE_URL` | Postgres URL. Falls back to SQLite if unset. |
-| `REDIS_URL` | Redis for the Channels layer, cache and sessions. |
-| `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` | SMTP for verification and password reset. Without them, links only print to the container log. |
-| `WEBRTC_STUN_URLS` | Comma-separated STUN URLs for video calls. Defaults to five public Google STUN servers. Empty means none. |
-| `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL` | Optional TURN relay for networks where direct calls fail. A TURN entry is used only when all three are set. |
-| `QUICK_MATCH_REQUIRE_VERIFIED_EMAIL` | Require a verified email for quick match. Default `True`. |
-| `SIGNUPS_PER_HOUR_PER_IP` | Cap sign-ups per client address per hour. `0` (default) is off. Leave it off behind a proxy that hides client addresses. |
-| `SECURE_SSL_REDIRECT`, `SECURE_HSTS_*`, `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_SECURE`, `X_FRAME_OPTIONS` | HTTPS hardening. Cookie and redirect flags default to off, so turn them on once HTTPS works. HSTS defaults to one year, so only deploy with HTTPS. |
-| `TIME_ZONE`, `LANGUAGE_CODE` | Default `Asia/Seoul` and `en-us`. |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Read by the Postgres container in `docker-compose.yml`. |
-| `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD` | The Docker entrypoint creates this admin only if the password is set. |
+### `DJANGO_SETTINGS_MODULE`
+
+`config.settings_prod` for Docker and production. Without it you get the development settings (in-memory channel layer, console email, SQLite, no HTTPS or HSTS settings). `env.example` sets it.
+
+### `SECRET_KEY`
+
+Required. Long random value. The app will not start with a placeholder.
+
+### `DEBUG`
+
+`False` in production. Defaults to `False`.
+
+### `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`
+
+Your domain(s), comma separated. `CSRF_TRUSTED_ORIGINS` needs the scheme, for example `https://speakle.example.com`.
+
+### `SITE_URL`
+
+Public origin, for example `https://speakle.example.com`. Used for canonical URLs, the sitemap, share images and email links.
+
+### `DATABASE_URL`
+
+Postgres URL. Falls back to SQLite if unset.
+
+### `REDIS_URL`
+
+Redis for the Channels layer, cache and sessions.
+
+### `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`
+
+SMTP for verification and password reset. Without them, links only print to the container log.
+
+### `WEBRTC_STUN_URLS`
+
+Comma-separated STUN URLs for video calls. Defaults to five public Google STUN servers. Empty means none.
+
+### `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL`
+
+Optional TURN relay for networks where direct calls fail. A TURN entry is used only when all three are set.
+
+### `QUICK_MATCH_REQUIRE_VERIFIED_EMAIL`
+
+Require a verified email for quick match. Default `True`.
+
+### `SIGNUPS_PER_HOUR_PER_IP`
+
+Cap sign-ups per client address per hour. `0` (default) is off. Leave it off behind a proxy that hides client addresses.
+
+### `SECURE_SSL_REDIRECT`, `SECURE_HSTS_*`, `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_SECURE`, `X_FRAME_OPTIONS`
+
+HTTPS hardening. Cookie and redirect flags default to off, so turn them on once HTTPS works. HSTS defaults to one year, so only deploy with HTTPS.
+
+### `TIME_ZONE`, `LANGUAGE_CODE`
+
+Default `Asia/Seoul` and `en-us`.
+
+### `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+
+Read by the Postgres container in `docker-compose.yml`.
+
+### `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`
+
+The Docker entrypoint creates this admin only if the password is set.
 
 `MEDIA_URL` and `STATIC_URL` appear in `env.example` but are fixed in code (`/media/`, `/static/`).
 
@@ -114,7 +171,10 @@ Local development works without any config beyond `DEBUG=True`. Docker and produ
 python manage.py test
 ```
 
-About 250 tests covering accounts, matching, quick match, chat, WebSocket consumers, SEO, analytics and settings safety. They take a few minutes. CI runs the same tests plus `manage.py check` and `makemigrations --check` on every pull request (`.github/workflows/ci.yml`).
+The suite covers accounts, matching, quick match, chat, WebSocket consumers, SEO,
+analytics and settings safety. CI runs the same command plus `manage.py check`
+and `makemigrations --check` on every pull request
+([workflow](.github/workflows/ci.yml)).
 
 Not covered by automated tests: real camera and microphone calls between devices, and the Postgres and Redis stack.
 
@@ -168,4 +228,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md). Branch
 
 ## License
 
-There is no license file in this repository yet, so by default all rights are reserved. An older README said MIT. Add a `LICENSE` file if that is the intent.
+There is no license file in this repository yet, so by default all rights are reserved. A public repository alone does not grant an open-source license.
