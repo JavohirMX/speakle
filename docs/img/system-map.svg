@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 510" role="img" aria-labelledby="title">
+<title id="title">Speakle connections</title>
+<rect width="420" height="510" rx="10" fill="#f6f8fa"/>
+<text x="24" y="42" fill="#1f2328" font-size="24" font-weight="700" font-family="sans-serif">Speakle connections</text>
+<rect x="18" y="65" width="384" height="90" rx="8" fill="white" stroke="#d1d9e0"/>
+<text x="34" y="100" fill="#0969da" font-size="21" font-weight="700" font-family="sans-serif">Browser → Django HTTP</text>
+<text x="34" y="129" fill="#1f2328" font-size="18" font-family="sans-serif">Accounts, matching and history</text>
+<rect x="18" y="173" width="384" height="90" rx="8" fill="white" stroke="#d1d9e0"/>
+<text x="34" y="208" fill="#0969da" font-size="21" font-weight="700" font-family="sans-serif">Browser ↔ Channels</text>
+<text x="34" y="237" fill="#1f2328" font-size="18" font-family="sans-serif">Presence, chat and signaling</text>
+<rect x="18" y="281" width="384" height="90" rx="8" fill="white" stroke="#d1d9e0"/>
+<text x="34" y="316" fill="#0969da" font-size="21" font-weight="700" font-family="sans-serif">Django → data services</text>
+<text x="34" y="345" fill="#1f2328" font-size="18" font-family="sans-serif">Database and channel layer</text>
+<rect x="18" y="389" width="384" height="90" rx="8" fill="white" stroke="#d1d9e0"/>
+<text x="34" y="424" fill="#0969da" font-size="21" font-weight="700" font-family="sans-serif">Browser ↔ browser</text>
+<text x="34" y="453" fill="#1f2328" font-size="18" font-family="sans-serif">WebRTC media; optional TURN</text>
+</svg>
