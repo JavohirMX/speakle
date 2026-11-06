@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from users.throttle import chat_allowed
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -277,6 +278,7 @@ def check_invitation_status(request, invitation_id):
     
     return JsonResponse({
         'status': invitation.status,
+        'room_url': reverse('chats:video_room', args=[invitation.room.room_id]) if invitation.status == 'accepted' else None,
         'responded_at': invitation.responded_at.isoformat() if invitation.responded_at else None,
         'is_expired': invitation.is_expired()
     })
