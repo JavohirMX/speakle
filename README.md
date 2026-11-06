@@ -15,12 +15,9 @@ Live: https://speakle.javohirmx.com/
 - [Features](#features)
 - [Screenshots](#screenshots)
 - [How matching works](#how-matching-works)
-- [Quickstart](#quickstart)
-- [Tests](#tests)
-- [Front-end CSS](#front-end-css)
-- [Deploy](#deploy)
-- [Project layout](#project-layout)
 - [Known limits](#known-limits)
+- [Quickstart](#quickstart)
+- [Deploy](#deploy)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -68,6 +65,11 @@ Matching is rule-based, not machine learning (`matches/services.py`). A pair nee
 - 5 per shared interest word, up to 6 words.
 - 10 if both people wrote a bio longer than 50 characters.
 
+## Known limits
+
+- Calls use public Google STUN servers by default, with no TURN relay. Some networks (strict NATs, some mobile carriers) will not connect. Set the `WEBRTC_TURN_*` variables in `env.example` to add a TURN relay.
+- Session reminders need a scheduler: `python manage.py send_session_reminders` sends the 24h and 1h emails once each. Run it from cron (every 5 minutes is fine); it is not wired into Docker by default.
+
 ## Quickstart
 
 Prefer the Makefile? `make install && make migrate languages run` runs the same local
@@ -96,32 +98,6 @@ Open http://127.0.0.1:8000/.
 - Two or more accounts are needed to try matching. Register them with complementary languages, for example one who speaks English and learns Korean and one who speaks Korean and learns English. You can open the second in a private window.
 - Video calls need camera and microphone access, and a secure context (`localhost` counts).
 
-## Tests
-
-```bash
-python manage.py test
-```
-
-The suite covers accounts, matching, quick match, chat, WebSocket consumers, SEO,
-analytics and settings safety. CI runs the same command plus `manage.py check`
-and `makemigrations --check` on every pull request
-([workflow](.github/workflows/ci.yml)).
-
-Not covered by automated tests: real camera and microphone calls between devices, and the Postgres and Redis stack.
-
-## Front-end CSS
-
-- `static/css/tailwind.css` is compiled ahead of time (Tailwind 3). After adding utility classes to a template, rebuild:
-
-  ```bash
-  npm i -D tailwindcss@3
-  npx tailwindcss -c tailwind.config.js -i static/css/tailwind.src.css -o static/css/tailwind.css --minify
-  ```
-
-  The first command creates `package.json` and `node_modules/` locally. Do not commit them.
-- `static/css/app.css` (layout and components) and `static/css/design.css` (design tokens and shared components) are plain hand-written CSS. Templates link them with a content hash (`{% versioned_static %}`), so they can be cached for a long time and a change gets a new URL.
-- Fonts are self-hosted in `static/fonts/`.
-
 ## Deploy
 
 Full guide: [DEPLOYMENT.md](DEPLOYMENT.md). Every environment variable is documented in `env.example`. Short version:
@@ -134,7 +110,21 @@ docker compose exec web python manage.py populate_languages
 
 The stack is Daphne (port 8001 on the host), Postgres and Redis. The entrypoint runs migrations and `collectstatic`. Serve `/static/` and `/media/` from a reverse proxy, which is not included in this repository. Pushes to `main` run `.github/workflows/deploy.yml`.
 
-## Project layout
+## Contributing
+
+Branch from `dev` and open pull requests against `dev`. Read [CONTRIBUTING.md](CONTRIBUTING.md) (workflow, style, front-end CSS rebuild) and [CHANGELOG.md](CHANGELOG.md).
+
+### Tests
+
+```bash
+python manage.py test
+```
+
+The suite covers accounts, matching, quick match, chat, WebSocket consumers, SEO, analytics and settings safety. CI runs the same command plus `manage.py check` and `makemigrations --check` on every pull request ([workflow](.github/workflows/ci.yml)).
+
+Not covered by automated tests: real camera and microphone calls between devices, and the Postgres and Redis stack.
+
+### Project layout
 
 ```
 config/       settings.py (development), settings_prod.py (Docker and production), urls, asgi
@@ -147,15 +137,6 @@ docs/         architecture notes, older docs, screenshots
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for models, WebSocket endpoints and call flow.
-
-## Known limits
-
-- Calls use public Google STUN servers by default, with no TURN relay. Some networks (strict NATs, some mobile carriers) will not connect. Set the `WEBRTC_TURN_*` variables in `env.example` to add a TURN relay.
-- Session reminders need a scheduler: `python manage.py send_session_reminders` sends the 24h and 1h emails once each. Run it from cron (every 5 minutes is fine); it is not wired into Docker by default.
-
-## Contributing
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md). Branch from `dev` and open pull requests against `dev`.
 
 ## License
 
