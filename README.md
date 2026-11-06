@@ -4,6 +4,8 @@ Two-way language exchange in the browser. You speak English and want Korean, som
 
 Live: https://speakle.javohirmx.com/
 
+[![CI](https://github.com/JavohirMX/speakle/actions/workflows/ci.yml/badge.svg)](https://github.com/JavohirMX/speakle/actions/workflows/ci.yml)
+
 ![Speakle landing page on desktop](docs/img/landing-desktop.png)
 
 [Phone view](docs/img/landing-mobile.png)
@@ -14,7 +16,6 @@ Live: https://speakle.javohirmx.com/
 - [Screenshots](#screenshots)
 - [How matching works](#how-matching-works)
 - [Quickstart](#quickstart)
-- [Configuration](#configuration)
 - [Tests](#tests)
 - [Front-end CSS](#front-end-css)
 - [Deploy](#deploy)
@@ -79,7 +80,7 @@ git clone https://github.com/JavohirMX/speakle.git
 cd speakle
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-export DEBUG=True                       # local development only, see below
+export DEBUG=True                       # local development only, see Safe by default below
 python manage.py migrate
 python manage.py populate_languages     # the language list is not created by migrations
 python manage.py createsuperuser        # optional, for /admin/
@@ -94,76 +95,6 @@ Open http://127.0.0.1:8000/.
 - **Database** is SQLite (`db.sqlite3`) unless you use the production settings.
 - Two or more accounts are needed to try matching. Register them with complementary languages, for example one who speaks English and learns Korean and one who speaks Korean and learns English. You can open the second in a private window.
 - Video calls need camera and microphone access, and a secure context (`localhost` counts).
-
-## Configuration
-
-Local development works without any config beyond `DEBUG=True`. Docker and production read environment variables (or a `.env` file, via python-decouple). Copy `env.example` to `.env` and edit it.
-
-### `DJANGO_SETTINGS_MODULE`
-
-`config.settings_prod` for Docker and production. Without it you get the development settings (in-memory channel layer, console email, SQLite, no HTTPS or HSTS settings). `env.example` sets it.
-
-### `SECRET_KEY`
-
-Required. Long random value. The app will not start with a placeholder.
-
-### `DEBUG`
-
-`False` in production. Defaults to `False`.
-
-### `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`
-
-Your domain(s), comma separated. `CSRF_TRUSTED_ORIGINS` needs the scheme, for example `https://speakle.example.com`.
-
-### `SITE_URL`
-
-Public origin, for example `https://speakle.example.com`. Used for canonical URLs, the sitemap, share images and email links.
-
-### `DATABASE_URL`
-
-Postgres URL. Falls back to SQLite if unset.
-
-### `REDIS_URL`
-
-Redis for the Channels layer, cache and sessions.
-
-### `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`
-
-SMTP for verification and password reset. Without them, links only print to the container log.
-
-### `WEBRTC_STUN_URLS`
-
-Comma-separated STUN URLs for video calls. Defaults to five public Google STUN servers. Empty means none.
-
-### `WEBRTC_TURN_URLS`, `WEBRTC_TURN_USERNAME`, `WEBRTC_TURN_CREDENTIAL`
-
-Optional TURN relay for networks where direct calls fail. A TURN entry is used only when all three are set.
-
-### `QUICK_MATCH_REQUIRE_VERIFIED_EMAIL`
-
-Require a verified email for quick match. Default `True`.
-
-### `SIGNUPS_PER_HOUR_PER_IP`
-
-Cap sign-ups per client address per hour. `0` (default) is off. Leave it off behind a proxy that hides client addresses.
-
-### `SECURE_SSL_REDIRECT`, `SECURE_HSTS_*`, `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_SECURE`, `X_FRAME_OPTIONS`
-
-HTTPS hardening. Cookie and redirect flags default to off, so turn them on once HTTPS works. HSTS defaults to one year, so only deploy with HTTPS.
-
-### `TIME_ZONE`, `LANGUAGE_CODE`
-
-Default `Asia/Seoul` and `en-us`.
-
-### `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
-
-Read by the Postgres container in `docker-compose.yml`.
-
-### `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`
-
-The Docker entrypoint creates this admin only if the password is set.
-
-`MEDIA_URL` and `STATIC_URL` appear in `env.example` but are fixed in code (`/media/`, `/static/`).
 
 ## Tests
 
@@ -193,7 +124,7 @@ Not covered by automated tests: real camera and microphone calls between devices
 
 ## Deploy
 
-Full guide: [DEPLOYMENT.md](DEPLOYMENT.md). Short version:
+Full guide: [DEPLOYMENT.md](DEPLOYMENT.md). Every environment variable is documented in `env.example`. Short version:
 
 ```bash
 cp env.example .env     # set SECRET_KEY, ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, SITE_URL, passwords
@@ -219,7 +150,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for models, WebSocket endpoints
 
 ## Known limits
 
-- Calls use public Google STUN servers by default, with no TURN relay. Some networks (strict NATs, some mobile carriers) will not connect. Set the `WEBRTC_TURN_*` variables to add a TURN relay.
+- Calls use public Google STUN servers by default, with no TURN relay. Some networks (strict NATs, some mobile carriers) will not connect. Set the `WEBRTC_TURN_*` variables in `env.example` to add a TURN relay.
 - Session reminders need a scheduler: `python manage.py send_session_reminders` sends the 24h and 1h emails once each. Run it from cron (every 5 minutes is fine); it is not wired into Docker by default.
 
 ## Contributing
