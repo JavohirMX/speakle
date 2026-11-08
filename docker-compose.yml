@@ -42,8 +42,11 @@ services:
              python manage.py collectstatic --noinput &&
              daphne -b 0.0.0.0 -p 8000 config.asgi:application"
     volumes:
-      - ./staticfiles:/app/staticfiles
-      - ./media:/app/media
+      # Use the named volumes declared below: bind-mounting ./staticfiles and
+      # ./media makes Docker create root-owned host dirs on a fresh checkout,
+      # and collectstatic then fails as the non-root appuser.
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     ports:
       - "8001:8000"
     env_file:
