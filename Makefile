@@ -12,6 +12,10 @@ export DEBUG ?= True
 .DEFAULT_GOAL := help
 .PHONY: help venv install migrate languages superuser run runserver test check migrations-check ci css clean compose-up compose-down compose-logs
 
+# Order-only prerequisite: created only when missing, never rebuilt over your edits.
+.env: env.example
+	@python3 -c "import secrets,pathlib,re; s=pathlib.Path('env.example').read_text(); s=re.sub(r'(?m)^SECRET_KEY=.*$$','SECRET_KEY='+secrets.token_urlsafe(48),s); pathlib.Path('.env').write_text(s); print('Created .env from env.example with a generated SECRET_KEY. Set real values before deploying.')"
+
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
 
@@ -56,7 +60,7 @@ css: ## Rebuild static/css/tailwind.css (needs Node; creates local node_modules,
 clean: ## Remove Python bytecode caches only
 	find . -name __pycache__ -type d -not -path './$(VENV)/*' -prune -exec rm -rf {} +
 
-compose-up: ## Start the Docker stack (needs .env, see env.example)
+compose-up: | .env ## Start the Docker stack (first run creates .env from env.example)
 	docker compose up -d
 
 compose-down: ## Stop the Docker stack (keeps volumes and data)

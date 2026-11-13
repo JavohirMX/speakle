@@ -103,10 +103,11 @@ Open http://127.0.0.1:8000/.
 Full guide: [DEPLOYMENT.md](DEPLOYMENT.md). Every environment variable is documented in `env.example`. Short version:
 
 ```bash
-cp env.example .env     # set SECRET_KEY, ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, SITE_URL, passwords
-docker compose up -d --build
+make compose-up   # first run creates .env from env.example with a generated SECRET_KEY
 docker compose exec web python manage.py populate_languages
 ```
+
+For anything beyond a local try-out, edit `.env`: set your own `SECRET_KEY`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `SITE_URL` and passwords. A plain `cp env.example .env` without that edit fails fast: the app refuses the placeholder key while `DEBUG=False`.
 
 The stack is Daphne (port 8001 on the host), Postgres and Redis. The entrypoint runs migrations and `collectstatic`. Serve `/static/` and `/media/` from a reverse proxy, which is not included in this repository. Pushes to `main` run `.github/workflows/deploy.yml`.
 

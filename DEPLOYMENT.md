@@ -26,6 +26,9 @@ cd speakle
 cp env.example .env
 ```
 
+(For a local throwaway stack, `make compose-up` creates `.env` for you with a generated
+`SECRET_KEY`. The steps below are for a real deployment.)
+
 Edit `.env`. At minimum:
 
 ```bash

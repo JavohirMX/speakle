@@ -12,8 +12,11 @@ KEY = 'k' * 50
 def _load(**env):
     clean = {k: v for k, v in os.environ.items() if k not in ('DEBUG', 'SECRET_KEY', 'DJANGO_SETTINGS_MODULE')}
     clean.update(env)
-    code = ('import os; os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings"); '
+    code = ('import decouple; decouple.config = decouple.Config(decouple.RepositoryEmpty()); '
+            'import os; os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings"); '
             'import django.conf as c; s = c.settings; print(s.DEBUG, s.SECRET_KEY == %r)' % KEY)
+    # RepositoryEmpty keeps a local .env (created by `make compose-up`) out of this check;
+    # environment variables still take precedence, exactly as decouple does.
     return subprocess.run([sys.executable, '-c', code], cwd=ROOT, env=clean, capture_output=True, text=True)
 
 
