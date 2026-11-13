@@ -26,7 +26,7 @@ git fetch && git checkout overnight/all   # or merge the PR branches
 docker compose up -d --build              # entrypoint runs migrate + collectstatic
 ```
 Only schema change: two new tables. No config/env changes needed. Rollback: redeploy main; the new tables are unused by old code.
-Heads up (not changed): entrypoint creates an admin with default password `admin123` if the env var is unset. Set DJANGO_SUPERUSER_PASSWORD in .env. Prod settings default SECRET_KEY is `change-me-in-production`: make sure .env sets a real one.
+Corrected 2026-11-13: the entrypoint skips superuser creation when DJANGO_SUPERUSER_PASSWORD is unset; no default admin password exists. Set DJANGO_SUPERUSER_PASSWORD in .env (a local `make compose-up` bootstrap generates one). Prod settings default SECRET_KEY is `change-me-in-production`: make sure .env sets a real one.
 
 ## Market notes (sources checked Oct 16 2026)
 - Category: language exchange apps, est. ~US$1.4B in 2025 growing ~10%/yr (QY Research, paid-report summary, treat as rough): https://www.qyresearch.com/reports/6132953/language-exchange-application

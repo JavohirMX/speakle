@@ -10,7 +10,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      # Loopback only: services reach Postgres over the compose network. Drop the
+      # 127.0.0.1 prefix only if host-network access is intended (use a strong password).
+      - "127.0.0.1:5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U speakle_user -d speakle"]
       interval: 30s
@@ -23,7 +25,9 @@ services:
     image: redis:7-alpine
     container_name: speakle_redis
     ports:
-      - "6380:6379"
+      # Loopback only: services reach Redis over the compose network. Redis has no
+      # password here, so publishing it beyond the host would expose sessions and cache.
+      - "127.0.0.1:6380:6379"
     volumes:
       - redis_data:/data
     healthcheck:

@@ -14,7 +14,7 @@ export DEBUG ?= True
 
 # Order-only prerequisite: created only when missing, never rebuilt over your edits.
 .env: env.example
-	@python3 -c "import secrets,pathlib,re; s=pathlib.Path('env.example').read_text(); s=re.sub(r'(?m)^SECRET_KEY=.*$$','SECRET_KEY='+secrets.token_urlsafe(48),s); pathlib.Path('.env').write_text(s); print('Created .env from env.example with a generated SECRET_KEY. Set real values before deploying.')"
+	@python3 -c "import secrets,pathlib,re; s=pathlib.Path('env.example').read_text(); g=lambda: secrets.token_urlsafe(48); sk=g(); su=g(); pg=g(); s=re.sub(r'(?m)^SECRET_KEY=.*$$','SECRET_KEY='+sk,s); s=re.sub(r'(?m)^DJANGO_SUPERUSER_PASSWORD=.*$$','DJANGO_SUPERUSER_PASSWORD='+su,s); s=re.sub(r'(?m)^POSTGRES_PASSWORD=.*$$','POSTGRES_PASSWORD='+pg,s); s=re.sub(r'(?m)^DATABASE_URL=postgres://speakle_user:[^@]*@','DATABASE_URL=postgres://speakle_user:'+pg+'@',s); pathlib.Path('.env').write_text(s); print('Created .env from env.example with generated SECRET_KEY, admin and database passwords (values only in .env).')"
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'

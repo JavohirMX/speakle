@@ -5,8 +5,8 @@ Speakle runs as three containers from `docker-compose.yml`:
 | Service | Image | Host port | Role |
 |---|---|---|---|
 | `web` | built from `Dockerfile` (Python 3.11) | 8001 | Daphne serving HTTP and WebSockets |
-| `db` | `postgres:15-alpine` | 5433 | Postgres |
-| `redis` | `redis:7-alpine` | 6380 | Channels layer, cache, sessions |
+| `db` | `postgres:15-alpine` | 5433 on 127.0.0.1 | Postgres |
+| `redis` | `redis:7-alpine` | 6380 on 127.0.0.1 | Channels layer, cache, sessions |
 
 There is no reverse proxy in this repository. Put one (nginx, Caddy, a load balancer) in front for HTTPS, `/static/` and `/media/`. See [Reverse proxy](#reverse-proxy).
 
@@ -53,7 +53,7 @@ docker compose exec web python manage.py populate_languages   # once; migrations
 docker compose ps
 ```
 
-The entrypoint waits for Postgres and Redis, runs `migrate` and `collectstatic`, and creates the admin user only when `DJANGO_SUPERUSER_PASSWORD` is set. Check the app at `http://<host>:8001/health/`, which returns `{"status": "healthy"}`.
+The entrypoint waits for Postgres and Redis, runs `migrate` and `collectstatic`, and creates the admin user only when `DJANGO_SUPERUSER_PASSWORD` is set. Check the app at `http://<host>:8001/health/`, which returns `{"status": "healthy"}`. Only `web` is published beyond the host: `db` and `redis` bind to 127.0.0.1 because their sample credentials are not secret and Redis has none.
 
 All variables are described in the [README configuration table](README.md#configuration).
 
